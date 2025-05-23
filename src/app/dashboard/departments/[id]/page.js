@@ -30,13 +30,13 @@ export default function DepartmentDetailsPage({ params }) {
   const doctors = [
     {
       id: 1,
-      name: "DR. ANIRBAN SAHA MBBD",
+      name: "DR. ANIRBAN SAHA MBBS",
       specialty: "MD (Anesthesiology)",
       regNo: "Reg No. 64306 (WBMC)",
       experience: "16+ Years",
       languages: ["English", "Hindi", "Bengali"],
       available: true,
-      photo: "/placeholder.svg?height=100&width=100",
+      photo: "/assets/images/doctor/AMITAVA_SARKAR.webp",
     },
     {
       id: 2,
@@ -46,7 +46,7 @@ export default function DepartmentDetailsPage({ params }) {
       experience: "16+ Years",
       languages: ["English", "Hindi", "Bengali"],
       available: true,
-      photo: "/placeholder.svg?height=100&width=100",
+      photo: "/assets/images/doctor/SUNANDA_JANA.webp",
     },
     {
       id: 3,
@@ -56,7 +56,7 @@ export default function DepartmentDetailsPage({ params }) {
       experience: "16+ Years",
       languages: ["English", "Hindi", "Bengali"],
       available: true,
-      photo: "/placeholder.svg?height=100&width=100",
+      photo: "/assets/images/doctor/PURNENDU_PAL.webp",
     },
   ];
 
@@ -232,7 +232,7 @@ export default function DepartmentDetailsPage({ params }) {
                         />
                       </div>
                       {doctor.available && (
-                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                        <div className="absolute -top-1 right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
                       )}
                     </div>
                     <div>
