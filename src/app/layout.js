@@ -1,6 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
+import AuthWrapper from "./components/AuthWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,8 +26,18 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`font-[Outfit] antialiased`}>{children}</body>
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`font-[Outfit] antialiased`}>
+        <Toaster richColors />
+        <AuthWrapper>
+          <div className="flex h-screen">
+            <main className="flex-1  overflow-auto">
+              {/* <NoInternet /> */}
+              {children}
+            </main>
+          </div>
+        </AuthWrapper>
+      </body>
     </html>
   );
 }

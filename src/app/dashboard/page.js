@@ -1,17 +1,15 @@
-
 import { ChevronRight, Clock, Clock9, FileText, User } from "lucide-react";
 import Image from "next/image";
 
 export default function Page() {
-  // ************** GET ALL Enquiry Data API CALL *******************
-
   const data = [
-     {
+    {
       icon: "/assets/images/dashboard/totalPatient.svg",
       name: "Total Patients",
       value: "200",
       link: "",
-    }, {
+    },
+    {
       icon: "/assets/images/dashboard/patient.svg",
       name: "Today’s Patients",
       value: "100",
@@ -23,7 +21,7 @@ export default function Page() {
       value: "120",
       link: "",
     },
-     {
+    {
       icon: "/assets/images/dashboard/department.svg",
       name: "Total Departments",
       value: "05",
