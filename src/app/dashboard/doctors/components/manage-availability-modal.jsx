@@ -1,27 +1,41 @@
 "use client"
 
 import React from "react"
-
-import { useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-
-export function ManageAvailabilityModal({ children, doctor, onSave }) {
-    const [open, setOpen] = useState(false)
-    const [schedule, setSchedule] = useState({
-        monday: { enabled: doctor.availableDays.includes("Monday"), startTime: "09:00", endTime: "17:00" },
-        tuesday: { enabled: doctor.availableDays.includes("Tuesday"), startTime: "09:00", endTime: "17:00" },
-        wednesday: { enabled: doctor.availableDays.includes("Wednesday"), startTime: "09:00", endTime: "17:00" },
-        thursday: { enabled: doctor.availableDays.includes("Thursday"), startTime: "09:00", endTime: "17:00" },
-        friday: { enabled: doctor.availableDays.includes("Friday"), startTime: "09:00", endTime: "17:00" },
-        saturday: { enabled: doctor.availableDays.includes("Saturday"), startTime: "09:00", endTime: "17:00" },
-        sunday: { enabled: doctor.availableDays.includes("Sunday"), startTime: "09:00", endTime: "17:00" },
+export function ManageAvailabilityModal({ open, onOpenChange, doctor, onSave }) {
+    const [schedule, setSchedule] = React.useState({
+        monday: { enabled: doctor?.availability?.some(a => a.day === "Monday") || false, startTime: "09:00", endTime: "17:00" },
+        tuesday: { enabled: doctor?.availability?.some(a => a.day === "Tuesday") || false, startTime: "09:00", endTime: "17:00" },
+        wednesday: { enabled: doctor?.availability?.some(a => a.day === "Wednesday") || false, startTime: "09:00", endTime: "17:00" },
+        thursday: { enabled: doctor?.availability?.some(a => a.day === "Thursday") || false, startTime: "09:00", endTime: "17:00" },
+        friday: { enabled: doctor?.availability?.some(a => a.day === "Friday") || false, startTime: "09:00", endTime: "17:00" },
+        saturday: { enabled: doctor?.availability?.some(a => a.day === "Saturday") || false, startTime: "09:00", endTime: "17:00" },
+        sunday: { enabled: doctor?.availability?.some(a => a.day === "Sunday") || false, startTime: "09:00", endTime: "17:00" },
     })
+
+    // Initialize with existing availability data
+    React.useEffect(() => {
+        if (doctor?.availability) {
+            const newSchedule = { ...schedule }
+            doctor.availability.forEach(avail => {
+                const dayKey = avail.day.toLowerCase()
+                if (newSchedule[dayKey]) {
+                    newSchedule[dayKey] = {
+                        enabled: true,
+                        startTime: avail.startTime,
+                        endTime: avail.endTime
+                    }
+                }
+            })
+            setSchedule(newSchedule)
+        }
+    }, [doctor])
 
     const timeOptions = [
         "08:00",
@@ -72,28 +86,36 @@ export function ManageAvailabilityModal({ children, doctor, onSave }) {
     }
 
     const handleSave = () => {
-        // Process the schedule data
-        const availableDays = Object.entries(schedule)
+        // Process the schedule data to match the API structure
+        const availability = Object.entries(schedule)
             .filter(([_, value]) => value.enabled)
-            .map(([day]) => day.charAt(0).toUpperCase() + day.slice(1))
+            .map(([day, value]) => ({
+                day: day.charAt(0).toUpperCase() + day.slice(1),
+                startTime: value.startTime,
+                endTime: value.endTime
+            }))
 
-        const data = { availableDays, schedule }
+        const data = {
+            _id: doctor._id,
+            availability
+        }
         console.log("Updated availability:", data)
 
         if (onSave) {
             onSave(data)
         }
+    }
 
-        setOpen(false)
+    const handleCancel = () => {
+        onOpenChange(false)
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center">
-                        <button onClick={() => setOpen(false)} className="mr-2">
+                        <button onClick={handleCancel} className="mr-2">
                             <ArrowLeft className="h-5 w-5" />
                         </button>
                         <DialogTitle>Manage Availability</DialogTitle>
@@ -153,7 +175,7 @@ export function ManageAvailabilityModal({ children, doctor, onSave }) {
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                    <Button type="button" variant="outline" onClick={handleCancel}>
                         Cancel
                     </Button>
                     <Button type="button" className="bg-blue-600 hover:bg-blue-700" onClick={handleSave}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -15,6 +15,7 @@ import {
   Clock,
   Calendar,
   ListFilter,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ManageAvailabilityModal } from "./components/manage-availability-modal";
 import { DoctorDetailsModal } from "./components/doctor-details-modal";
 import { AddDoctorModal } from "./components/add-doctor-modal";
 import {
@@ -37,150 +37,338 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import API from "@/api";
+import { toast } from "sonner";
+import useAuthDataStore from "@/store/authStore";
 
 export default function DoctorsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [allDoctors, setAllDoctors] = useState([]);
+  const [filteredDoctors, setFilteredDoctors] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [error, setError] = useState(null);
 
-  const doctors = [
-    {
-      id: 12345,
-      name: "DR MD FARUKUDDIN PURKAIT",
-      department: "Cardiologist",
-      degree: "DIP CARD, MD,",
-      regNo: "Reg No. 65728(WBMC)",
-      experience: "30+",
-      availability: "Wednesday",
-      photoUrl: "/assets/images/doctor/FARUKUDDIN_PURKATTE.webp",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Monday", "Wednesday", "Thursday", "Saturday"],
-      isAvailable: true,
-    },
-    {
-      id: 2345,
-      name: "DR SUNANDA JANA MBBS",
-      department: "Cardiologist",
-      degree: "MD, DNB (Cardiology)",
-      regNo: "Reg. No. 64394",
-      experience: "30+",
-      availability: "Wednesday",
-      photoUrl: "/assets/images/doctor/SUNANDA_JANA.webp",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Monday", "Wednesday"],
-      isAvailable: true,
-    },
-    {
-      id: 3456,
-      name: "DR ANIRBAN SAHA MBBS",
-      department: "Anesthesiology",
-      degree: "MD (Anesthesiology)",
-      photoUrl: "/assets/images/doctor/PURNENDU_PAL.webp",
-      regNo: "Reg. No. 64306",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Monday", "Tuesday", "Friday"],
-      isAvailable: true,
-    },
-    {
-      id: 4567,
-      name: "DR BARNAVA PAL MBBS",
-      department: "Anesthesiology",
-      degree: "DNB (Anesthesiology)",
-      photoUrl: "/assets/images/doctor/AMITAVA_SARKAR.webp",
-      regNo: "Reg. No. 66083",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Wednesday", "Thursday", "Saturday"],
-      isAvailable: true,
-    },
-    {
-      id: 5678,
-      name: "DR ARVIND K. MBBS",
-      department: "Anesthesiology",
-      degree: "DNB (Anesthesiology)",
-      regNo: "Reg. No. 133417",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Monday", "Friday"],
-      isAvailable: false,
-    },
-    {
-      id: 6789,
-      name: "DR RABINDR NATH JANA MBBS",
-      department: "Anesthesiology",
-      degree: "MD (Anesthesiology)",
-      regNo: "Reg. No. 49776",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Tuesday", "Thursday", "Saturday"],
-      isAvailable: true,
-    },
-    {
-      id: 7890,
-      name: "DR ARVIND K. MBBS",
-      department: "Anesthesiology",
-      degree: "DNB (Anesthesiology)",
-      regNo: "Reg. No. 133417",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Monday", "Friday"],
-      isAvailable: false,
-    },
-    {
-      id: 8901,
-      name: "DR RABINDR NATH JANA MBBS",
-      department: "Anesthesiology",
-      degree: "MD (Anesthesiology)",
-      regNo: "Reg. No. 49776",
-      experience: "30+",
-      availability: "",
-      languages: ["English", "Hindi", "Bengali"],
-      contactNumber: "+91 6555656585",
-      availableDays: ["Tuesday", "Thursday", "Saturday"],
-      isAvailable: true,
-    },
-  ];
+  // Modal states
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [addDoctorModalOpen, setAddDoctorModalOpen] = useState(false);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [doctorForAction, setDoctorForAction] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  const filteredDoctors = doctors.filter((doctor) => {
-    const matchesSearch =
-      doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doctor.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doctor.regNo.toLowerCase().includes(searchQuery.toLowerCase());
+  const authData = useAuthDataStore((state) => state.authData);
 
-    const matchesDepartment =
-      selectedDepartment && selectedDepartment !== "all"
-        ? doctor.department === selectedDepartment
-        : true;
+  // Fetch all doctors on component mount
+  useEffect(() => {
+    getAllDoctors();
+  }, []);
 
-    return matchesSearch && matchesDepartment;
-  });
+  // Monitor modal states and ensure proper cleanup
+  useEffect(() => {
+    const allModalsClosed =
+      !detailsModalOpen &&
+      !editModalOpen &&
+      !addDoctorModalOpen &&
+      !deleteConfirmationOpen;
+    if (allModalsClosed && doctorForAction) {
+      setDoctorForAction(null);
+    }
+  }, [
+    detailsModalOpen,
+    editModalOpen,
+    addDoctorModalOpen,
+    deleteConfirmationOpen,
+    doctorForAction,
+  ]);
 
-  const handleSaveDoctor = (data) => {
-    console.log("Saving doctor data:", data);
-    // Here you would update the doctor data in your state or database
+  // Close dropdown when any modal opens
+  useEffect(() => {
+    if (
+      detailsModalOpen ||
+      editModalOpen ||
+      addDoctorModalOpen ||
+      deleteConfirmationOpen
+    ) {
+      setOpenDropdownId(null);
+    }
+  }, [
+    detailsModalOpen,
+    editModalOpen,
+    addDoctorModalOpen,
+    deleteConfirmationOpen,
+  ]);
+
+  // ************** GET ALL DOCTORS API CALL *******************
+  const getAllDoctors = () => {
+    setLoading(true);
+    setError(null);
+
+    console.log("Fetching doctors...");
+    API.doctor
+      .getAllDoctors(authData?.access_token)
+      .then((response) => {
+        console.log("API Response:", response);
+        if (response.success === true) {
+          setAllDoctors(response.data);
+          setFilteredDoctors(response.data); // Initialize filtered list
+          console.log("Doctors loaded:", response.data);
+        } else {
+          setError("Failed to fetch doctors");
+          toast.error("Failed to fetch doctors");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching doctors:", error);
+        setError("Error fetching doctors");
+        toast.error("Error fetching doctors");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
-  const handleDeleteDoctor = (doctorId) => {
-    console.log("Deleting doctor with ID:", doctorId);
-    // Here you would delete the doctor from your state or database
+  // ****************************** Refresh Function ***********************************
+  const funcRefresh = () => {
+    getAllDoctors();
   };
 
-  const handleSaveAvailability = (data  ) => {
-    console.log("Saving availability data:", data);
-    // Here you would update the doctor's availability in your state or database
+  // ****************************** Search Function ***********************************
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Filter doctors based on search term matching doctorId, fullName, department, or regNo
+    const filtered = allDoctors.filter(
+      (doctor) =>
+        doctor.doctorId
+          ?.toString()
+          .toLowerCase()
+          .includes(value.toLowerCase()) ||
+        doctor.fullName?.toLowerCase().includes(value.toLowerCase()) ||
+        doctor.department?.toLowerCase().includes(value.toLowerCase()) ||
+        doctor.regNo?.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilteredDoctors(filtered);
+  };
+
+  // ****************************** Department Filter Function ***********************************
+  const handleDepartmentFilter = (department) => {
+    setSelectedDepartment(department);
+
+    if (department === "all") {
+      setFilteredDoctors(allDoctors);
+    } else {
+      const filtered = allDoctors.filter(
+        (doctor) => doctor.department === department
+      );
+      setFilteredDoctors(filtered);
+    }
+  };
+
+  // ****************************** Dropdown Action Handlers ***********************************
+  const handleViewDetails = (doctor) => {
+    console.log("Opening details modal for:", doctor);
+    setOpenDropdownId(null); // Close dropdown
+    setDoctorForAction(doctor);
+    setDetailsModalOpen(true);
+  };
+
+  const handleEditDoctor = (doctor) => {
+    console.log("Opening edit modal for:", doctor);
+    setOpenDropdownId(null); // Close dropdown
+    setDoctorForAction(doctor);
+    setEditModalOpen(true);
+  };
+
+  const handleDeleteDoctor = (doctor) => {
+    console.log("Opening delete confirmation for:", doctor);
+    setOpenDropdownId(null); // Close dropdown
+    setDoctorForAction(doctor);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!doctorForAction) return;
+
+    try {
+      const response = await API.doctor.deleteDoctor(
+        doctorForAction._id,
+        authData?.access_token
+      );
+
+      if (response && response.success !== false) {
+        toast.success("Doctor deleted successfully");
+        funcRefresh(); // Refresh the list
+        setDeleteConfirmationOpen(false);
+        setDoctorForAction(null);
+      } else {
+        toast.error("Failed to delete doctor");
+      }
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      toast.error("Error deleting doctor");
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteConfirmationOpen(false);
+    setDoctorForAction(null);
+  };
+
+  // Modal close handlers
+  const handleCloseDetailsModal = () => {
+    setDetailsModalOpen(false);
+    setDoctorForAction(null);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditModalOpen(false);
+    setDoctorForAction(null);
+  };
+
+  const handleCloseAddDoctorModal = () => {
+    setAddDoctorModalOpen(false);
+    // Reset form data when closing add doctor modal
+    setDoctorForAction(null);
+  };
+
+  // Handle modal state changes
+  const handleDetailsModalChange = (open) => {
+    setDetailsModalOpen(open);
+    if (!open) setDoctorForAction(null);
+  };
+
+  const handleEditModalChange = (open) => {
+    setEditModalOpen(open);
+    if (!open) setDoctorForAction(null);
+  };
+
+  const handleAddDoctorModalChange = (open) => {
+    setAddDoctorModalOpen(open);
+    if (!open) setDoctorForAction(null);
+  };
+
+  // Reset all modal states
+  const resetAllModals = () => {
+    setDetailsModalOpen(false);
+    setEditModalOpen(false);
+    setAvailabilityModalOpen(false);
+    setAddDoctorModalOpen(false);
+    setDoctorForAction(null);
+  };
+
+  const handleToggleDoctorStatus = async (doctor) => {
+    try {
+      setOpenDropdownId(null); // Close dropdown
+      const updatedDoctor = {
+        ...doctor,
+        isActive: !doctor.isActive,
+      };
+
+      const response = await API.doctor.updateDoctor(
+        updatedDoctor,
+        authData?.access_token
+      );
+
+      if (response && response !== false) {
+        const status = updatedDoctor.isActive ? "activated" : "deactivated";
+        toast.success(`Doctor ${status} successfully`);
+        funcRefresh(); // Refresh the list
+      } else {
+        toast.error(
+          `Failed to ${
+            updatedDoctor.isActive ? "activate" : "deactivate"
+          } doctor`
+        );
+      }
+    } catch (error) {
+      console.error("Error toggling doctor status:", error);
+      toast.error("Error updating doctor status");
+    }
+  };
+
+  const handleSaveDoctor = async (data) => {
+    try {
+      if (data._id) {
+        // Update existing doctor
+        const response = await API.doctor.updateDoctor(
+          data,
+          authData?.access_token
+        );
+        console.log("Update doctor response:", response);
+        console.log("Response type:", typeof response);
+        console.log(
+          "Response keys:",
+          response ? Object.keys(response) : "No response"
+        );
+
+        // Check for success - response could be an object, array, or have success property
+        const isSuccess =
+          response &&
+          (response.success === true ||
+            response.status === 200 ||
+            Array.isArray(response) ||
+            (typeof response === "object" &&
+              response !== null &&
+              !response.error));
+
+        if (isSuccess) {
+          toast.success("Doctor updated successfully");
+          funcRefresh(); // Refresh the list
+          setEditModalOpen(false);
+        } else {
+          toast.error("Failed to update doctor");
+        }
+      } else {
+        // Add new doctor
+        const response = await API.doctor.addDoctor(
+          data,
+          authData?.access_token
+        );
+        console.log("Add doctor response:", response);
+        console.log("Response type:", typeof response);
+        console.log(
+          "Response keys:",
+          response ? Object.keys(response) : "No response"
+        );
+        console.log("Response === false:", response === false);
+        console.log("Response truthy check:", !!response);
+
+        // Check for success - response could be an object, array, or have success property
+        const isSuccess =
+          response &&
+          (response.success === true ||
+            response.status === 200 ||
+            Array.isArray(response) ||
+            (typeof response === "object" &&
+              response !== null &&
+              !response.error) ||
+            response._id); // If response has an _id, it's likely successful
+
+        if (isSuccess) {
+          toast.success("Doctor added successfully");
+          funcRefresh(); // Refresh the list
+          setAddDoctorModalOpen(false); // Close the add doctor modal
+        } else {
+          toast.error("Failed to add doctor");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving doctor:", error);
+      toast.error("Error saving doctor");
+    }
   };
 
   return (
@@ -203,206 +391,368 @@ export default function DoctorsPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search here..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchTerm}
+              onChange={handleSearch}
               className="pl-10 pr-4 py-2 rounded-md border border-gray-300"
+              disabled={loading}
             />
           </div>
           <div className="flex gap-3 w-full md:w-auto">
             <Select
               value={selectedDepartment}
-              onValueChange={setSelectedDepartment}
+              onValueChange={handleDepartmentFilter}
+              disabled={loading}
             >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select Department" />
+                <SelectValue
+                  placeholder={loading ? "Loading..." : "Select Department"}
+                />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-                <SelectItem value="Anesthesiology">Anesthesiology</SelectItem>
+                {!loading &&
+                  Array.from(
+                    new Set(allDoctors.map((doctor) => doctor.department))
+                  ).map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             <Button
               variant="outline"
-              className="flex items-center gap-2 text-[#4B4B4B]"
+              className="flex items-center gap-2 text-[#4B4B4B] cursor-pointer"
+              disabled={loading}
+              onClick={getAllDoctors}
             >
-              <ListFilter className="h-4 w-4" />
-              Filter
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              Refresh
             </Button>
-            <AddDoctorModal onSave={handleSaveDoctor}>
-              <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 ml-auto md:ml-0">
-                <Plus className="h-4 w-4" />
-                Add Doctor
-              </Button>
-            </AddDoctorModal>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 ml-auto md:ml-0 cursor-pointer"
+              disabled={loading}
+              onClick={() => setAddDoctorModalOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              Add Doctor
+            </Button>
           </div>
         </div>
       </div>
 
       <div className="h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll pt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-4">
-          {filteredDoctors.map((doctor) => (
-            <Card
-              key={doctor.id}
-              className="border border-[#E2E2E2] cursor-pointer bg-white rounded-[10px] p-0 flex flex-col justify-between overflow-hidden shadow-none transition-shadow"
-            >
-              <CardContent className="p-0">
-                <div className="space-y-4 px-3  py-4 ">
-                  <div className="flex items-center justify-between">
-                    <Badge
-                      variant={doctor.isAvailable ? "success" : "secondary"}
-                      className={`${
-                        doctor.isAvailable
-                          ? "bg-[#ECFDF5] text-[#059669]"
-                          : "bg-gray-100 text-gray-500"
-                      } text-xs px-2 py-1 rounded-full border-none flex items-center gap-2 font-normal`}
-                    >
-                      <div
-                        className={`h-2 w-2 rounded-full ${
-                          doctor.isAvailable ? "bg-[#059669]" : "bg-gray-400"
-                        }`}
-                      ></div>
-                      {doctor.isAvailable ? "Available" : "Not Available"}
-                    </Badge>
-                    <div className="flex items-center ">
-                      <div className="text-[#4B4B4B] bg-[#F5F5F5] rounded-[3px] px-3 py-0.5 text-sm">
-                        {doctor.id}
-                      </div>
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center gap-4">
+              <div className="flex items-center gap-3">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="text-lg font-medium text-gray-700">
+                  Loading doctors...
+                </span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Please wait while we fetch the latest data
+              </p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-red-500 mb-4">{error}</p>
+              <Button
+                onClick={funcRefresh}
+                variant="outline"
+                className="cursor-pointer"
+              >
+                Try Again
+              </Button>
+            </div>
+          </div>
+        ) : filteredDoctors.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <p className="text-gray-500 mb-4">No doctors found</p>
+              {searchTerm || selectedDepartment !== "" ? (
+                <Button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedDepartment("");
+                    setFilteredDoctors(allDoctors);
+                  }}
+                  variant="outline"
+                  className="cursor-pointer"
+                >
+                  Clear Filters
+                </Button>
+              ) : null}
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-4">
+            {filteredDoctors.map((doctor) => (
+              <Card
+                key={doctor._id}
+                className="border border-[#E2E2E2] cursor-pointer bg-white rounded-[10px] p-0 flex flex-col justify-between overflow-hidden shadow-none transition-shadow"
+              >
+                <CardContent className="p-0">
+                  <div className="space-y-2 px-3  py-3 ">
+                    <div className="flex items-center justify-between">
+                      <Badge
+                        variant={doctor.isActive ? "success" : "secondary"}
+                        className={`${
+                          doctor.isActive
+                            ? "bg-[#ECFDF5] text-[#059669]"
+                            : "bg-gray-100 text-gray-500"
+                        } text-xs px-2 py-1 rounded-full border-none flex items-center gap-2 font-normal`}
+                      >
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            doctor.isActive ? "bg-[#059669]" : "bg-gray-400"
+                          }`}
+                        ></div>
+                        {doctor.isActive ? "Available" : "Not Available"}
+                      </Badge>
+                      <div className="flex items-center ">
+                        <div className="text-[#4B4B4B] bg-[#F5F5F5] rounded-[3px] px-3 py-0.5 text-sm">
+                          {doctor.doctorId}
+                        </div>
 
-                      {/* DropdownMenu */}
-                      <div className=" ">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DoctorDetailsModal
-                              doctor={doctor}
-                              onEdit={() => setSelectedDoctor(doctor)}
-                              onDelete={() => handleDeleteDoctor(doctor.id)}
-                            >
+                        {/* DropdownMenu */}
+                        <div className=" ">
+                          <DropdownMenu
+                            key={`dropdown-${doctor._id}`}
+                            open={openDropdownId === doctor._id}
+                            onOpenChange={(open) => {
+                              setOpenDropdownId(open ? doctor._id : null);
+                            }}
+                          >
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Dropdown trigger clicked for doctor:",
+                                    doctor.fullName
+                                  );
+                                }}
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "View details clicked for:",
+                                    doctor.fullName
+                                  );
+                                  handleViewDetails(doctor);
+                                }}
+                                className="cursor-pointer"
                               >
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                            </DoctorDetailsModal>
 
-                            <AddDoctorModal
-                              doctor={doctor}
-                              onSave={handleSaveDoctor}
-                            >
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Edit doctor clicked for:",
+                                    doctor.fullName
+                                  );
+                                  handleEditDoctor(doctor);
+                                }}
+                                className="cursor-pointer"
                               >
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit Doctor
                               </DropdownMenuItem>
-                            </AddDoctorModal>
 
-                            <ManageAvailabilityModal
-                              doctor={doctor}
-                              onSave={handleSaveAvailability}
-                            >
                               <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Toggle status clicked for:",
+                                    doctor.fullName
+                                  );
+                                  handleToggleDoctorStatus(doctor);
+                                }}
+                                className={`cursor-pointer ${
+                                  doctor.isActive
+                                    ? "text-orange-600 hover:text-orange-700"
+                                    : "text-green-600 hover:text-green-700"
+                                }`}
                               >
-                                <Clock className="h-4 w-4 mr-2" />
-                                Manage Availability
+                                {doctor.isActive ? (
+                                  <svg
+                                    className="h-4 w-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <svg
+                                    className="h-4 w-4 mr-2"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M5 13l4 4L19 7"
+                                    />
+                                  </svg>
+                                )}
+                                {doctor.isActive ? "Deactivate" : "Activate"}{" "}
+                                Doctor
                               </DropdownMenuItem>
-                            </ManageAvailabilityModal>
 
-                            <DropdownMenuItem
-                              className="text-red-600"
-                              onClick={() => handleDeleteDoctor(doctor.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete Doctor
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <div className="size-12 md:size-14 rounded-full bg-[#C3DDFF] flex items-center justify-center text-blue-600 overflow-hidden">
-                      {doctor.photoUrl ? (
-                        <Image
-                          width={100}
-                          height={100}
-                          className="w-full h-full object-center object-cover"
-                          src={doctor.photoUrl || "/placeholder.svg"}
-                          alt={doctor.name}
-                        />
-                      ) : (
-                        <Image
-                          width={100}
-                          height={100}
-                          className="size-8 md:size-9"
-                          src="/assets/images/doctor/avatar.svg"
-                          alt="avatar"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <h3
-                        title={doctor.name}
-                        className="text-sm text-[#323232] truncate  font-semibold"
-                      >
-                        {doctor.name}
-                      </h3>
-                      <p className="text-xs text-[#7F7F7F]">
-                        {doctor.degree}, {doctor.regNo}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="w-full flex items-center gap-3 justify-start  ">
-                    <div className="text-xs flex items-center gap-1 text-[#7F7F7F]">
-                      <Image
-                        width={100}
-                        height={100}
-                        className="size-4 md:size-5"
-                        src="/assets/images/doctor/calender.svg"
-                        alt="avatar"
-                      />
-
-                      <div className="flex gap-1 text-[#4B4B4B] text-sm">
-                        {doctor.experience}
-                        <div className="font-normal">Experience</div>
-                      </div>
-                    </div>
-                    <div className="w-[1.2px] h-[15px] bg-[#7F7F7F]"></div>
-                    {doctor.languages && (
-                      <div className="text-xs flex items-center gap-1 text-gray-600">
-                        <Image
-                          width={100}
-                          height={100}
-                          className="size-4 md:size-5"
-                          src="/assets/images/doctor/language.svg"
-                          alt="language"
-                        />
-
-                        <div className="font-normal text-xs text-[#4B4B4B]">
-                          {doctor.languages.join(", ")}
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log(
+                                    "Delete doctor clicked for:",
+                                    doctor.fullName
+                                  );
+                                  handleDeleteDoctor(doctor);
+                                }}
+                                className="cursor-pointer text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Doctor
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="flex flex-col items-start space-y-2">
+                      <div className="size-12 md:size-14 rounded-full bg-[#C3DDFF] flex items-center justify-center text-blue-600 overflow-hidden shrink-0">
+                        {doctor.profilePic ? (
+                          <Image
+                            width={100}
+                            height={100}
+                            className="w-full h-full object-top object-cover"
+                            src={doctor.profilePic || "/placeholder.svg"}
+                            alt={doctor.fullName}
+                          />
+                        ) : (
+                          <Image
+                            width={100}
+                            height={100}
+                            className="size-8 md:size-9 "
+                            src="/assets/images/doctor/avatar.svg"
+                            alt="avatar"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <h3
+                          title={doctor.fullName}
+                          className="text-sm text-[#323232] truncate uppercase font-semibold"
+                        >
+                          {doctor.fullName}
+                        </h3>
+                        <p className="text-xs text-[#7F7F7F]">
+                          {doctor.qualification}, {doctor.regNo}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Modals */}
+      {doctorForAction && (
+        <>
+          <DoctorDetailsModal
+            open={detailsModalOpen}
+            onOpenChange={handleDetailsModalChange}
+            doctor={doctorForAction}
+          />
+
+          <AddDoctorModal
+            open={editModalOpen}
+            onOpenChange={handleEditModalChange}
+            doctor={doctorForAction}
+            onSave={handleSaveDoctor}
+          />
+        </>
+      )}
+
+      {/* Add Doctor Modal */}
+      <AddDoctorModal
+        open={addDoctorModalOpen}
+        onOpenChange={handleAddDoctorModalChange}
+        onSave={handleSaveDoctor}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <AlertDialog
+        open={deleteConfirmationOpen}
+        onOpenChange={setDeleteConfirmationOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete{" "}
+              <span className="font-semibold">{doctorForAction?.fullName}</span>{" "}
+              from the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleCancelDelete}
+              className="cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 cursor-pointer"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
