@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, User, FileText, LogOut, ChevronsLeftRight, Settings, MessageSquareMore, House, Plane, BriefcaseMedical, Mic, Stethoscope, Syringe } from 'lucide-react'
+import { LayoutDashboard, User, FileText, LogOut, ChevronsLeftRight, Settings, MessageSquareMore, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import Image from 'next/image'
 import {
@@ -12,8 +12,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-// import useAuthDataStore from '@/store/authStore'
-// import API from '@/api'
+import useAuthDataStore from '@/store/authStore'
+import API from '@/api'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 
@@ -25,16 +25,23 @@ const menuItems = [
     matchPaths: ['/dashboard']
   },
   {
-    icon: User,
-    label: 'Patients',
-    href: '/dashboard/patients',
-    matchPaths: ['/dashboard/patients', '/dashboard/patients/[id]']
+    icon: UserSearch,
+    label: 'Patients Enquiry',
+    href: '/dashboard/patients-enquiries',
+    matchPaths: ['/dashboard/patients-enquiries']
   },
+
   {
     icon: Plane,
     label: 'International Patient',
-    href: '/dashboard/international-patient',
-    matchPaths: ['/dashboard/international-patient', '/dashboard/international-patient/[id]']
+    href: '/dashboard/international-patients',
+    matchPaths: ['/dashboard/international-patients', '/dashboard/international-patients/[id]']
+  },
+  {
+    icon: User,
+    label: 'Patients',
+    href: '/dashboard/patient',
+    matchPaths: ['/dashboard/patient', '/dashboard/patient/[id]']
   },
   {
     icon: Stethoscope,
@@ -63,8 +70,8 @@ const menuItems = [
   {
     icon: Mic,
     label: 'News',
-    href: '/dashboard/blog',
-    matchPaths: ['/dashboard/blogs', '/dashboard/blogs/all-blogs', '/dashboard/blogs/create-blog', '/dashboard/blogs/edit']
+    href: '/dashboard/news',
+    matchPaths: ['/dashboard/news', '/dashboard/news/all-news', '/dashboard/news/create-news', '/dashboard/news/edit']
   },
   {
     icon: Settings,
@@ -79,17 +86,34 @@ export function Sidebar() {
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-//   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
+  const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
 
-//   const handleLogout = () => {
-//     API.auth.Logout(router, clearAuthData);
-//   }
+  const handleLogout = () => {
+    API.auth.Logout(router, clearAuthData);
+  }
 
   const isActiveRoute = (item) => {
     if (item.label === 'Dashboard') {
       return pathname === '/dashboard'
     }
-    return item.matchPaths.some(path => pathname.startsWith(path))
+
+    // For more precise matching, check exact matches first, then startsWith
+    return item.matchPaths.some(path => {
+      // Handle dynamic routes with [id]
+      if (path.includes('[id]')) {
+        const basePath = path.replace('/[id]', '')
+        return pathname.startsWith(basePath) && pathname !== basePath
+      }
+      // For exact paths - be more specific to avoid conflicts
+      if (pathname === path) {
+        return true
+      }
+      // For paths that should match sub-routes, but be careful about overlaps
+      if (pathname.startsWith(path + '/')) {
+        return true
+      }
+      return false
+    })
   }
 
   return (
@@ -164,13 +188,13 @@ export function Sidebar() {
       <div className='h-[1px] bg-[#D0D5DD] mx-auto' style={{ width: isCollapsed ? '70%' : '80%' }}>
 
       </div>
-      <div className={isCollapsed ? 'px-4 pt-4' : "px-6 pt-4"}>
+      <div className={isCollapsed ? 'px-4 pt-2' : "px-6 pt-2"}>
 
         <AlertDialog className='w-full '>
           <AlertDialogTrigger className='w-full'>
             <Button
               className={cn(
-                "w-full flex items-center justify-start bg-transparent border-none shadow-none text-[#7F7F7F] hover:bg-gray-100",
+                "w-full flex items-center justify-start bg-transparent border-none shadow-none text-[#7F7F7F] hover:bg-gray-100 cursor-pointer",
                 isCollapsed ? "p-2" : ""
               )}
             >
@@ -187,7 +211,12 @@ export function Sidebar() {
             </AlertDialogHeader>
             <AlertDialogFooter className="w-full grid grid-cols-2 gap-x-4  px-10 place-content-center content-center">
               <AlertDialogCancel className='bg-gray-100 border text-xs  sm:text-sm py-4 hover:bg-gray-200'>Cancel</AlertDialogCancel>
-              <AlertDialogAction  className='bg-red-500 py-4 text-white text-xs  sm:text-sm hover:bg-red-600 ' >Logout</AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleLogout}
+                className='bg-red-500 py-4 text-white text-xs  sm:text-sm hover:bg-red-600'
+              >
+                Logout
+              </AlertDialogAction>
             </AlertDialogFooter>
             <div className="text-[#52544F] font-normal text-xs leading-4 text-center">
               Facing issues? <span className="text-[#004CA3] font-normal text-xs leading-4">Talk to our technical person </span>
