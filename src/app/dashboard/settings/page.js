@@ -9,38 +9,47 @@ import { Button } from "@/components/ui/button";
 import { PasswordUpdateForm } from "./components/password-update-form";
 import { EditDetailsForm } from "./components/edit-details-form";
 import { EmailUpdateForm } from "./components/email-update-form";
+import useAuthDataStore from "@/store/authStore";
 
 export default function SettingsPage() {
   const [activeView, setActiveView] = useState("details");
+  const authData = useAuthDataStore((state) => state.authData);
 
   const userDetails = {
-    fullName: "Dr. Farukuddin Purkaite",
-    email: "admin001@gmail.com",
-    contactNumber: "+91 2355658454",
-    role: "Super Admin",
+    fullName: `${authData?.first_name || ""} ${
+      authData?.last_name || ""
+    }`.trim(),
+    email: authData?.email || "",
+    contactNumber: authData?.phone_number || "",
+    role: authData?.account_type === "admin" ? "Super Admin" : "Admin",
   };
 
   return (
     <>
       {/* Header */}
       <div className="w-full flex items-center justify-between">
-        <div className="flex items-center  space-x-2 ">
-          <Image
-            width={100}
-            height={100}
-            src={"/assets/images/dashboard/leftArrow.svg"}
-            alt="leftArrow"
-            className="w-4 h-4"
-          />
+        <div className="flex items-center space-x-2">
+          <Link
+            href="/dashboard"
+            className="p-2 hover:bg-gray-50 rounded-md transition-colors duration-200 cursor-pointer"
+          >
+            <Image
+              width={100}
+              height={100}
+              src={"/assets/images/dashboard/leftArrow.svg"}
+              alt="leftArrow"
+              className="w-4 h-4 hover:scale-110 transition-transform duration-200"
+            />
+          </Link>
           <div className="w-[1.2px] h-[15px] bg-[#7F7F7F]"></div>
-          <p className="text-[#4B4B4B] font-medium ">Settings</p>
+          <p className="text-[#4B4B4B] font-medium">Settings</p>
         </div>
       </div>
 
       <div className="h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Profile Card */}
         <div className="md:col-span-1">
-          <Card className="overflow-hidden py-0 border-none rounded-none shadow-none ">
+          <Card className="overflow-hidden py-0 border-none rounded-none shadow-none">
             <div className="relative">
               <div className=" ">
                 <div className="relative w-full h-[250px]  ">
@@ -52,7 +61,7 @@ export default function SettingsPage() {
                     className="w-full h-full object-cover rounded-[10px]"
                   />
                   <h3 className="absolute w-[95%] bottom-1.5 left-1/2 transform -translate-x-1/2 rounded-md bg-white/40 shadow backdrop-blur-sm text-base font-medium text-[#323232] text-center py-2">
-                    Super Admin
+                    {userDetails.role}
                   </h3>
                 </div>
               </div>
@@ -63,21 +72,21 @@ export default function SettingsPage() {
                 <div>
                   <p className="text-sm text-[#7F7F7F]">Full Name</p>
                   <p className="font-medium text-[#323232]">
-                    {userDetails.fullName}
+                    {userDetails.fullName || "Not provided"}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-[#7F7F7F]">Email Address</p>
                   <p className="font-medium text-[#323232]">
-                    {userDetails.email}
+                    {userDetails.email || "Not provided"}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-[#7F7F7F]">Contact Number</p>
                   <p className="font-medium text-[#323232]">
-                    {userDetails.contactNumber}
+                    {userDetails.contactNumber || "Not provided"}
                   </p>
                 </div>
               </div>
