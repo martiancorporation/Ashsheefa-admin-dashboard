@@ -1,367 +1,272 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
-import { Ellipsis, Eye, Pencil, Trash2 } from "lucide-react"
+import { Ellipsis, Eye, Pencil, Trash2, Loader2 } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { HealthCheckupDetailsModal } from "./health-checkup-details-modal"
 import { AddHealthCheckupModal } from "./add-health-checkup-modal"
+import { DeleteConfirmationModal } from "./delete-confirmation-modal"
+import { toast } from "sonner"
+import healthCheckup from "@/api/healthCheckup"
 
 export default function AllHealthPackage({
     searchQuery = "",
     selectedCategory = "",
-    selectedGender = "",
+    onPackageUpdate,
 }) {
     const [selectedPackage, setSelectedPackage] = useState(null)
+    const [packages, setPackages] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [openDropdownId, setOpenDropdownId] = useState(null)
+    const [packageToDelete, setPackageToDelete] = useState(null)
+    const [editModalOpen, setEditModalOpen] = useState(false)
+    const [editingPackage, setEditingPackage] = useState(null)
+    const [pagination, setPagination] = useState({
+        current_page: 1,
+        total_pages: 1,
+        total_records: 0,
+        limit: 10
+    })
 
-    const packages = [
-        {
-            id: 1,
-            name: "Basic Health Package-Male",
-            category: "General Health",
-            gender: "male",
-            tests: 21,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general.png",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-                "COMPLETE BLOOD COUNT",
-                "LIPID PROFILE",
-                "LIVER FUNCTION TEST",
-                "KIDNEY FUNCTION TEST",
-                "THYROID PROFILE",
-                "URINE ROUTINE",
-                "CHEST X-RAY",
-                "ECG",
-                "VITAMIN B12",
-                "VITAMIN D",
-                "HBA1C",
-                "CALCIUM",
-                "URIC ACID",
-                "ELECTROLYTES",
-                "IRON STUDIES",
-                "PSA (FOR MEN)",
-            ],
-        },
-        {
-            id: 2,
-            name: "Basic Health Package-Female",
-            category: "General Health",
-            gender: "female",
-            tests: 23,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_one.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-                "COMPLETE BLOOD COUNT",
-                "LIPID PROFILE",
-                "LIVER FUNCTION TEST",
-                "KIDNEY FUNCTION TEST",
-                "THYROID PROFILE",
-                "URINE ROUTINE",
-                "CHEST X-RAY",
-                "ECG",
-                "VITAMIN B12",
-                "VITAMIN D",
-                "HBA1C",
-                "CALCIUM",
-                "URIC ACID",
-                "ELECTROLYTES",
-                "IRON STUDIES",
-                "PAP SMEAR (FOR WOMEN)",
-                "MAMMOGRAM (FOR WOMEN)",
-                "BONE DENSITY SCAN",
-            ],
-        },
-        {
-            id: 3,
-            name: "Comprehensive Health check",
-            category: "General Health",
-            gender: "all",
-            tests: 30,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_two.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 4,
-            name: "Hypertension Screening Package",
-            category: "General Health",
-            gender: "all",
-            tests: 15,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_three.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 5,
-            name: "Healthy Heart",
-            category: "Heart",
-            gender: "all",
-            tests: 18,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/women.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 6,
-            name: "Lung Health Check",
-            category: "Special",
-            gender: "all",
-            tests: 12,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_one.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 7,
-            name: "Preconception Health Check",
-            category: "Women",
-            gender: "female",
-            tests: 25,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_two.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 8,
-            name: "Fertility Health Check",
-            category: "Special",
-            gender: "all",
-            tests: 20,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_three.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 9,
-            name: "Senior Citizen Health Check",
-            category: "Senior Citizen",
-            gender: "all",
-            tests: 35,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general_one.webp",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 10,
-            name: "Basic Health Check",
-            category: "General Health",
-            gender: "all",
-            tests: 18,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general.png",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 11,
-            name: "Menopausal Health Package",
-            category: "Women",
-            gender: "female",
-            tests: 22,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general.png",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-        {
-            id: 12,
-            name: "PCOS Health Check Package",
-            category: "Women",
-            gender: "female",
-            tests: 24,
-            originalPrice: "₹5700",
-            discountPrice: "₹5700",
-            image: "/assets/images/healthCheckup/general.png",
-            testDetails: [
-                "BLOOD UREA NITROGEN, SERUM (1079H-SRL)",
-                "GLUCOSE, FASTING, PLASMA / URINE (1302H-SRL)",
-                "WHOLE ABDOMEN ULTRASOUND",
-                "CREATININE EGFR- EPI (1320HGFREP - SRL)",
-                "URINALYSIS (5200U-SRL)",
-            ],
-        },
-    ]
+    // Fetch health checkups from API
+    const fetchHealthCheckups = async () => {
+        setLoading(true)
+        try {
+            const params = {
+                page: 1,
+                limit: 50,
+                search: searchQuery,
+                category: selectedCategory,
+            }
 
-    // Filter packages based on search query, category, and gender
+            const response = await healthCheckup.getAllHealthCheckups(params)
+
+            if (response && response.data && response.data.health_checkups) {
+                setPackages(response.data.health_checkups)
+                setPagination(response.data.pagination || {
+                    current_page: 1,
+                    total_pages: 1,
+                    total_records: response.data.health_checkups.length,
+                    limit: 50
+                })
+            } else {
+                setPackages([])
+                setPagination({
+                    current_page: 1,
+                    total_pages: 1,
+                    total_records: 0,
+                    limit: 50
+                })
+            }
+        } catch (error) {
+            console.error("Error fetching health checkups:", error)
+            toast.error("Failed to fetch health checkups")
+            setPackages([])
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    // Fetch data on component mount and when filters change
+    useEffect(() => {
+        fetchHealthCheckups()
+    }, [searchQuery, selectedCategory])
+
+    // Handle package refresh after add/edit/delete
+    const handlePackageUpdate = () => {
+        if (onPackageUpdate) {
+            onPackageUpdate()
+        } else {
+            fetchHealthCheckups()
+        }
+    }
+
+    const handleViewPackage = (pkg) => {
+        setSelectedPackage(pkg)
+        setOpenDropdownId(null) // Close dropdown when view details is clicked
+    }
+
+    const handleEditPackage = (pkg) => {
+        setEditingPackage(pkg)
+        setEditModalOpen(true)
+        setOpenDropdownId(null) // Close dropdown when edit is clicked
+    }
+
+    const handleDeletePackage = (pkg) => {
+        setPackageToDelete(pkg)
+        setOpenDropdownId(null) // Close dropdown when delete is clicked
+    }
+
+    const handleDeleteSuccess = () => {
+        fetchHealthCheckups() // Refresh the list
+        setPackageToDelete(null)
+    }
+
+    // Filter packages based on search and category
     const filteredPackages = packages.filter((pkg) => {
-        const matchesSearch =
-            pkg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            pkg.category.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchesCategory = selectedCategory
-            ? selectedCategory === "all-categories"
-                ? true
-                : pkg.category.toLowerCase() === selectedCategory.replace("-", " ")
+        const matchesSearch = searchQuery
+            ? pkg.checkup_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            pkg.checkup_title?.toLowerCase().includes(searchQuery.toLowerCase())
             : true
 
-        const matchesGender = selectedGender ? (selectedGender === "all" ? true : pkg.gender === selectedGender) : true
+        const matchesCategory = selectedCategory
+            ? pkg.category?.toLowerCase() === selectedCategory.toLowerCase()
+            : true
 
-        return matchesSearch && matchesCategory && matchesGender
+        return matchesSearch && matchesCategory
     })
 
-    // Group packages by category
-    const groupedPackages = {}
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading health checkups...</span>
+            </div>
+        )
+    }
 
-    filteredPackages.forEach((pkg) => {
-        if (!groupedPackages[pkg.category]) {
-            groupedPackages[pkg.category] = []
-        }
-        groupedPackages[pkg.category].push(pkg)
-    })
-
-    const handleDeletePackage = (id) => {
-        console.log("Delete package with ID:", id)
-        // Here you would delete the package from your state or database
+    if (filteredPackages.length === 0) {
+        return (
+            <div className="text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">
+                    {loading ? "Loading..." : "No health checkups found"}
+                </div>
+                {!loading && (
+                    <p className="text-gray-400">
+                        {searchQuery || selectedCategory
+                            ? "Try adjusting your search criteria"
+                            : "No health checkups available yet"}
+                    </p>
+                )}
+            </div>
+        )
     }
 
     return (
-        <div className="space-y-8">
-            {Object.entries(groupedPackages).map(([category, packages]) => (
-                <div key={category} className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-medium text-[#4B4B4B]">{category}</h2>
-                        <div className="flex-grow h-[1px] bg-[#DDDDDD]"></div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {filteredPackages.map((pkg) => (
+                <Card key={pkg._id} className="py-1.5 px-1.5 border border-[#EEEEEE] bg-[#FEFEFE] shadow-none overflow-hidden rounded-[10px] gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+                    {/* Image Section */}
+                    <div className="relative h-32 w-full">
+                        {pkg.image ? (
+                            <Image
+                                src={pkg.image}
+                                alt={pkg.checkup_name}
+                                fill
+                                className="w-full h-full rounded-[6px] object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full rounded-[6px] bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                                <div className="text-center">
+                                    <div className="w-12 h-12 bg-blue-200 rounded-full flex items-center justify-center mx-auto mb-1">
+                                        <span className="text-blue-600 text-lg font-bold">
+                                            {pkg.checkup_name?.charAt(0) || "H"}
+                                        </span>
+                                    </div>
+                                    <p className="text-blue-600 text-xs font-medium">Health Checkup</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {packages.map((pkg) => (
-                            <Card
-                                key={pkg.id}
-                                className="py-1.5 px-1.5 border border-[#EEEEEE] bg-[#FEFEFE] shadow-none overflow-hidden rounded-[10px] gap-2"
+                    {/* Category and Menu Section */}
+                    <div className="px-2 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <div className="bg-[#E3F8BC] text-[#323232] text-xs px-2 py-1 rounded-[3px] cursor-pointer hover:bg-[#D4F0A8] transition-colors">
+                                {pkg.checkup_title || "General Health"}
+                            </div>
+                            <DropdownMenu
+                                open={openDropdownId === pkg._id}
+                                onOpenChange={(open) => setOpenDropdownId(open ? pkg._id : null)}
                             >
-                                <div className="relative h-32 w-full">
-                                    <Image src={pkg.image || "/placeholder.svg"} alt={pkg.name} fill className="w-full h-full rounded-[6px] object-cover" />
-                                </div>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-gray-100 cursor-pointer">
+                                        <Ellipsis className="h-4 w-4 text-gray-600" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
+                                >
+                                    <DropdownMenuItem
+                                        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        onClick={() => handleViewPackage(pkg)}
+                                    >
+                                        <Eye className="h-4 w-4 mr-3 text-gray-500" />
+                                        View Details
+                                    </DropdownMenuItem>
 
-                                <div className="px-2 space-y-2">
-                                    <div className="flex items-center justify-between ">
-                                        <div className="bg-[#E3F8BC] text-[#323232] text-xs px-2 py-1 rounded-[3px]">{pkg.category}</div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <Ellipsis className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <HealthCheckupDetailsModal healthPackage={pkg}>
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                        <Eye className="h-4 w-4 mr-2" />
-                                                        View Details
-                                                    </DropdownMenuItem>
-                                                </HealthCheckupDetailsModal>
+                                    <DropdownMenuItem
+                                        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                                        onClick={() => handleEditPackage(pkg)}
+                                    >
+                                        <Pencil className="h-4 w-4 mr-3 text-gray-500" />
+                                        Edit Package
+                                    </DropdownMenuItem>
 
-                                                <AddHealthCheckupModal healthPackage={pkg}>
-                                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                                        <Pencil className="h-4 w-4 mr-2" />
-                                                        Edit Package
-                                                    </DropdownMenuItem>
-                                                </AddHealthCheckupModal>
+                                    <DropdownMenuItem
+                                        className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                                        onClick={() => handleDeletePackage(pkg)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-3 text-red-500" />
+                                        Delete Package
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
 
-                                                <DropdownMenuItem className="text-red-600" onClick={() => handleDeletePackage(pkg.id)}>
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Delete Package
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
+                        {/* Package Details with Blue Line */}
+                        <div className="flex items-start gap-2 cursor-pointer" onClick={() => handleViewPackage(pkg)}>
+                            <div className="w-[3px] h-10 bg-[#3B8BF4]"></div>
+                            <div>
+                                <h3 className="text-sm font-medium text-[#323232] hover:text-[#3B8BF4] transition-colors">
+                                    {pkg.checkup_name || "Basic Health"}
+                                </h3>
+                                <p className="text-sm text-[#7F7F7F]">
+                                    {pkg.tests?.length || 0} tests included
+                                </p>
+                            </div>
+                        </div>
 
-                                    <div className="flex items-start gap-2 ">
-                                        <div className="w-[3px] h-10 bg-[#3B8BF4] "></div>
-                                        <div>
-                                            <h3 className=" text-sm font-medium text-[#323232]">{pkg.name}</h3>
-                                            <p className="text-sm text-[#7F7F7F]">{pkg.tests} tests included</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-between items-center pt-3 border-t border-[#ECECEC]">
-                                        <div>
-                                            <p className="text-xs text-[#7F7F7F]">Discounted Pricing</p>
-                                            <p className="font-semibold text-lg text-[#323232]">{pkg.discountPrice}</p>
-                                        </div>
-
-
-                                    </div>
-                                </div>
-                            </Card>
-                        ))}
+                        {/* Pricing Section */}
+                        <div className="flex justify-between items-center pt-3 border-t border-[#ECECEC] cursor-pointer" onClick={() => handleViewPackage(pkg)}>
+                            <div>
+                                <p className="text-xs text-[#7F7F7F]">Discounted Pricing</p>
+                                <p className="font-semibold text-lg text-[#323232] hover:text-[#3B8BF4] transition-colors">
+                                    ₹{pkg.discount_price || pkg.original_price}
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
+                </Card>
             ))}
+
+            {/* Health Checkup Details Modal */}
+            {selectedPackage && (
+                <HealthCheckupDetailsModal
+                    healthPackage={selectedPackage}
+                    onClose={() => setSelectedPackage(null)}
+                    onSave={handlePackageUpdate}
+                />
+            )}
+
+            {/* Add Health Checkup Modal */}
+            <AddHealthCheckupModal
+                open={editModalOpen}
+                onOpenChange={setEditModalOpen}
+                healthPackage={editingPackage}
+                onSave={handlePackageUpdate}
+            />
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                healthPackage={packageToDelete}
+                onClose={() => setPackageToDelete(null)}
+                onDeleteSuccess={handleDeleteSuccess}
+            />
         </div>
     )
 }

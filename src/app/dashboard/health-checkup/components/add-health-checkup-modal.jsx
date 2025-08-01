@@ -1,29 +1,59 @@
 "use client"
 
-import  React from "react"
-
-import { useState, useRef } from "react"
+import React from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { ArrowLeft, X, Upload, Plus } from "lucide-react"
+import { ArrowLeft, X, Upload, Plus, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import healthCheckup from "@/api/healthCheckup"
 
-
-export function AddHealthCheckupModal({ children, healthPackage, onSave }) {
+export function AddHealthCheckupModal({ open, onOpenChange, healthPackage, onSave }) {
     const fileInputRef = useRef(null)
-    const [open, setOpen] = useState(false)
-    const [photoUrl, setPhotoUrl] = useState(healthPackage?.image || "")
-    const [selectedTests, setSelectedTests] = useState(healthPackage?.testDetails || [])
+    const [loading, setLoading] = useState(false)
+    const [photoUrl, setPhotoUrl] = useState("")
+    const [selectedTests, setSelectedTests] = useState([])
     const [testInput, setTestInput] = useState("")
     const [formData, setFormData] = useState({
-        title: healthPackage?.name || "",
-        name: healthPackage?.name || "",
-        originalPrice: healthPackage?.originalPrice?.replace("₹", "") || "",
-        discountPrice: healthPackage?.discountPrice?.replace("₹", "") || "",
+        checkup_title: "",
+        checkup_name: "",
+        original_price: "",
+        discount_price: "",
+        description: "",
     })
+
+    // Initialize form when modal opens or healthPackage changes
+    useEffect(() => {
+        if (open) {
+            if (healthPackage) {
+                setFormData({
+                    checkup_title: healthPackage.checkup_title || "",
+                    checkup_name: healthPackage.checkup_name || "",
+                    original_price: healthPackage.original_price?.toString() || "",
+                    discount_price: healthPackage.discount_price?.toString() || "",
+                    description: healthPackage.description || "",
+                })
+                setPhotoUrl(healthPackage.image || "")
+                setSelectedTests(healthPackage.tests || [])
+            } else {
+                // Reset form for new health checkup
+                setFormData({
+                    checkup_title: "",
+                    checkup_name: "",
+                    original_price: "",
+                    discount_price: "",
+                    description: "",
+                })
+                setPhotoUrl("")
+                setSelectedTests([])
+            }
+            setTestInput("")
+        }
+    }, [open, healthPackage])
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -65,162 +95,299 @@ export function AddHealthCheckupModal({ children, healthPackage, onSave }) {
         setSelectedTests(selectedTests.filter((t) => t !== test))
     }
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
 
-        const data = {
-            ...formData,
-            photoUrl,
-            tests: selectedTests.length,
-            testDetails: selectedTests,
-            originalPrice: `₹${formData.originalPrice}`,
-            discountPrice: `₹${formData.discountPrice}`,
+        // Validation
+        if (!formData.checkup_title.trim()) {
+            toast.error("Checkup title is required")
+            return
+        }
+        if (!formData.checkup_name.trim()) {
+            toast.error("Checkup name is required")
+            return
+        }
+        if (!formData.original_price.trim()) {
+            toast.error("Original price is required")
+            return
+        }
+        if (!formData.discount_price.trim()) {
+            toast.error("Discount price is required")
+            return
+        }
+        if (selectedTests.length === 0) {
+            toast.error("At least one test is required")
+            return
         }
 
-        console.log("Form submitted:", data)
+        setLoading(true)
+        try {
+            const submitData = {
+                checkup_title: formData.checkup_title.trim(),
+                checkup_name: formData.checkup_name.trim(),
+                original_price: formData.original_price.trim(),
+                discount_price: formData.discount_price.trim(),
+                image: photoUrl || null,
+                tests: selectedTests,
+                description: formData.description.trim() || null,
+            }
 
-        if (onSave) {
-            onSave(data)
+            let response
+            if (healthPackage) {
+                // Update existing health checkup
+                response = await healthCheckup.updateHealthCheckup(healthPackage._id, submitData)
+                if (response) {
+                    toast.success("Health checkup updated successfully")
+                } else {
+                    toast.error("Failed to update health checkup")
+                }
+            } else {
+                // Create new health checkup
+                response = await healthCheckup.addHealthCheckup(submitData)
+                if (response) {
+                    toast.success("Health checkup created successfully")
+                } else {
+                    toast.error("Failed to create health checkup")
+                }
+            }
+
+            if (response) {
+                onOpenChange(false)
+                if (onSave) {
+                    onSave()
+                }
+            }
+        } catch (error) {
+            console.error("Error saving health checkup:", error)
+            toast.error("An error occurred while saving the health checkup")
+        } finally {
+            setLoading(false)
         }
+    }
 
-        setOpen(false)
+    const handleCancel = () => {
+        onOpenChange(false)
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>{children}</DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center">
-                        <button onClick={() => setOpen(false)} className="mr-2">
+                        <button onClick={handleCancel} className="mr-2">
                             <ArrowLeft className="h-5 w-5" />
                         </button>
-                        <DialogTitle className={`text-[#4B4B4B] text-base`}>{healthPackage ? "Edit Health checkup" : "Add New Health checkup"}</DialogTitle>
+                        <DialogTitle className={`text-[#4B4B4B] text-base`}>
+                            {healthPackage ? "Edit Health checkup" : "Add New Health checkup"}
+                        </DialogTitle>
                     </div>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 py-0">
-                    <div className="border border-dashed border-gray-300 rounded-lg p-2 flex flex-col items-center justify-center relative">
-                        {photoUrl ? (
-                            <div className="relative w-full h-40">
-                                <Image
-                                    src={photoUrl || "/placeholder.svg"}
-                                    alt="Health checkup"
-                                    fill
-                                    className="object-cover rounded-md"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    size="icon"
-                                    className="absolute top-2 right-2 h-6 w-6 rounded-full"
-                                    onClick={handleDeletePhoto}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ) : (
-                            <>
-                                    <Upload className="h-7 w-7 text-[#BBB9B9] mb-2" />
-                                    <p className="text-base text-[#2D292D] mb-1">Upload Image</p>
-                                    <p className="text-sm text-[#7F7F7F] mb-2">Photo must be under 2 MB & JPEG, PNG only.</p>
-                                <Button type="button" variant="outline" onClick={handlePhotoUpload}>
-                                    Choose File
-                                </Button>
-                            </>
-                        )}
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleFileChange}
-                            accept="image/jpeg, image/png"
-                            className="hidden"
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* Checkup Title */}
+                    <div className="space-y-2">
+                        <Label htmlFor="checkup_title" className="text-[#4A4A4B] text-sm">
+                            Checkup Title*
+                        </Label>
+                        <Input
+                            id="checkup_title"
+                            name="checkup_title"
+                            value={formData.checkup_title}
+                            onChange={handleChange}
+                            placeholder="e.g., Pre-Surgery"
+                            required
+                            className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                            disabled={loading}
                         />
                     </div>
 
-                    <div className="space-y-3">
+                    {/* Checkup Name */}
+                    <div className="space-y-2">
+                        <Label htmlFor="checkup_name" className="text-[#4A4A4B] text-sm">
+                            Checkup Name*
+                        </Label>
+                        <Input
+                            id="checkup_name"
+                            name="checkup_name"
+                            value={formData.checkup_name}
+                            onChange={handleChange}
+                            placeholder="e.g., Pre-Anesthesia package"
+                            required
+                            className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                            disabled={loading}
+                        />
+                    </div>
+
+                    {/* Pricing */}
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="title">Checkup Title*</Label>
+                            <Label htmlFor="original_price" className="text-[#4A4A4B] text-sm">
+                                Original Price*
+                            </Label>
                             <Input
-                                id="title"
-                                name="title"
-                                placeholder="Enter title"
-                                value={formData.title}
+                                id="original_price"
+                                name="original_price"
+                                type="number"
+                                value={formData.original_price}
                                 onChange={handleChange}
+                                placeholder="10000"
                                 required
+                                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                                disabled={loading}
                             />
                         </div>
-
                         <div className="space-y-2">
-                            <Label htmlFor="name">Checkup Name*</Label>
+                            <Label htmlFor="discount_price" className="text-[#4A4A4B] text-sm">
+                                Discount Price*
+                            </Label>
                             <Input
-                                id="name"
-                                name="name"
-                                placeholder="Enter name"
-                                value={formData.name}
+                                id="discount_price"
+                                name="discount_price"
+                                type="number"
+                                value={formData.discount_price}
                                 onChange={handleChange}
+                                placeholder="6000"
                                 required
+                                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                                disabled={loading}
                             />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="originalPrice">Original Price*</Label>
-                                <Input
-                                    id="originalPrice"
-                                    name="originalPrice"
-                                    placeholder="Original Price"
-                                    value={formData.originalPrice}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="discountPrice">Discount Price*</Label>
-                                <Input
-                                    id="discountPrice"
-                                    name="discountPrice"
-                                    placeholder="Discount Price"
-                                    value={formData.discountPrice}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="tests">Enter Tests*</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="tests"
-                                    placeholder="Tests"
-                                    value={testInput}
-                                    onChange={(e) => setTestInput(e.target.value)}
-                                />
-                                <Button type="button" onClick={handleAddTest} className="shrink-0">
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2 mt-4">
-                            {selectedTests.map((test, index) => (
-                                <Badge key={index} variant="secondary" className="flex items-center gap-1 py-1 px-2">
-                                    {test}
-                                    <button type="button" onClick={() => handleRemoveTest(test)}>
-                                        <X className="h-3 w-3 ml-1" />
-                                    </button>
-                                </Badge>
-                            ))}
                         </div>
                     </div>
 
+                    {/* Description */}
+                    <div className="space-y-2">
+                        <Label htmlFor="description" className="text-[#4A4A4B] text-sm">
+                            Description
+                        </Label>
+                        <Input
+                            id="description"
+                            name="description"
+                            value={formData.description}
+                            onChange={handleChange}
+                            placeholder="Enter description (optional)"
+                            className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                            disabled={loading}
+                        />
+                    </div>
+
+                    {/* Photo Upload */}
+                    <div className="space-y-2">
+                        <Label className="text-[#4A4A4B] text-sm">Photo</Label>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handlePhotoUpload}
+                                className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
+                                disabled={loading}
+                            >
+                                <Upload className="h-4 w-4 mr-2" />
+                                Upload Photo
+                            </Button>
+                            {photoUrl && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleDeletePhoto}
+                                    className="text-red-600 border-red-200 hover:bg-red-50"
+                                    disabled={loading}
+                                >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Remove
+                                </Button>
+                            )}
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                        />
+                        {photoUrl && (
+                            <div className="mt-2">
+                                <Image
+                                    src={photoUrl}
+                                    alt="Preview"
+                                    width={100}
+                                    height={100}
+                                    className="rounded-md object-cover"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Tests */}
+                    <div className="space-y-2">
+                        <Label className="text-[#4A4A4B] text-sm">Tests*</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                value={testInput}
+                                onChange={(e) => setTestInput(e.target.value)}
+                                placeholder="Add test name"
+                                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                                disabled={loading}
+                                onKeyPress={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault()
+                                        handleAddTest()
+                                    }
+                                }}
+                            />
+                            <Button
+                                type="button"
+                                onClick={handleAddTest}
+                                className="bg-[#005CD4] hover:bg-blue-700"
+                                disabled={loading}
+                            >
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        {selectedTests.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {selectedTests.map((test, index) => (
+                                    <Badge
+                                        key={index}
+                                        variant="secondary"
+                                        className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                    >
+                                        {test}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveTest(test)}
+                                            className="ml-2 text-blue-600 hover:text-blue-800"
+                                            disabled={loading}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleCancel}
+                            disabled={loading}
+                        >
                             Cancel
                         </Button>
-                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                            {healthPackage ? "Update Health checkup" : "Add Health checkup"}
+                        <Button
+                            type="submit"
+                            className="bg-[#005CD4] hover:bg-blue-700"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                    {healthPackage ? "Updating..." : "Creating..."}
+                                </>
+                            ) : (
+                                healthPackage ? "Update Health Checkup" : "Create Health Checkup"
+                            )}
                         </Button>
                     </DialogFooter>
                 </form>
