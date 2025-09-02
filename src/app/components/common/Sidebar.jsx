@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, User, FileText, LogOut, ChevronsLeftRight, Settings, MessageSquareMore, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic } from 'lucide-react'
+import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import Image from 'next/image'
 import {
@@ -29,6 +29,12 @@ const menuItems = [
     label: 'Patients Enquiry',
     href: '/dashboard/patients-enquiries',
     matchPaths: ['/dashboard/patients-enquiries']
+  },
+  {
+    icon: ClipboardCheck,
+    label: 'Appointments',
+    href: '/dashboard/appointments',
+    matchPaths: ['/dashboard/appointments']
   },
 
   {
@@ -104,14 +110,28 @@ export function Sidebar() {
         const basePath = path.replace('/[id]', '')
         return pathname.startsWith(basePath) && pathname !== basePath
       }
+
       // For exact paths - be more specific to avoid conflicts
       if (pathname === path) {
         return true
       }
+
       // For paths that should match sub-routes, but be careful about overlaps
+      // Add more specific checks to avoid conflicts between similar paths
       if (pathname.startsWith(path + '/')) {
         return true
       }
+
+      // Special case: prevent "Patients Enquiry" from matching "Patients"
+      if (item.label === 'Patients Enquiry') {
+        return pathname === '/dashboard/patients-enquiries'
+      }
+
+      // Special case: prevent "Patients" from matching "Patients Enquiry"
+      if (item.label === 'Patients') {
+        return pathname.startsWith('/dashboard/patient') && !pathname.startsWith('/dashboard/patients-enquiries')
+      }
+
       return false
     })
   }
@@ -157,13 +177,13 @@ export function Sidebar() {
           </div>
         </div> */}
       </div>
-      <nav className={isCollapsed ? "w-full px-4 py-3" : "w-full  px-4 py-3"}>
+      <nav className={isCollapsed ? "w-full  px-4 py-3" : "w-full  px-4 py-3"}>
         <ul>
           {menuItems.map((item) => (
             <li key={item.href}>
               <Link href={item.href}>
                 <span className={cn(
-                  " flex items-center gap-x-2 text-sm py-2 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
+                  " flex items-center gap-x-2 text-sm py-1.5 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
                   isActiveRoute(item) ? "bg-[#FFFFFF] text-[#323232] border border-[#E5E5E5]" : "",
                   isCollapsed ? "justify-center" : ""
                 )}>
@@ -227,10 +247,10 @@ export function Sidebar() {
       </div>
 
       {
-        <div className='w-full flex flex-col items-center absolute bottom-4 left-1/2 transform -translate-x-1/2'>
+        <div className='w-full flex flex-col items-center absolute bottom-2  left-1/2 transform -translate-x-1/2'>
           {isCollapsed ? <p className='text-blue-700 font-semibold'>M</p> :
             <div>
-              <div className='text-[#656565] text-sm flex items-center gap-x-1'>
+              <div className='text-[#656565] text-sm flex items-center gap-x-1 leading-3'>
                 Developed By
                 <Image src="/assets/images/love.svg"
                   className='w-4 h-4'
