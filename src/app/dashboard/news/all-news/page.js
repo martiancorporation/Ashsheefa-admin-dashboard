@@ -158,27 +158,29 @@ export default function AllNews() {
       {/* Table Section */}
       <div className="mt-6">
         {loading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex flex-col items-center justify-center h-64">
+
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <p className="text-[#4B4B4B] text-base font-medium">Loading News...</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
+          <Table className="w-full border border-gray-300 rounded-md">
+            <TableHeader className="bg-[#F9F9F9] rounded-md border border-gray-300">
               <TableRow>
-                <TableHead className="w-[50px]">No</TableHead>
-                <TableHead className="w-[80px]">Image</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>News Channel</TableHead>
-                <TableHead>Publish Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[50px] border-r border-gray-300">No</TableHead>
+                <TableHead className="w-[80px] border-r border-gray-300">Image</TableHead>
+                <TableHead className="border-r border-gray-300">Title</TableHead>
+                <TableHead className="border-r border-gray-300">Description</TableHead>
+                <TableHead className="border-r border-gray-300">News Channel</TableHead>
+                <TableHead className="border-r border-gray-300">Publish Date</TableHead>
+                <TableHead className="border-r border-gray-300">Status</TableHead>
+                <TableHead className="text-right border-r border-gray-300">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredNews.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center border-r border-gray-300 py-8">
                     <div className="flex flex-col items-center gap-2">
                       <Image
                         src="/assets/images/blogs/empty-box.png"
@@ -194,10 +196,10 @@ export default function AllNews() {
               ) : (
                 filteredNews.map((item, index) => (
                   <TableRow key={item._id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium border-r border-gray-300">
                       {item.no || index + 1}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="border-r border-gray-300">
                       {item.image ? (
                         <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200">
                           <Image
@@ -227,19 +229,19 @@ export default function AllNews() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="max-w-[200px]">
+                    <TableCell className="max-w-[200px] border-r border-gray-300">
                       <div className="truncate" title={item.title}>
                         {item.title}
                       </div>
                     </TableCell>
-                    <TableCell className="max-w-[300px]">
+                    <TableCell className="max-w-[250px] border-r border-gray-300">
                       <div className="truncate" title={item.description}>
                         {truncateDescription(item.description, 10)}
                       </div>
                     </TableCell>
-                    <TableCell>{item.news_channel_name}</TableCell>
-                    <TableCell>{formatDate(item.publish_date)}</TableCell>
-                    <TableCell>
+                    <TableCell className="border-r border-gray-300">{item.news_channel_name}</TableCell>
+                    <TableCell className="border-r border-gray-300">{formatDate(item.publish_date)}</TableCell>
+                    <TableCell className="border-r border-gray-300">
                       <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
                         Published
                       </span>

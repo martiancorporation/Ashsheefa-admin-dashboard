@@ -17,20 +17,19 @@ import { AddInternationalPatientModal } from "./components/add-international-pat
 
 export default function InternationalPatientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedSpeciality, setSelectedSpeciality] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all-status");
+  const [selectedSpeciality, setSelectedSpeciality] =
+    useState("all-specialities");
+  const [selectedCountry, setSelectedCountry] = useState("all-countries");
   const [refreshKey, setRefreshKey] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
   const statusOptions = [
     { name: "All Status" },
     { name: "Pending" },
-    { name: "Confirmed" },
     { name: "In Progress" },
-    { name: "Completed" },
     { name: "Cancelled" },
-    { name: "Discharged" },
+    { name: "Confirmed" },
   ];
 
   const specialityOptions = [
@@ -65,6 +64,14 @@ export default function InternationalPatientsPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
+  // Debug logging for filter changes
+  console.log("Current filter states:", {
+    selectedStatus,
+    selectedSpeciality,
+    selectedCountry,
+    searchQuery,
+  });
+
   return (
     <>
       <div className="w-full flex items-center justify-between">
@@ -77,10 +84,10 @@ export default function InternationalPatientsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div className="w-full md:w-auto flex flex-wrap items-center gap-2">
+      <div className="w-full flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="w-full md:w-auto flex  items-center gap-2">
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className="w-full md:w-[120px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -99,7 +106,7 @@ export default function InternationalPatientsPage() {
             value={selectedSpeciality}
             onValueChange={setSelectedSpeciality}
           >
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue placeholder="All Specialities" />
             </SelectTrigger>
             <SelectContent>
@@ -115,7 +122,7 @@ export default function InternationalPatientsPage() {
           </Select>
 
           <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[130px]">
               <SelectValue placeholder="All Countries" />
             </SelectTrigger>
             <SelectContent>
@@ -131,14 +138,14 @@ export default function InternationalPatientsPage() {
           </Select>
         </div>
 
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex gap-2 w-full md:w-auto">
           <div className="relative w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Search patients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[300px]"
+              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[200px]"
             />
           </div>
 

@@ -63,24 +63,16 @@ export function InternationalPatientDetailsModal({ patient, onClose, onSave }) {
     return (
         <>
             <Dialog open={true} onOpenChange={onClose}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <div className="flex items-center justify-between">
                             <DialogTitle className="text-[#4B4B4B] text-lg font-semibold">
                                 Patient Details
                             </DialogTitle>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={onClose}
-                                className="h-8 w-8"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
                         </div>
                     </DialogHeader>
 
-                    <div className="space-y-6">
+                    <div className="space-y-3">
                         {/* Header with Status */}
                         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                             <div className="flex items-center gap-3">
@@ -92,7 +84,7 @@ export function InternationalPatientDetailsModal({ patient, onClose, onSave }) {
                                         {patient.patient_full_name}
                                     </h2>
                                     <p className="text-sm text-[#7F7F7F]">
-                                        {patient.age} years • {patient.gender}
+                                        {patient.age === 0 ? "Not specified" : `${patient.age} years`} • {patient.gender}
                                     </p>
                                 </div>
                             </div>

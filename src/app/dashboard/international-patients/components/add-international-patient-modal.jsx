@@ -51,7 +51,8 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                     status: patient.status || "",
                 })
             } else {
-                // Reset form for new patient
+                // Reset form for new patient with current date as default
+                const today = new Date().toLocaleDateString('en-GB')
                 setFormData({
                     patient_full_name: "",
                     age: "",
@@ -61,7 +62,7 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                     speciality: "",
                     medical_issue_details: "",
                     refer_doctor: "",
-                    appointment_date: "",
+                    appointment_date: today,
                     passport_number: "",
                     status: "",
                 })
@@ -81,37 +82,21 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        // Validation
+        // Validation for required fields
         if (!formData.patient_full_name.trim()) {
             toast.error("Patient full name is required")
-            return
-        }
-        if (!formData.age.trim()) {
-            toast.error("Age is required")
             return
         }
         if (!formData.contact_number.trim()) {
             toast.error("Contact number is required")
             return
         }
-        if (!formData.gender.trim()) {
-            toast.error("Gender is required")
-            return
-        }
-        if (!formData.country.trim()) {
-            toast.error("Country is required")
-            return
-        }
-        if (!formData.speciality.trim()) {
-            toast.error("Speciality is required")
-            return
-        }
         if (!formData.passport_number.trim()) {
             toast.error("Passport number is required")
             return
         }
-        if (!formData.appointment_date.trim()) {
-            toast.error("Appointment date is required")
+        if (!formData.country.trim()) {
+            toast.error("Country is required")
             return
         }
         // Status is only required when editing an existing patient
@@ -122,16 +107,23 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
 
         setLoading(true)
         try {
+            // Set current date if no appointment date is provided
+            let appointmentDate = formData.appointment_date.trim()
+            if (!appointmentDate) {
+                const today = new Date()
+                appointmentDate = today.toLocaleDateString('en-GB') // DD/MM/YYYY format
+            }
+
             const submitData = {
                 patient_full_name: formData.patient_full_name.trim(),
-                age: formData.age.trim(),
+                age: formData.age.trim() || null,
                 contact_number: formData.contact_number.trim(),
-                gender: formData.gender.trim(),
+                gender: formData.gender.trim() || null,
                 country: formData.country.trim(),
-                speciality: formData.speciality.trim(),
+                speciality: formData.speciality.trim() || null,
                 medical_issue_details: formData.medical_issue_details.trim() || null,
                 refer_doctor: formData.refer_doctor.trim() || null,
-                appointment_date: formData.appointment_date.trim(),
+                appointment_date: appointmentDate,
                 passport_number: formData.passport_number.trim(),
                 ...(patient && { status: formData.status.trim() }), // Only include status when editing
             }
@@ -199,11 +191,9 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
 
     const statusOptions = [
         { value: "Pending", label: "Pending" },
-        { value: "Confirmed", label: "Confirmed" },
         { value: "In Progress", label: "In Progress" },
-        { value: "Completed", label: "Completed" },
         { value: "Cancelled", label: "Cancelled" },
-        { value: "Discharged", label: "Discharged" },
+        { value: "Confirmed", label: "Confirmed" },
     ]
 
     const countryOptions = [
@@ -253,7 +243,7 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="age" className="text-[#4A4A4B] text-sm">
-                                Age*
+                                Age
                             </Label>
                             <Input
                                 id="age"
@@ -262,14 +252,13 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                                 value={formData.age}
                                 onChange={handleChange}
                                 placeholder="Enter age"
-                                required
                                 className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                                 disabled={loading}
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="gender" className="text-[#4A4A4B] text-sm">
-                                Gender*
+                                Gender
                             </Label>
                             <Select value={formData.gender} onValueChange={(value) => handleSelectChange("gender", value)}>
                                 <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none">
@@ -324,7 +313,7 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="speciality" className="text-[#4A4A4B] text-sm">
-                                Speciality*
+                                Speciality
                             </Label>
                             <Select value={formData.speciality} onValueChange={(value) => handleSelectChange("speciality", value)}>
                                 <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none">
@@ -361,15 +350,14 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                     {/* Appointment Date */}
                     <div className="space-y-2">
                         <Label htmlFor="appointment_date" className="text-[#4A4A4B] text-sm">
-                            Appointment Date* (DD/MM/YYYY)
+                            Appointment Date (DD/MM/YYYY) - Leave empty for current date
                         </Label>
                         <Input
                             id="appointment_date"
                             name="appointment_date"
                             value={formData.appointment_date}
                             onChange={handleChange}
-                            placeholder="DD/MM/YYYY"
-                            required
+                            placeholder="DD/MM/YYYY (optional)"
                             className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                             disabled={loading}
                         />

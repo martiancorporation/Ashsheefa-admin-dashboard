@@ -17,6 +17,7 @@ import {
 import { InternationalPatientDetailsModal } from "./international-patient-details-modal"
 import { AddInternationalPatientModal } from "./add-international-patient-modal"
 import { DeleteConfirmationModal } from "./delete-confirmation-modal"
+import { UpdateStatusModal } from "./update-status-modal"
 import { toast } from "sonner"
 import internationalPatient from "@/api/internationalPatient"
 
@@ -34,6 +35,8 @@ export default function AllInternationalPatients({
     const [patientToDelete, setPatientToDelete] = useState(null)
     const [editModalOpen, setEditModalOpen] = useState(false)
     const [editingPatient, setEditingPatient] = useState(null)
+    const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false)
+    const [statusUpdatePatient, setStatusUpdatePatient] = useState(null)
     const [pagination, setPagination] = useState({
         current_page: 1,
         total_pages: 1,
@@ -50,6 +53,13 @@ export default function AllInternationalPatients({
             const specialityParam = selectedSpeciality && selectedSpeciality !== 'all-specialities' ? selectedSpeciality.replace(/-/g, ' ') : ''
             const countryParam = selectedCountry && selectedCountry !== 'all-countries' ? selectedCountry.replace(/-/g, ' ') : ''
 
+            console.log('API Filter Parameters:', {
+                status: statusParam,
+                speciality: specialityParam,
+                country: countryParam,
+                search: searchQuery
+            })
+
             const params = {
                 page: 1,
                 limit: 50,
@@ -60,6 +70,8 @@ export default function AllInternationalPatients({
             }
 
             const response = await internationalPatient.getAllInternationalPatients(params)
+
+            console.log('API Response:', response)
 
             // Check if the data is directly in response.data or nested
             let patientsData = null
@@ -147,6 +159,12 @@ export default function AllInternationalPatients({
         setOpenDropdownId(null) // Close dropdown when edit is clicked
     }
 
+    const handleUpdateStatus = (patient) => {
+        setStatusUpdatePatient(patient)
+        setStatusUpdateModalOpen(true)
+        setOpenDropdownId(null) // Close dropdown when update status is clicked
+    }
+
     const handleDeletePatient = (patient) => {
         setPatientToDelete(patient)
         setOpenDropdownId(null) // Close dropdown when delete is clicked
@@ -164,6 +182,7 @@ export default function AllInternationalPatients({
             return true
         }
 
+        // Search filter
         const matchesSearch = searchQuery
             ? patient.patient_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             patient.passport_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -171,39 +190,31 @@ export default function AllInternationalPatients({
             patient.country?.toLowerCase().includes(searchQuery.toLowerCase())
             : true
 
-        // Convert filter values back to original format for comparison
-        const statusFilter = selectedStatus ? selectedStatus.replace(/-/g, ' ').toLowerCase() : ''
-        const specialityFilter = selectedSpeciality ? selectedSpeciality.replace(/-/g, ' ').toLowerCase() : ''
-        const countryFilter = selectedCountry ? selectedCountry.replace(/-/g, ' ').toLowerCase() : ''
+        // Status filter - convert filter value back to original format
+        const statusFilter = selectedStatus && selectedStatus !== 'all-status'
+            ? selectedStatus.replace(/-/g, ' ').toLowerCase()
+            : ''
 
-        // Also try exact match with original dropdown values
-        const statusExact = selectedStatus ? selectedStatus : ''
-        const specialityExact = selectedSpeciality ? selectedSpeciality : ''
-        const countryExact = selectedCountry ? selectedCountry : ''
-
-        // Handle "All" options - they should match everything
-        const matchesStatus = selectedStatus && selectedStatus !== 'all-status'
-            ? patient.status?.toLowerCase() === statusFilter ||
-            patient.status?.toLowerCase().includes(statusFilter) ||
-            statusFilter.includes(patient.status?.toLowerCase()) ||
-            patient.status?.toLowerCase() === statusExact ||
-            patient.status?.toLowerCase() === statusExact.replace(/-/g, ' ')
+        const matchesStatus = statusFilter
+            ? patient.status?.toLowerCase() === statusFilter
             : true
 
-        const matchesSpeciality = selectedSpeciality && selectedSpeciality !== 'all-specialities'
-            ? patient.speciality?.toLowerCase() === specialityFilter ||
-            patient.speciality?.toLowerCase().includes(specialityFilter) ||
-            specialityFilter.includes(patient.speciality?.toLowerCase()) ||
-            patient.speciality?.toLowerCase() === specialityExact ||
-            patient.speciality?.toLowerCase() === specialityExact.replace(/-/g, ' ')
+        // Speciality filter
+        const specialityFilter = selectedSpeciality && selectedSpeciality !== 'all-specialities'
+            ? selectedSpeciality.replace(/-/g, ' ').toLowerCase()
+            : ''
+
+        const matchesSpeciality = specialityFilter
+            ? patient.speciality?.toLowerCase() === specialityFilter
             : true
 
-        const matchesCountry = selectedCountry && selectedCountry !== 'all-countries'
-            ? patient.country?.toLowerCase() === countryFilter ||
-            patient.country?.toLowerCase().includes(countryFilter) ||
-            countryFilter.includes(patient.country?.toLowerCase()) ||
-            patient.country?.toLowerCase() === countryExact ||
-            patient.country?.toLowerCase() === countryExact.replace(/-/g, ' ')
+        // Country filter
+        const countryFilter = selectedCountry && selectedCountry !== 'all-countries'
+            ? selectedCountry.replace(/-/g, ' ').toLowerCase()
+            : ''
+
+        const matchesCountry = countryFilter
+            ? patient.country?.toLowerCase() === countryFilter
             : true
 
         // Debug logging for first patient only to avoid spam
@@ -246,18 +257,12 @@ export default function AllInternationalPatients({
         switch (status?.toLowerCase()) {
             case 'pending':
                 return 'bg-yellow-100 text-yellow-800'
-            case 'confirmed':
-                return 'bg-blue-100 text-blue-800'
             case 'in progress':
                 return 'bg-orange-100 text-orange-800'
-            case 'completed':
-                return 'bg-green-100 text-green-800'
             case 'cancelled':
                 return 'bg-red-100 text-red-800'
-            case 'discharged':
-                return 'bg-purple-100 text-purple-800'
-            case 'active':
-                return 'bg-green-100 text-green-800'
+            case 'confirmed':
+                return 'bg-blue-100 text-blue-800'
             default:
                 return 'bg-gray-100 text-gray-800'
         }
@@ -301,7 +306,7 @@ export default function AllInternationalPatients({
 
     return (
         <div className="w-full">
-            <Table className="border-collapse">
+            <Table className="border border-gray-200 rounded-lg border-collapse">
                 <TableHeader>
                     <TableRow className="bg-gray-50 border-b border-gray-200">
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -331,7 +336,7 @@ export default function AllInternationalPatients({
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
                             Appointment Date
                         </TableHead>
-                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
                             Status
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] text-center font-normal py-3">
@@ -373,7 +378,7 @@ export default function AllInternationalPatients({
                                 {formatDate(patient.appointment_date)}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center gap-2">
                                     <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(patient.status)}`}>
                                         {patient.status || "N/A"}
                                     </Badge>
@@ -408,6 +413,14 @@ export default function AllInternationalPatients({
                                             >
                                                 <Pencil className="h-4 w-4 mr-3 text-gray-500" />
                                                 Edit Patient
+                                            </DropdownMenuItem>
+
+                                            <DropdownMenuItem
+                                                className="flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors"
+                                                onClick={() => handleUpdateStatus(patient)}
+                                            >
+                                                <Calendar className="h-4 w-4 mr-3 text-blue-500" />
+                                                Update Status
                                             </DropdownMenuItem>
 
                                             <DropdownMenuItem
@@ -448,6 +461,14 @@ export default function AllInternationalPatients({
                 patient={patientToDelete}
                 onClose={() => setPatientToDelete(null)}
                 onDeleteSuccess={handleDeleteSuccess}
+            />
+
+            {/* Update Status Modal */}
+            <UpdateStatusModal
+                open={statusUpdateModalOpen}
+                onOpenChange={setStatusUpdateModalOpen}
+                patient={statusUpdatePatient}
+                onSave={handlePatientUpdate}
             />
         </div>
     )
