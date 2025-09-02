@@ -198,21 +198,22 @@ const EditBlogPost = () => {
 
   return (
     <>
-      <Card className="w-full mx-auto shadow-none border bg-[#FBFBFB] h-[calc(100vh-100px)] flex flex-col">
+      <Card className="w-full mx-auto shadow-none border bg-[#FBFBFB] h-[calc(100vh-100px)] flex flex-col p-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 border-b py-3 flex-shrink-0">
-          <CardTitle className="text-[#18181B] text-base font-semibold flex items-center gap-2">
+          <CardTitle className=" text-[#18181B] text-base font-semibold flex items-center gap-2">
             <Link
               href={"/dashboard/blogs"}
-              className="bg-white p-2 border rounded-md"
+              className="p-2 hover:bg-gray-50 rounded-md transition-colors duration-200 cursor-pointer"
             >
               <Image
-                src={"/assets/images/back-icon.svg"}
-                className="w-4 h-3"
                 width={100}
                 height={100}
-                alt="back-icon"
+                src={"/assets/images/dashboard/leftArrow.svg"}
+                alt="leftArrow"
+                className="w-4 h-4 hover:scale-110 transition-transform duration-200"
               />
             </Link>
+            <div className="w-[1.5px] h-[15px] bg-[#7F7F7F]"></div>
             Edit Blog Post
           </CardTitle>
           <Button
@@ -224,7 +225,7 @@ const EditBlogPost = () => {
             Preview
           </Button>
         </CardHeader>
-        <CardContent className="py-2 px-4 flex-1 overflow-y-auto custom-scrollbar">
+        <CardContent className="py-0 px-4 flex-1 overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Image Upload */}
             <div className="space-y-2">

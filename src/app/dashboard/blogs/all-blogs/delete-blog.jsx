@@ -28,11 +28,14 @@ export const DeleteBlog = ({ blog, getAllBlogs }) => {
     };
 
     API.blog
-      .deleteBlog(authData?.access_token, data)
+      .deleteBlog(data)
       .then((response) => {
+        console.log("Delete blog response:", response);
         if (response) {
           toast.success("Blog post deleted successfully");
-          getAllBlogs(authData?.access_token);
+          getAllBlogs();
+        } else {
+          toast.error("Failed to delete blog post");
         }
       })
       .catch((error) => {

@@ -40,7 +40,7 @@ export default function AllBlogs() {
   const getAllBlogs = () => {
     setLoading(true);
     API.blog
-      .getAllBlogs(authData?.access_token)
+      .getAllBlogs()
       .then((response) => {
         if (response) {
           setBlogs(response);
