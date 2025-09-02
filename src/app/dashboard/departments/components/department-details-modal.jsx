@@ -33,14 +33,19 @@ export function DepartmentDetailsModal({ children, department, onDelete }) {
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
                             <Image
-                                src={department.icon || "/placeholder.svg"}
-                                alt={department.name}
+                                src={
+                                    department?.department_logo ||
+                                    department?.logo ||
+                                    department?.icon ||
+                                    "/assets/images/department/oncology.svg"
+                                }
+                                alt={department?.name || department?.department_name || "department"}
                                 width={64}
                                 height={64}
                                 className="w-full h-full object-cover"
                             />
                         </div>
-                        <h2 className="text-xl font-bold">{department.name} Department</h2>
+                        <h2 className="text-xl font-bold">{department.name || department.department_name} Department</h2>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
