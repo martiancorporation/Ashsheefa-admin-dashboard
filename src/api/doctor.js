@@ -9,11 +9,14 @@ const {
 } = dashboardDoctorEndpoints;
 
 const doctor = {
-  // Get all doctors data
-  getAllDoctors: async () => {
+  // Get all doctors data with pagination
+  getAllDoctors: async (page = 1, limit = 15) => {
     let response = null;
     try {
-      response = await apiConnector("GET", GET_ALL_DOCTORS_DATA_API);
+      response = await apiConnector(
+        "GET",
+        `${GET_ALL_DOCTORS_DATA_API}?page=${page}&limit=${limit}`
+      );
     } catch (error) {
       response = error;
     }

@@ -12,6 +12,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 
+const DEPARTMENTS = [
+    "General Medicine",
+    "General Surgery",
+    "Cardiology",
+    "Neurology",
+    "Neurosurgery",
+    "Orthopedics",
+    "Pediatrics",
+    "Obstetrics & Gynecology",
+    "Dermatology",
+    "Psychiatry",
+    "Ophthalmology",
+    "ENT",
+    "Oncology",
+    "Urology",
+    "Nephrology",
+    "Pulmonology",
+    "Gastroenterology",
+    "Endocrinology",
+    "Radiology",
+    "Anesthesiology",
+    "Pathology",
+    "Hematology",
+    "Rheumatology",
+    "Plastic Surgery",
+    "Cardiothoracic Surgery",
+    "Forensic Medicine",
+    "Family Medicine",
+    "Sports Medicine"
+];
+
 export function AddDoctorModal({ open, onOpenChange, doctor, onSave }) {
     const fileInputRef = useRef(null)
     const [photoUrl, setPhotoUrl] = useState(doctor?.profilePic || "")
@@ -211,7 +242,7 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave }) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0">
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto p-0 bg-[#ffffff]">
                 <DialogHeader className="p-6 pb-2">
                     <div className="flex items-center">
                         <button onClick={handleCancel} className="mr-2">
@@ -323,12 +354,9 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave }) {
                                 <SelectValue placeholder="Select department" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Cardiologist">Cardiologist</SelectItem>
-                                <SelectItem value="Anesthesiology">Anesthesiology</SelectItem>
-                                <SelectItem value="Neurology">Neurology</SelectItem>
-                                <SelectItem value="Orthopedics">Orthopedics</SelectItem>
-                                <SelectItem value="Pediatrics">Pediatrics</SelectItem>
-                                <SelectItem value="Anaesthetist">Anaesthetist</SelectItem>
+                                {DEPARTMENTS.map((dept) => (
+                                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

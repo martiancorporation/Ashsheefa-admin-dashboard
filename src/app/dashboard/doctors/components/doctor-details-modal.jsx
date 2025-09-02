@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 export function DoctorDetailsModal({ open, onOpenChange, doctor }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px] max-h-[80vh] overflow-y-auto bg-[#ffffff]">
                 <DialogHeader className="flex justify-between items-start pb-4">
                     <div>
                         <DialogTitle className="text-xl font-bold text-gray-900">Doctor Details</DialogTitle>

@@ -52,13 +52,54 @@ import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 
 export default function DoctorsPage() {
+  // Static list of all available departments
+  const DEPARTMENTS = [
+    "General Medicine",
+    "General Surgery",
+    "Cardiology",
+    "Neurology",
+    "Neurosurgery",
+    "Orthopedics",
+    "Pediatrics",
+    "Obstetrics & Gynecology",
+    "Dermatology",
+    "Psychiatry",
+    "Ophthalmology",
+    "ENT",
+    "Oncology",
+    "Urology",
+    "Nephrology",
+    "Pulmonology",
+    "Gastroenterology",
+    "Endocrinology",
+    "Radiology",
+    "Anesthesiology",
+    "Pathology",
+    "Hematology",
+    "Rheumatology",
+    "Plastic Surgery",
+    "Cardiothoracic Surgery",
+    "Forensic Medicine",
+    "Family Medicine",
+    "Sports Medicine",
+  ];
+
   const [loading, setLoading] = useState(false);
   const [allDoctors, setAllDoctors] = useState([]);
   const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctor, setDoctor] = useState(null);
   const [error, setError] = useState(null);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalDoctors, setTotalDoctors] = useState(0);
+  const [activeDoctorsCount, setActiveDoctorsCount] = useState(null);
+  const [inactiveDoctorsCount, setInactiveDoctorsCount] = useState(null);
+  const doctorsPerPage = 15;
 
   // Modal states
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -72,7 +113,9 @@ export default function DoctorsPage() {
 
   // Fetch all doctors on component mount
   useEffect(() => {
-    getAllDoctors();
+    setCurrentPage(1);
+    setHasMore(true);
+    getAllDoctors(1, false);
   }, []);
 
   // Monitor modal states and ensure proper cleanup
@@ -111,43 +154,120 @@ export default function DoctorsPage() {
   ]);
 
   // ************** GET ALL DOCTORS API CALL *******************
-  const getAllDoctors = () => {
-    setLoading(true);
-    setError(null);
+  const getAllDoctors = (page = 1, isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+      setError(null);
+    }
 
-    console.log("Fetching doctors...");
+    console.log("Fetching doctors...", { page, isLoadMore });
     API.doctor
-      .getAllDoctors(authData?.access_token)
+      .getAllDoctors(page, doctorsPerPage)
       .then((response) => {
         console.log("API Response:", response);
         if (response.success === true) {
-          setAllDoctors(response.data);
-          setFilteredDoctors(response.data); // Initialize filtered list
-          console.log("Doctors loaded:", response.data);
+          setDoctor(response);
+          const newDoctors =
+            response.data?.doctors ||
+            response.data?.data ||
+            (Array.isArray(response.data) ? response.data : []) ||
+            [];
+          const totalFromResponse =
+            response.data?.counts?.totalDoctors ??
+            response.data?.totalRecords ??
+            response.data?.total ??
+            response.total ??
+            null;
+          const activeFromResponse =
+            response.data?.counts?.activeDoctors ?? null;
+          const inactiveFromResponse =
+            response.data?.counts?.inactiveDoctors ?? null;
+
+          if (isLoadMore) {
+            // Append new doctors to existing list
+            setAllDoctors((prev) => [...prev, ...newDoctors]);
+            setFilteredDoctors((prev) => [...prev, ...newDoctors]);
+          } else {
+            // Replace existing doctors
+            setAllDoctors(newDoctors);
+            setFilteredDoctors(newDoctors);
+          }
+
+          // Track total only if backend provides it; otherwise leave null
+          setTotalDoctors(totalFromResponse);
+          setActiveDoctorsCount(activeFromResponse);
+          setInactiveDoctorsCount(inactiveFromResponse);
+          setCurrentPage(page);
+          setError(null);
+          // If total is known, use it. Otherwise, assume more pages exist
+          // as long as the current page returned a full page of results
+          const calculatedHasMore =
+            totalFromResponse != null
+              ? page * doctorsPerPage < totalFromResponse
+              : newDoctors.length === doctorsPerPage;
+          setHasMore(calculatedHasMore);
+
+          console.log("Doctors loaded:", {
+            newDoctors,
+            total: totalFromResponse,
+            currentPage: page,
+            hasMore: calculatedHasMore,
+          });
         } else {
-          setError("Failed to fetch doctors");
-          toast.error("Failed to fetch doctors");
+          if (!isLoadMore) {
+            setError("Failed to fetch doctors");
+            toast.error("Failed to fetch doctors");
+          } else {
+            toast.error("Failed to load more doctors");
+          }
         }
       })
       .catch((error) => {
         console.error("Error fetching doctors:", error);
-        setError("Error fetching doctors");
+        if (!isLoadMore) {
+          setError("Error fetching doctors");
+          setAllDoctors([]);
+          setFilteredDoctors([]);
+          setActiveDoctorsCount(null);
+          setInactiveDoctorsCount(null);
+        }
         toast.error("Error fetching doctors");
       })
       .finally(() => {
-        setLoading(false);
+        if (isLoadMore) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
       });
   };
 
   // ****************************** Refresh Function ***********************************
   const funcRefresh = () => {
-    getAllDoctors();
+    setCurrentPage(1);
+    setHasMore(true);
+    getAllDoctors(1, false);
+  };
+
+  // ****************************** Load More Function ***********************************
+  const handleLoadMore = () => {
+    if (hasMore && !loadingMore) {
+      getAllDoctors(currentPage + 1, true);
+    }
   };
 
   // ****************************** Search Function ***********************************
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
+
+    // Reset pagination when searching
+    if (value !== searchTerm) {
+      setCurrentPage(1);
+      setHasMore(true);
+    }
 
     // Filter doctors based on search term matching doctorId, fullName, department, or regNo
     const filtered = allDoctors.filter(
@@ -166,6 +286,10 @@ export default function DoctorsPage() {
   // ****************************** Department Filter Function ***********************************
   const handleDepartmentFilter = (department) => {
     setSelectedDepartment(department);
+
+    // Reset pagination when filtering by department
+    setCurrentPage(1);
+    setHasMore(true);
 
     if (department === "all") {
       setFilteredDoctors(allDoctors);
@@ -210,7 +334,25 @@ export default function DoctorsPage() {
 
       if (response && response.success !== false) {
         toast.success("Doctor deleted successfully");
-        funcRefresh(); // Refresh the list
+        // Optimistically update local lists and counts
+        setAllDoctors((prev) =>
+          prev.filter((d) => d._id !== doctorForAction._id)
+        );
+        setFilteredDoctors((prev) =>
+          prev.filter((d) => d._id !== doctorForAction._id)
+        );
+        setTotalDoctors((prev) =>
+          prev != null ? Math.max(prev - 1, 0) : prev
+        );
+        if (doctorForAction.isActive) {
+          setActiveDoctorsCount((prev) =>
+            prev != null ? Math.max(prev - 1, 0) : prev
+          );
+        } else {
+          setInactiveDoctorsCount((prev) =>
+            prev != null ? Math.max(prev - 1, 0) : prev
+          );
+        }
         setDeleteConfirmationOpen(false);
         setDoctorForAction(null);
       } else {
@@ -224,23 +366,6 @@ export default function DoctorsPage() {
 
   const handleCancelDelete = () => {
     setDeleteConfirmationOpen(false);
-    setDoctorForAction(null);
-  };
-
-  // Modal close handlers
-  const handleCloseDetailsModal = () => {
-    setDetailsModalOpen(false);
-    setDoctorForAction(null);
-  };
-
-  const handleCloseEditModal = () => {
-    setEditModalOpen(false);
-    setDoctorForAction(null);
-  };
-
-  const handleCloseAddDoctorModal = () => {
-    setAddDoctorModalOpen(false);
-    // Reset form data when closing add doctor modal
     setDoctorForAction(null);
   };
 
@@ -260,15 +385,6 @@ export default function DoctorsPage() {
     if (!open) setDoctorForAction(null);
   };
 
-  // Reset all modal states
-  const resetAllModals = () => {
-    setDetailsModalOpen(false);
-    setEditModalOpen(false);
-    setAvailabilityModalOpen(false);
-    setAddDoctorModalOpen(false);
-    setDoctorForAction(null);
-  };
-
   const handleToggleDoctorStatus = async (doctor) => {
     try {
       setOpenDropdownId(null); // Close dropdown
@@ -285,7 +401,22 @@ export default function DoctorsPage() {
       if (response && response !== false) {
         const status = updatedDoctor.isActive ? "activated" : "deactivated";
         toast.success(`Doctor ${status} successfully`);
-        funcRefresh(); // Refresh the list
+        // Optimistically update local lists
+        setAllDoctors((prev) =>
+          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d))
+        );
+        setFilteredDoctors((prev) =>
+          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d))
+        );
+        // Update counts if we have them from backend
+        setActiveDoctorsCount((prev) => {
+          if (prev == null) return prev;
+          return updatedDoctor.isActive ? prev + 1 : Math.max(prev - 1, 0);
+        });
+        setInactiveDoctorsCount((prev) => {
+          if (prev == null) return prev;
+          return updatedDoctor.isActive ? Math.max(prev - 1, 0) : prev + 1;
+        });
       } else {
         toast.error(
           `Failed to ${
@@ -410,21 +541,18 @@ export default function DoctorsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                {!loading &&
-                  Array.from(
-                    new Set(allDoctors.map((doctor) => doctor.department))
-                  ).map((dept) => (
-                    <SelectItem key={dept} value={dept}>
-                      {dept}
-                    </SelectItem>
-                  ))}
+                {DEPARTMENTS.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button
               variant="outline"
               className="flex items-center gap-2 text-[#4B4B4B] cursor-pointer"
               disabled={loading}
-              onClick={getAllDoctors}
+              onClick={funcRefresh}
             >
               <svg
                 className="h-4 w-4"
@@ -453,7 +581,80 @@ export default function DoctorsPage() {
         </div>
       </div>
 
-      <div className="h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll pt-6">
+      {/* Stats: Total, Active, Inactive */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-0">
+        {(() => {
+          const totalCount = doctor?.counts?.totalDoctors;
+          const activeCount = doctor?.counts?.activeDoctors;
+          const inactiveCount = doctor?.counts?.inactiveDoctors;
+          return (
+            <>
+              <Card className="border border-[#E2E2E2] bg-white rounded-[10px] p-0 shadow-none">
+                <CardContent className="py-2 px-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#7F7F7F]">Total Doctors</p>
+                    <p className="text-xl font-semibold text-[#323232]">
+                      {totalCount}
+                    </p>
+                  </div>
+                  <div className="size-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-5 w-5"
+                    >
+                      <path d="M12 2a5 5 0 015 5v1a5 5 0 11-10 0V7a5 5 0 015-5zm7 18a1 1 0 01-1 1H6a1 1 0 01-1-1 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border border-[#E2E2E2] bg-white rounded-[10px] p-0 shadow-none">
+                <CardContent className="py-2 px-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#7F7F7F]">Active Doctors</p>
+                    <p className="text-xl font-semibold text-[#059669]">
+                      {activeCount}
+                    </p>
+                  </div>
+                  <div className="size-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-5 w-5"
+                    >
+                      <path d="M9 12l2 2 4-4 1.5 1.5L11 16l-3.5-3.5L9 12z" />
+                    </svg>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border border-[#E2E2E2] bg-white rounded-[10px] p-0 shadow-none">
+                <CardContent className="py-2 px-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#7F7F7F]">Inactive Doctors</p>
+                    <p className="text-xl font-semibold text-[#B91C1C]">
+                      {inactiveCount}
+                    </p>
+                  </div>
+                  <div className="size-10 rounded-full bg-rose-50 flex items-center justify-center text-rose-600">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      className="h-5 w-5"
+                    >
+                      <path d="M6.225 4.811L4.811 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586 6.225 4.811z" />
+                    </svg>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          );
+        })()}
+      </div>
+
+      <div className="h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll pt-2">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-4">
@@ -468,7 +669,7 @@ export default function DoctorsPage() {
               </p>
             </div>
           </div>
-        ) : error ? (
+        ) : error && allDoctors.length === 0 ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <p className="text-red-500 mb-4">{error}</p>
@@ -491,6 +692,8 @@ export default function DoctorsPage() {
                     setSearchTerm("");
                     setSelectedDepartment("");
                     setFilteredDoctors(allDoctors);
+                    setCurrentPage(1);
+                    setHasMore(true);
                   }}
                   variant="outline"
                   className="cursor-pointer"
@@ -697,6 +900,54 @@ export default function DoctorsPage() {
           </div>
         )}
       </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex flex-col items-center space-y-1">
+          {totalDoctors != null ? (
+            <div className="text-sm text-gray-600">
+              Showing {allDoctors.length} of {totalDoctors} doctors
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Showing {allDoctors.length} doctors
+            </div>
+          )}
+          <Button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            variant="outline"
+            className="flex items-center gap-2 px-6 py-2"
+          >
+            {loadingMore ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Plus className="h-4 w-4" />
+                Load More Doctors
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Show total count when all doctors are loaded */}
+      {!hasMore && allDoctors.length > 0 && (
+        <div className="flex justify-center ">
+          {totalDoctors != null ? (
+            <div className="text-sm text-gray-600">
+              Showing all {totalDoctors} doctors
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Showing all {allDoctors.length} doctors
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       {doctorForAction && (
