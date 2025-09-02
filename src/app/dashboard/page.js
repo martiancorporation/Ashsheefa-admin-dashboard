@@ -1,5 +1,6 @@
 import { ChevronRight, Clock, Clock9, FileText, User } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Page() {
   const data = [
@@ -7,25 +8,25 @@ export default function Page() {
       icon: "/assets/images/dashboard/totalPatient.svg",
       name: "Total Patients",
       value: "200",
-      link: "",
+      link: "/dashboard/patient",
     },
     {
       icon: "/assets/images/dashboard/patient.svg",
-      name: "Today’s Patients",
+      name: "Total International Patients",
       value: "100",
-      link: "",
+      link: "/dashboard/international-patients",
     },
     {
       icon: "/assets/images/dashboard/doctor.svg",
       name: "Total Doctors",
       value: "120",
-      link: "",
+      link: "/dashboard/doctors",
     },
     {
       icon: "/assets/images/dashboard/department.svg",
       name: "Total Departments",
       value: "05",
-      link: "",
+      link: "/dashboard/departments",
     },
   ];
 
@@ -50,7 +51,7 @@ export default function Page() {
             key={data.name}
             className="w-full rounded-[10px] border border-[#D9D9D9] bg-white  py-2 "
           >
-            <div className="flex items-center gap-x-3 px-2 pb-2">
+            <div className="flex items-center gap-x-2 px-2 pb-1">
               <div className="bg-[#F7F7F7] border border-[#D9D9D9]  rounded-[6px] flex items-center justify-center p-1.5">
                 <Image
                   src={data?.icon}
@@ -69,10 +70,13 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="text-[#7F7F7F] text-xs border-t pt-3 flex items-center justify-center gap-1">
-              <p>View details</p>
+            <Link
+              href={data?.link}
+              className="text-[#7F7F7F] text-xs border-t pt-1 flex items-center justify-center gap-1 hover:text-[#000] hover:underline cursor-pointer"
+            >
+              View details
               <ChevronRight className="text-[#7F7F7F] w-5 h-5" />
-            </div>
+            </Link>
           </div>
         ))}
       </div>

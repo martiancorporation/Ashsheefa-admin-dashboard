@@ -17,6 +17,15 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
 
     // Add additional headers for better compatibility
     finalHeaders["Accept"] = "application/json";
+
+    // Ensure we don't set any Content-Type header for FormData
+    delete finalHeaders["Content-Type"];
+
+    // For FormData, only keep essential headers
+    finalHeaders = {
+      Authorization: finalHeaders.Authorization,
+      Accept: "application/json",
+    };
   }
 
   // Add authentication headers for all routes (dashboard only)
@@ -35,6 +44,9 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
     // Only set Content-Type for non-FormData requests
     if (!(bodyData instanceof FormData)) {
       finalHeaders["Content-Type"] = "application/json";
+    } else {
+      // For FormData, ensure no Content-Type is set
+      delete finalHeaders["Content-Type"];
     }
   }
 
@@ -46,13 +58,15 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
     bodyData ? bodyData.constructor.name : "null"
   );
 
-  return axiosInstance({
+  const config = {
     method: `${method}`,
     url: `${url}`,
     data: bodyData ? bodyData : null,
     headers: finalHeaders ? finalHeaders : null,
     params: params ? params : null,
-  });
+  };
+
+  return axiosInstance(config);
 };
 
 export const handleResponse = (response) => {

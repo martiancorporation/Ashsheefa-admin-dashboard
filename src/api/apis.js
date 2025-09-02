@@ -1,6 +1,6 @@
 // console.log(BASE_URL);
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 //**************** * AUTH ENDPOINTS ***************
 export const authEndpoints = {
@@ -117,4 +117,50 @@ export const PATIENTS_ENQUIRY_API = {
     BASE_URL + "/v1/dashboard/patients_enquiry/add_patients_enquiry",
   GET_PATIENTS_ENQUIRY_STATS:
     BASE_URL + "/v1/dashboard/patients_enquiry/get_patients_enquiry_stats",
+};
+
+// Dashboard Appointments APIs (Always Authenticated)
+export const APPOINTMENTS_API = {
+  GET_ALL_APPOINTMENTS:
+    BASE_URL + "/v1/dashboard/patient_appointment/get_all_patients_data",
+  ADD_APPOINTMENT:
+    BASE_URL + "/v1/dashboard/patient_appointment/add_patients_data",
+  GET_APPOINTMENT_BY_ID:
+    BASE_URL + "/v1/dashboard/patient_appointment/get_patient_data",
+  UPDATE_APPOINTMENT:
+    BASE_URL + "/v1/dashboard/patient_appointment/update_patients_data",
+  DELETE_APPOINTMENT:
+    BASE_URL + "/v1/dashboard/patient_appointment/delete_patients_data",
+};
+
+// Dashboard Patients APIs (Always Authenticated)
+export const PATIENTS_API = {
+  GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/patients/get_all_patients_data",
+  ADD_PATIENT: BASE_URL + "/v1/dashboard/patients/add_patient_data",
+  GET_PATIENT_BY_ID: BASE_URL + "/v1/dashboard/patients/get_patient_data",
+  GET_PATIENT_DATA_BY_ID:
+    BASE_URL + "/v1/dashboard/patients/get_patients_data_by_id",
+  UPDATE_PATIENT: BASE_URL + "/v1/dashboard/patients/update_patient_data",
+  DELETE_PATIENT: BASE_URL + "/v1/dashboard/patients/delete_patient_data",
+  UPLOAD_LAB_REPORT: BASE_URL + "/v1/dashboard/patients/upload_lab_report",
+  GET_LAB_REPORTS: BASE_URL + "/v1/dashboard/patients/get_lab_reports",
+  DELETE_LAB_REPORT: BASE_URL + "/v1/dashboard/patients/delete_lab_report",
+  UPLOAD_PRESCRIPTION: BASE_URL + "/v1/dashboard/patients/upload_prescription",
+  GET_PRESCRIPTIONS: BASE_URL + "/v1/dashboard/patients/get_prescriptions",
+  DELETE_PRESCRIPTION: BASE_URL + "/v1/dashboard/patients/delete_prescription",
+  GET_PATIENT_DOCUMENTS:
+    BASE_URL + "/v1/dashboard/patients/get_patient_documents",
+};
+
+// Dashboard Departments APIs (Always Authenticated)
+export const dashboardDepartmentEndpoints = {
+  GET_ALL_DEPARTMENTS_API:
+    BASE_URL + "/v1/dashboard/departments/get-all-departments",
+  ADD_DEPARTMENT_API: BASE_URL + "/v1/dashboard/departments/add-department",
+  GET_DEPARTMENT_BY_ID_API:
+    BASE_URL + "/v1/dashboard/departments/get-department",
+  UPDATE_DEPARTMENT_API:
+    BASE_URL + "/v1/dashboard/departments/update-department",
+  DELETE_DEPARTMENT_API:
+    BASE_URL + "/v1/dashboard/departments/delete-department",
 };
