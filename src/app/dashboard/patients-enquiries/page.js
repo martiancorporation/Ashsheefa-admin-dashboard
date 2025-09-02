@@ -2,16 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import {
-  Search,
-  Filter,
-  Plus,
-  Phone,
-  Mail,
-  ArrowLeft,
-  ListFilter,
-  Loader2,
-} from "lucide-react";
+import { Search, Plus, Phone, ListFilter, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PatientModal } from "./components/patient-modal";
@@ -64,14 +55,7 @@ export default function PatientEnquiryPage() {
       filtered = filtered.filter(
         (patient) =>
           patient.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          patient.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          patient.phone_number?.includes(searchQuery) ||
-          patient.department
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          patient.referral_doctor
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase())
+          patient.phone_number?.includes(searchQuery)
       );
     }
 
@@ -129,25 +113,6 @@ export default function PatientEnquiryPage() {
   const handleCall = (phoneNumber) => {
     if (phoneNumber) {
       window.open(`tel:${phoneNumber}`, "_self");
-    } else {
-      toast.error("Phone number not available");
-    }
-  };
-
-  // Handle email action
-  const handleEmail = (email) => {
-    if (email) {
-      window.open(`mailto:${email}`, "_self");
-    } else {
-      toast.error("Email not available");
-    }
-  };
-
-  // Handle WhatsApp action
-  const handleWhatsApp = (phoneNumber) => {
-    if (phoneNumber) {
-      const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\D/g, "")}`;
-      window.open(whatsappUrl, "_blank");
     } else {
       toast.error("Phone number not available");
     }
@@ -263,7 +228,7 @@ export default function PatientEnquiryPage() {
             disabled={loading}
           >
             <Plus className="h-4 w-4" />
-            New Patient
+            New Enquiry
           </Button>
         </div>
       </div>
@@ -272,7 +237,7 @@ export default function PatientEnquiryPage() {
         {data.map((data) => (
           <div
             key={data.name}
-            className="w-full rounded-[10px] border border-[#D9D9D9] bg-[#F9F9F9] px-2  py-2 flex items-center gap-x-3 "
+            className="w-full rounded-[10px] border border-[#D9D9D9] bg-[#F9F9F9] px-2  py-1 flex items-center gap-x-3 "
           >
             <div className="bg-[#FFFFFF] border border-[#D9D9D9]  rounded-[6px] flex items-center justify-center p-1.5">
               <Image
@@ -369,31 +334,22 @@ export default function PatientEnquiryPage() {
             </div>
           )}
 
-          <Table>
-            <TableHeader>
+          <Table className="w-full border border-gray-300 rounded-md ">
+            <TableHeader className="bg-[#F9F9F9] rounded-md border border-gray-300">
               <TableRow>
-                <TableHead className="text-[#7F7F7F] font-normal">
+                <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-300">
                   No.
                 </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Name
+                <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-300">
+                  Full Name
                 </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Age
+                <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-300">
+                  Phone Number
                 </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Gender
+                <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-300">
+                  Created Date
                 </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Department
-                </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Referral Doctor
-                </TableHead>
-                <TableHead className="text-[#7F7F7F] font-normal">
-                  Appointment Date
-                </TableHead>
-                <TableHead className="text-[#7F7F7F] text-center font-normal">
+                <TableHead className="text-[#7F7F7F] text-center font-normal border-r border-gray-300">
                   Actions
                 </TableHead>
               </TableRow>
@@ -401,14 +357,31 @@ export default function PatientEnquiryPage() {
             <TableBody>
               {filteredPatients.map((patient, index) => (
                 <TableRow key={patient._id}>
-                  <TableCell>{patient.no}</TableCell>
-                  <TableCell>{patient.name}</TableCell>
-                  <TableCell>{patient.age}</TableCell>
-                  <TableCell>{patient.gender}</TableCell>
-                  <TableCell>{patient.department}</TableCell>
-                  <TableCell>{patient.referral_doctor}</TableCell>
-                  <TableCell>{patient.appointment_date}</TableCell>
-                  <TableCell className="text-center">
+                  <TableCell className="border-r border-gray-300">{index + 1}</TableCell>
+                  <TableCell className="border-r border-gray-300">{patient.name}</TableCell>
+                  <TableCell className="border-r border-gray-300">{patient.phone_number}</TableCell>
+                  <TableCell className="border-r border-gray-300">
+                    {patient.created_at
+                      ? new Date(patient.created_at).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )
+                      : patient.createdAt
+                      ? new Date(patient.createdAt).toLocaleDateString(
+                          "en-GB",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )
+                      : "N/A"}
+                  </TableCell>
+                  <TableCell className="text-center border-r border-gray-300">
                     <Button
                       variant="outline"
                       size="icon"
@@ -417,30 +390,6 @@ export default function PatientEnquiryPage() {
                       title="Call"
                     >
                       <Phone className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="bg-transparent border-none shadow-none p-0 cursor-pointer hover:bg-green-50 rounded-full"
-                      onClick={() => handleWhatsApp(patient.phone_number)}
-                      title="WhatsApp"
-                    >
-                      <svg
-                        className="h-4 w-4 text-green-600"
-                        fill="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
-                      </svg>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="bg-transparent border-none shadow-none p-0 cursor-pointer hover:bg-red-50 rounded-full"
-                      onClick={() => handleEmail(patient.email)}
-                      title="Email"
-                    >
-                      <Mail className="h-4 w-4 text-red-600" />
                     </Button>
                   </TableCell>
                 </TableRow>
