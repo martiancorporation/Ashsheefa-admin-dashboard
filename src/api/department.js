@@ -10,13 +10,13 @@ const {
 } = dashboardDepartmentEndpoints;
 
 const department = {
-  // Get all departments
-  getAllDepartments: async () => {
+  // Get all departments with pagination
+  getAllDepartments: async (page = 1, limit = 10) => {
     let response = null;
     try {
-      console.log("Calling API:", GET_ALL_DEPARTMENTS_API);
-      console.log("Full URL:", GET_ALL_DEPARTMENTS_API);
-      response = await apiConnector("GET", GET_ALL_DEPARTMENTS_API);
+      const url = `${GET_ALL_DEPARTMENTS_API}?page=${page}&limit=${limit}`;
+      console.log("Calling API:", url);
+      response = await apiConnector("GET", url);
       console.log("Raw API response:", response);
     } catch (error) {
       console.error("API call error:", error);

@@ -1,6 +1,7 @@
 import { ChevronRight, Clock, Clock9, FileText, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { AppointmentPatientChart } from "./components/appointment-patients-chart";
 
 export default function Page() {
   const data = [
@@ -79,6 +80,11 @@ export default function Page() {
             </Link>
           </div>
         ))}
+      </div>
+
+      <div className="w-full flex items-center gap-8">
+        <AppointmentPatientChart/>
+        <AppointmentPatientChart/>
       </div>
     </>
   );

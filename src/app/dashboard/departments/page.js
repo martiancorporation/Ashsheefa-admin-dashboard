@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, Search, ListFilter } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  ListFilter,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DepartmentCard } from "./components/department-card";
@@ -17,17 +24,30 @@ export default function DepartmentsPage() {
   const [modalType, setModalType] = useState(null); // 'add' or 'edit'
   const [editingDepartment, setEditingDepartment] = useState(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const filteredDepartments = departments.filter((dept) => {
     const displayName = (dept.department_name || dept.name || "").toLowerCase();
     return displayName.includes(searchQuery.toLowerCase());
   });
 
-  // Fetch departments on component mount
+  // Reset pagination when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery]);
+
+  // Fetch departments on component mount and when page changes
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [currentPage]);
 
-  const fetchDepartments = async () => {
+  const fetchDepartments = async (page = currentPage) => {
     try {
       setLoading(true);
 
@@ -40,7 +60,11 @@ export default function DepartmentsPage() {
         return;
       }
 
-      const response = await API.department.getAllDepartments();
+      // Add pagination parameters to the API call
+      const response = await API.department.getAllDepartments(
+        page,
+        itemsPerPage
+      );
 
       // The API returns { departments: [...], pagination: {...} }
       if (response && response.departments) {
@@ -51,6 +75,14 @@ export default function DepartmentsPage() {
           image: d.image || d.banner || null,
         }));
         setDepartments(normalized);
+
+        // Update pagination state if available
+        if (response.pagination) {
+          setCurrentPage(response.pagination.currentPage || 1);
+          setTotalPages(response.pagination.totalPages || 1);
+          setTotalItems(response.pagination.totalItems || 0);
+          setItemsPerPage(response.pagination.itemsPerPage || 10);
+        }
       } else if (response && response.data) {
         // Fallback for different response structure
         const normalized = response.data.map((d) => ({
@@ -177,6 +209,25 @@ export default function DepartmentsPage() {
     }
   };
 
+  // Pagination handlers
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
   return (
     <>
       <div className="w-full flex items-center justify-between mb-6">
@@ -203,7 +254,10 @@ export default function DepartmentsPage() {
           <Button
             variant="outline"
             className="flex items-center gap-2 text-[#4B4B4B]"
-            onClick={fetchDepartments}
+            onClick={() => {
+              setCurrentPage(1);
+              fetchDepartments(1);
+            }}
           >
             <ListFilter className="h-4 w-4" />
             Refresh
@@ -234,17 +288,89 @@ export default function DepartmentsPage() {
           </div>
         </div>
       ) : (
-        <div className="w-full  overflow-y-scroll overscroll-y-contain eme-scroll grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
-          {filteredDepartments.map((dept) => (
-            <DepartmentCard
-              key={dept._id || dept.id}
-              department={dept}
-              onDelete={handleDeleteDepartment}
-              onEdit={handleEditDepartment}
-              openEditModal={openEditModal}
-            />
-          ))}
-        </div>
+        <>
+          <div className="w-full  overflow-y-scroll overscroll-y-contain eme-scroll grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
+            {filteredDepartments.map((dept) => (
+              <DepartmentCard
+                key={dept._id || dept.id}
+                department={dept}
+                onDelete={handleDeleteDepartment}
+                onEdit={handleEditDepartment}
+                openEditModal={openEditModal}
+              />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-2 px-4 py-3 bg-[#ffffff] border border-[#D9D9D9] rounded-lg">
+              <div className="flex items-center text-sm text-gray-700">
+                <span>
+                  Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of{" "}
+                  {totalItems} results
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={
+                          currentPage === pageNum ? "default" : "outline"
+                        }
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`w-8 h-8 p-0 ${
+                          currentPage === pageNum
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal - only render when needed */}
