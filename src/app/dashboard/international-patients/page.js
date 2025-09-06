@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Plus, Search, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import AllInternationalPatients from "./components/all-international-patients";
 import { AddInternationalPatientModal } from "./components/add-international-patient-modal";
+import API from "@/api";
 
 export default function InternationalPatientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +25,10 @@ export default function InternationalPatientsPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
 
+  // Dynamic departments state
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+
   const statusOptions = [
     { name: "All Status" },
     { name: "Pending" },
@@ -32,16 +37,57 @@ export default function InternationalPatientsPage() {
     { name: "Confirmed" },
   ];
 
+  // Fetch departments on component mount
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
+
+  // ************** FETCH DEPARTMENTS API CALL *******************
+  const fetchDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+      const response = await API.department.getAllDepartments(1, 100); // Get all departments
+
+      if (response && response.departments) {
+        const departmentNames = response.departments
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      } else if (response && response.data) {
+        const departmentNames = response.data
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      // Fallback to static list if API fails
+      setDepartments([
+        "Ortho",
+        "Cardiology",
+        "Neurology",
+        "Oncology",
+        "General Surgery",
+        "Dermatology",
+        "Pediatrics",
+        "Gynecology",
+        "ENT",
+        "Ophthalmology",
+        "Psychiatry",
+        "Radiology",
+        "Anesthesiology",
+        "Emergency Medicine",
+        "Internal Medicine",
+        "Cardiac Science",
+      ]);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
+
   const specialityOptions = [
     { name: "All Specialities" },
-    { name: "Ortho" },
-    { name: "Cardiology" },
-    { name: "Neurology" },
-    { name: "Oncology" },
-    { name: "General Surgery" },
-    { name: "Dermatology" },
-    { name: "Pediatrics" },
-    { name: "Gynecology" },
+    ...departments.map((dept) => ({ name: dept })),
   ];
 
   const countryOptions = [
@@ -105,9 +151,14 @@ export default function InternationalPatientsPage() {
           <Select
             value={selectedSpeciality}
             onValueChange={setSelectedSpeciality}
+            disabled={departmentsLoading}
           >
             <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue placeholder="All Specialities" />
+              <SelectValue
+                placeholder={
+                  departmentsLoading ? "Loading..." : "All Specialities"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
               {specialityOptions.map((speciality, index) => (
@@ -176,6 +227,8 @@ export default function InternationalPatientsPage() {
           selectedSpeciality={selectedSpeciality}
           selectedCountry={selectedCountry}
           onPatientUpdate={handlePatientUpdate}
+          departments={departments}
+          departmentsLoading={departmentsLoading}
         />
       </div>
 
@@ -185,6 +238,8 @@ export default function InternationalPatientsPage() {
         onOpenChange={setAddModalOpen}
         patient={null}
         onSave={handlePatientUpdate}
+        departments={departments}
+        departmentsLoading={departmentsLoading}
       />
     </>
   );

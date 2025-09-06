@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import patient from "@/api/patient"
 
-export function AddPatientModal({ open, onOpenChange, patient: patientData, onSave }) {
+export function AddPatientModal({ open, onOpenChange, patient: patientData, onSave, departments = [], departmentsLoading = false }) {
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
         patient_full_name: "",
@@ -167,24 +167,10 @@ export function AddPatientModal({ open, onOpenChange, patient: patientData, onSa
         { value: "Other", label: "Other" },
     ]
 
-    const specialityOptions = [
-        { value: "Ortho", label: "Ortho" },
-        { value: "Cardiology", label: "Cardiology" },
-        { value: "Neurology", label: "Neurology" },
-        { value: "Oncology", label: "Oncology" },
-        { value: "General Surgery", label: "General Surgery" },
-        { value: "Dermatology", label: "Dermatology" },
-        { value: "Pediatrics", label: "Pediatrics" },
-        { value: "Gynecology", label: "Gynecology" },
-        { value: "ENT", label: "ENT" },
-        { value: "Ophthalmology", label: "Ophthalmology" },
-        { value: "Psychiatry", label: "Psychiatry" },
-        { value: "Radiology", label: "Radiology" },
-        { value: "Anesthesiology", label: "Anesthesiology" },
-        { value: "Emergency Medicine", label: "Emergency Medicine" },
-        { value: "Internal Medicine", label: "Internal Medicine" },
-        { value: "Cardiac Science", label: "Cardiac Science" },
-    ]
+    const specialityOptions = departments.map(dept => ({
+        value: dept,
+        label: dept
+    }))
 
     const statusOptions = [
         { value: "In Treatment", label: "In Treatment" },
@@ -315,9 +301,13 @@ export function AddPatientModal({ open, onOpenChange, patient: patientData, onSa
                         <Label htmlFor="speciality" className="text-[#4A4A4B] text-sm">
                             Speciality*
                         </Label>
-                        <Select value={formData.speciality} onValueChange={(value) => handleSelectChange("speciality", value)}>
+                        <Select
+                            value={formData.speciality}
+                            onValueChange={(value) => handleSelectChange("speciality", value)}
+                            disabled={departmentsLoading}
+                        >
                             <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none">
-                                <SelectValue placeholder="Select speciality" />
+                                <SelectValue placeholder={departmentsLoading ? "Loading departments..." : "Select speciality"} />
                             </SelectTrigger>
                             <SelectContent>
                                 {specialityOptions.map((option) => (

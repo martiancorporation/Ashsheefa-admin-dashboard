@@ -52,37 +52,9 @@ import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 
 export default function DoctorsPage() {
-  // Static list of all available departments
-  const DEPARTMENTS = [
-    "General Medicine",
-    "General Surgery",
-    "Cardiology",
-    "Neurology",
-    "Neurosurgery",
-    "Orthopedics",
-    "Pediatrics",
-    "Obstetrics & Gynecology",
-    "Dermatology",
-    "Psychiatry",
-    "Ophthalmology",
-    "ENT",
-    "Oncology",
-    "Urology",
-    "Nephrology",
-    "Pulmonology",
-    "Gastroenterology",
-    "Endocrinology",
-    "Radiology",
-    "Anesthesiology",
-    "Pathology",
-    "Hematology",
-    "Rheumatology",
-    "Plastic Surgery",
-    "Cardiothoracic Surgery",
-    "Forensic Medicine",
-    "Family Medicine",
-    "Sports Medicine",
-  ];
+  // Dynamic departments will be fetched from API
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [allDoctors, setAllDoctors] = useState([]);
@@ -111,11 +83,67 @@ export default function DoctorsPage() {
 
   const authData = useAuthDataStore((state) => state.authData);
 
-  // Fetch all doctors on component mount
+  // ************** FETCH DEPARTMENTS API CALL *******************
+  const fetchDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+      const response = await API.department.getAllDepartments(1, 100); // Get all departments
+
+      if (response && response.departments) {
+        const departmentNames = response.departments
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      } else if (response && response.data) {
+        const departmentNames = response.data
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      // Fallback to static list if API fails
+      setDepartments([
+        "General Medicine",
+        "General Surgery",
+        "Cardiology",
+        "Neurology",
+        "Neurosurgery",
+        "Orthopedics",
+        "Pediatrics",
+        "Obstetrics & Gynecology",
+        "Dermatology",
+        "Psychiatry",
+        "Ophthalmology",
+        "ENT",
+        "Oncology",
+        "Urology",
+        "Nephrology",
+        "Pulmonology",
+        "Gastroenterology",
+        "Endocrinology",
+        "Radiology",
+        "Anesthesiology",
+        "Pathology",
+        "Hematology",
+        "Rheumatology",
+        "Plastic Surgery",
+        "Cardiothoracic Surgery",
+        "Forensic Medicine",
+        "Family Medicine",
+        "Sports Medicine",
+      ]);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
+
+  // Fetch all doctors and departments on component mount
   useEffect(() => {
     setCurrentPage(1);
     setHasMore(true);
     getAllDoctors(1, false);
+    fetchDepartments();
   }, []);
 
   // Monitor modal states and ensure proper cleanup
@@ -532,16 +560,18 @@ export default function DoctorsPage() {
             <Select
               value={selectedDepartment}
               onValueChange={handleDepartmentFilter}
-              disabled={loading}
+              disabled={loading || departmentsLoading}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue
-                  placeholder={loading ? "Loading..." : "Select Department"}
+                  placeholder={
+                    departmentsLoading ? "Loading..." : "Select Department"
+                  }
                 />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
-                {DEPARTMENTS.map((dept) => (
+                {departments.map((dept) => (
                   <SelectItem key={dept} value={dept}>
                     {dept}
                   </SelectItem>
@@ -963,6 +993,8 @@ export default function DoctorsPage() {
             onOpenChange={handleEditModalChange}
             doctor={doctorForAction}
             onSave={handleSaveDoctor}
+            departments={departments}
+            departmentsLoading={departmentsLoading}
           />
         </>
       )}
@@ -972,6 +1004,8 @@ export default function DoctorsPage() {
         open={addDoctorModalOpen}
         onOpenChange={handleAddDoctorModalChange}
         onSave={handleSaveDoctor}
+        departments={departments}
+        departmentsLoading={departmentsLoading}
       />
 
       {/* Delete Confirmation Modal */}

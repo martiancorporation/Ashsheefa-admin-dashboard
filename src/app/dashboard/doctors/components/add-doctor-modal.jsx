@@ -12,38 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 
-const DEPARTMENTS = [
-    "General Medicine",
-    "General Surgery",
-    "Cardiology",
-    "Neurology",
-    "Neurosurgery",
-    "Orthopedics",
-    "Pediatrics",
-    "Obstetrics & Gynecology",
-    "Dermatology",
-    "Psychiatry",
-    "Ophthalmology",
-    "ENT",
-    "Oncology",
-    "Urology",
-    "Nephrology",
-    "Pulmonology",
-    "Gastroenterology",
-    "Endocrinology",
-    "Radiology",
-    "Anesthesiology",
-    "Pathology",
-    "Hematology",
-    "Rheumatology",
-    "Plastic Surgery",
-    "Cardiothoracic Surgery",
-    "Forensic Medicine",
-    "Family Medicine",
-    "Sports Medicine"
-];
-
-export function AddDoctorModal({ open, onOpenChange, doctor, onSave }) {
+export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments = [], departmentsLoading = false }) {
     const fileInputRef = useRef(null)
     const [photoUrl, setPhotoUrl] = useState(doctor?.profilePic || "")
     const [selectedLanguages, setSelectedLanguages] = useState(doctor?.languages || [])
@@ -349,12 +318,16 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave }) {
 
                     <div className="space-y-2">
                         <Label htmlFor="department">Department*</Label>
-                        <Select value={formData.department} onValueChange={(value) => handleSelectChange("department", value)}>
+                        <Select
+                            value={formData.department}
+                            onValueChange={(value) => handleSelectChange("department", value)}
+                            disabled={departmentsLoading}
+                        >
                             <SelectTrigger>
-                                <SelectValue placeholder="Select department" />
+                                <SelectValue placeholder={departmentsLoading ? "Loading departments..." : "Select department"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {DEPARTMENTS.map((dept) => (
+                                {departments.map((dept) => (
                                     <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                                 ))}
                             </SelectContent>

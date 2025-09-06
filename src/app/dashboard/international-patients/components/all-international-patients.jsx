@@ -27,6 +27,8 @@ export default function AllInternationalPatients({
     selectedSpeciality = "",
     selectedCountry = "",
     onPatientUpdate,
+    departments = [],
+    departmentsLoading = false,
 }) {
     const [selectedPatient, setSelectedPatient] = useState(null)
     const [patients, setPatients] = useState([])
@@ -454,6 +456,8 @@ export default function AllInternationalPatients({
                 onOpenChange={setEditModalOpen}
                 patient={editingPatient}
                 onSave={handlePatientUpdate}
+                departments={departments}
+                departmentsLoading={departmentsLoading}
             />
 
             {/* Delete Confirmation Modal */}

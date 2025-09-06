@@ -26,6 +26,8 @@ export default function AllPatients({
     selectedStatus = "",
     selectedSpeciality = "",
     onPatientUpdate,
+    departments = [],
+    departmentsLoading = false,
 }) {
     const router = useRouter()
     const [patientsList, setPatientsList] = useState([])
@@ -331,7 +333,7 @@ export default function AllPatients({
                                     {patient.uhid || "N/A"}
                                 </div>
                             </TableCell>
-                        <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
+                            <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                                 {patient.patient_full_name || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
@@ -419,6 +421,8 @@ export default function AllPatients({
                 onOpenChange={setEditModalOpen}
                 patient={editingPatient}
                 onSave={handlePatientUpdate}
+                departments={departments}
+                departmentsLoading={departmentsLoading}
             />
 
             {/* Delete Confirmation Modal */}
