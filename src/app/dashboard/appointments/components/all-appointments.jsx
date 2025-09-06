@@ -26,6 +26,8 @@ export default function AllAppointments({
     selectedStatus = "",
     selectedSpeciality = "",
     onAppointmentUpdate,
+    departments = [],
+    departmentsLoading = false,
 }) {
     const [selectedAppointment, setSelectedAppointment] = useState(null)
     const [appointmentsList, setAppointmentsList] = useState([])
@@ -368,7 +370,7 @@ export default function AllAppointments({
                                                 className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
                                                 onClick={() => handleViewAppointment(appointment)}
                                             >
-                                                    <Eye className="h-4 w-4 mr-2 text-gray-500" />
+                                                <Eye className="h-4 w-4 mr-2 text-gray-500" />
                                                 View Details
                                             </DropdownMenuItem>
 
@@ -419,6 +421,8 @@ export default function AllAppointments({
                 onOpenChange={setEditModalOpen}
                 appointment={editingAppointment}
                 onSave={handleAppointmentUpdate}
+                departments={departments}
+                departmentsLoading={departmentsLoading}
             />
 
             {/* Delete Confirmation Modal */}
