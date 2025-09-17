@@ -20,13 +20,13 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showAvailability, setShowAvailability] = useState(false)
     const [schedule, setSchedule] = useState({
-        monday: { enabled: doctor?.availability?.some(a => a.day === "Monday") || false, startTime: "09:00", endTime: "17:00" },
-        tuesday: { enabled: doctor?.availability?.some(a => a.day === "Tuesday") || false, endTime: "17:00" },
-        wednesday: { enabled: doctor?.availability?.some(a => a.day === "Wednesday") || false, startTime: "09:00", endTime: "17:00" },
-        thursday: { enabled: doctor?.availability?.some(a => a.day === "Thursday") || false, startTime: "09:00", endTime: "17:00" },
-        friday: { enabled: doctor?.availability?.some(a => a.day === "Friday") || false, startTime: "09:00", endTime: "17:00" },
-        saturday: { enabled: doctor?.availability?.some(a => a.day === "Saturday") || false, startTime: "09:00", endTime: "17:00" },
-        sunday: { enabled: doctor?.availability?.some(a => a.day === "Sunday") || false, startTime: "09:00", endTime: "17:00" },
+        monday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Monday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        tuesday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Tuesday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        wednesday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Wednesday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        thursday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Thursday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        friday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Friday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        saturday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Saturday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
+        sunday: { id: null, enabled: doctor?.availability?.some(a => (a.day === "Sunday" && a.isAvailable)) || false, startTime: "09:00", endTime: "17:00" },
     })
     const [formData, setFormData] = useState({
         fullName: doctor?.fullName || "",
@@ -142,12 +142,13 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments
         if (doctor?.availability && doctor.availability.length > 0) {
             const newSchedule = { ...schedule }
             doctor.availability.forEach(avail => {
-                const dayKey = avail.day.toLowerCase()
+                const dayKey = (avail.day || "").toLowerCase()
                 if (newSchedule[dayKey]) {
                     newSchedule[dayKey] = {
-                        enabled: true,
-                        startTime: avail.startTime,
-                        endTime: avail.endTime
+                        id: avail._id || null,
+                        enabled: avail.isAvailable === true,
+                        startTime: avail.startTime || "09:00",
+                        endTime: avail.endTime || "17:00"
                     }
                 }
             })
@@ -177,13 +178,13 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments
 
         try {
             // Process availability data
-            const availability = Object.entries(schedule)
-                .filter(([_, value]) => value.enabled)
-                .map(([day, value]) => ({
-                    day: day.charAt(0).toUpperCase() + day.slice(1),
-                    startTime: value.startTime,
-                    endTime: value.endTime
-                }))
+            const availability = Object.entries(schedule).map(([day, value]) => ({
+                _id: value.id || undefined,
+                day: day.charAt(0).toUpperCase() + day.slice(1),
+                isAvailable: value.enabled,
+                startTime: value.enabled ? value.startTime : null,
+                endTime: value.enabled ? value.endTime : null,
+            }))
 
             // Handle form submission
             const formattedData = {

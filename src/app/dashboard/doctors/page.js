@@ -337,11 +337,28 @@ export default function DoctorsPage() {
     setDetailsModalOpen(true);
   };
 
-  const handleEditDoctor = (doctor) => {
+  const handleEditDoctor = async (doctor) => {
     console.log("Opening edit modal for:", doctor);
     setOpenDropdownId(null); // Close dropdown
-    setDoctorForAction(doctor);
-    setEditModalOpen(true);
+    try {
+      const response = await API.doctor.getDoctorById(doctor._id);
+      const fullDoctor =
+        response?.data?.doctor ||
+        response?.data ||
+        (Array.isArray(response) ? response[0] : null) ||
+        response;
+      if (fullDoctor && fullDoctor._id) {
+        setDoctorForAction(fullDoctor);
+      } else {
+        // Fallback to existing item if API shape is unexpected
+        setDoctorForAction(doctor);
+      }
+    } catch (e) {
+      console.error("Failed to fetch full doctor details:", e);
+      setDoctorForAction(doctor);
+    } finally {
+      setEditModalOpen(true);
+    }
   };
 
   const handleDeleteDoctor = (doctor) => {

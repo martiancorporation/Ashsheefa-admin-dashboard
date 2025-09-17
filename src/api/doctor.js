@@ -4,6 +4,7 @@ import { dashboardDoctorEndpoints } from "./apis";
 const {
   GET_ALL_DOCTORS_DATA_API,
   ADD_DOCTOR_DATA_API,
+  GET_DOCTOR_BY_ID_API,
   UPDATE_DOCTOR_DATA_API,
   DELETE_DOCTOR_DATA_API,
 } = dashboardDoctorEndpoints;
@@ -17,6 +18,18 @@ const doctor = {
         "GET",
         `${GET_ALL_DOCTORS_DATA_API}?page=${page}&limit=${limit}`
       );
+    } catch (error) {
+      response = error;
+    }
+    return handleResponse(response);
+  },
+
+  // Get doctor by id (fetch full details including availability)
+  getDoctorById: async (id) => {
+    let response = null;
+    try {
+      const url = `${GET_DOCTOR_BY_ID_API}/${id}`;
+      response = await apiConnector("GET", url);
     } catch (error) {
       response = error;
     }

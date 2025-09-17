@@ -10,13 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 export function ManageAvailabilityModal({ open, onOpenChange, doctor, onSave }) {
     const [schedule, setSchedule] = React.useState({
-        monday: { enabled: doctor?.availability?.some(a => a.day === "Monday") || false, startTime: "09:00", endTime: "17:00" },
-        tuesday: { enabled: doctor?.availability?.some(a => a.day === "Tuesday") || false, startTime: "09:00", endTime: "17:00" },
-        wednesday: { enabled: doctor?.availability?.some(a => a.day === "Wednesday") || false, startTime: "09:00", endTime: "17:00" },
-        thursday: { enabled: doctor?.availability?.some(a => a.day === "Thursday") || false, startTime: "09:00", endTime: "17:00" },
-        friday: { enabled: doctor?.availability?.some(a => a.day === "Friday") || false, startTime: "09:00", endTime: "17:00" },
-        saturday: { enabled: doctor?.availability?.some(a => a.day === "Saturday") || false, startTime: "09:00", endTime: "17:00" },
-        sunday: { enabled: doctor?.availability?.some(a => a.day === "Sunday") || false, startTime: "09:00", endTime: "17:00" },
+        monday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        tuesday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        wednesday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        thursday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        friday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        saturday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
+        sunday: { id: null, enabled: false, startTime: "09:00", endTime: "17:00" },
     })
 
     // Initialize with existing availability data
@@ -24,12 +24,13 @@ export function ManageAvailabilityModal({ open, onOpenChange, doctor, onSave }) 
         if (doctor?.availability) {
             const newSchedule = { ...schedule }
             doctor.availability.forEach(avail => {
-                const dayKey = avail.day.toLowerCase()
+                const dayKey = (avail.day || "").toLowerCase()
                 if (newSchedule[dayKey]) {
                     newSchedule[dayKey] = {
-                        enabled: true,
-                        startTime: avail.startTime,
-                        endTime: avail.endTime
+                        id: avail._id || null,
+                        enabled: avail.isAvailable === true,
+                        startTime: avail.startTime || "09:00",
+                        endTime: avail.endTime || "17:00"
                     }
                 }
             })
@@ -86,14 +87,14 @@ export function ManageAvailabilityModal({ open, onOpenChange, doctor, onSave }) 
     }
 
     const handleSave = () => {
-        // Process the schedule data to match the API structure
-        const availability = Object.entries(schedule)
-            .filter(([_, value]) => value.enabled)
-            .map(([day, value]) => ({
-                day: day.charAt(0).toUpperCase() + day.slice(1),
-                startTime: value.startTime,
-                endTime: value.endTime
-            }))
+        // Send all days with explicit isAvailable flag so backend persists correctly
+        const availability = Object.entries(schedule).map(([day, value]) => ({
+            _id: value.id || undefined,
+            day: day.charAt(0).toUpperCase() + day.slice(1),
+            isAvailable: value.enabled,
+            startTime: value.enabled ? value.startTime : null,
+            endTime: value.enabled ? value.endTime : null,
+        }))
 
         const data = {
             _id: doctor._id,
