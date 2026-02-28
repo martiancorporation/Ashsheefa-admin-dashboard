@@ -7,6 +7,7 @@ const {
   UPDATE_APPOINTMENT,
   DELETE_APPOINTMENT,
   GET_APPOINTMENT_BY_ID,
+  AVAILABLE_SLOTS_API
 } = APPOINTMENTS_API;
 
 const getAllAppointments = async (params) => {
@@ -65,12 +66,27 @@ const getAppointmentDetails = async (id) => {
   return handleResponse(response);
 };
 
+const getAvailableSlots = async (doctorId, dateStr) => {
+  try {
+    const url = `${AVAILABLE_SLOTS_API}?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(dateStr)}&interval=30`;
+    const response = await apiConnector("GET", url);
+    if (response?.data?.success) {
+      return (response.data.booked || []).map((s) => s.start);
+    }
+    return [];
+  } catch (error) {
+    console.error("Error fetching booked slots:", error);
+    return [];
+  }
+};
+
 const appointments = {
   getAllAppointments,
   addAppointment,
   updateAppointment,
   deleteAppointment,
   getAppointmentDetails,
+  getAvailableSlots,
 };
 
 export default appointments;

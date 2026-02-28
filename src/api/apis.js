@@ -125,13 +125,14 @@ export const APPOINTMENTS_API = {
   GET_ALL_APPOINTMENTS:
     BASE_URL + "/v1/dashboard/appointments",
   ADD_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/appointments/add_patients_data",
+    BASE_URL + "/v1/dashboard/appointments/add",
   GET_APPOINTMENT_BY_ID:
     BASE_URL + "/v1/dashboard/appointments/get_patient_data",
   UPDATE_APPOINTMENT:
     BASE_URL + "/v1/dashboard/appointments/update_patients_data",
   DELETE_APPOINTMENT:
     BASE_URL + "/v1/dashboard/appointments/delete_patients_data",
+  AVAILABLE_SLOTS_API: BASE_URL + "/v1/public/appointments/available-slots",
 };
 
 // Dashboard Patients APIs (Always Authenticated)
