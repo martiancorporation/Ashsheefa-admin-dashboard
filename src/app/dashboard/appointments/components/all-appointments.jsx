@@ -289,7 +289,7 @@ export default function AllAppointments({
                             Name
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Age
+                            Date of Birth
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
                             Gender
@@ -324,22 +324,22 @@ export default function AllAppointments({
                                 {index + 1}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.patient_full_name || "N/A"}
+                                {appointment.patientId?.patient_full_name || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.age || "N/A"}
+                                {appointment.patientId?.date_of_birth ? formatDate(appointment.patientId.date_of_birth) : "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.gender || "N/A"}
+                                {appointment.patientId?.gender || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.contact_number || "N/A"}
+                                {appointment.patientId?.contact_number || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.speciality || "N/A"}
+                                {appointment.doctorId?.department || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.refer_doctor || "N/A"}
+                                {appointment.doctorId?.fullName || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                                 {formatDate(appointment.appointment_date)}

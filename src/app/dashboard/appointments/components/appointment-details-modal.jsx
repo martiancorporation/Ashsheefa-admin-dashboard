@@ -67,21 +67,21 @@ export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
                                 <span className="font-medium text-gray-700">Full Name:</span>
-                                <p className="text-gray-900">{appointment.patient_full_name || "Not specified"}</p>
+                                <p className="text-gray-900">{appointment.patientId?.patient_full_name || "Not specified"}</p>
                             </div>
                             <div>
-                                <span className="font-medium text-gray-700">Age:</span>
-                                <p className="text-gray-900">{appointment.age || "Not specified"}</p>
+                                <span className="font-medium text-gray-700">Date of Birth:</span>
+                                <p className="text-gray-900">{appointment.patientId?.date_of_birth ? formatDate(appointment.patientId.date_of_birth) : "Not specified"}</p>
                             </div>
                             <div>
                                 <span className="font-medium text-gray-700">Gender:</span>
-                                <p className="text-gray-900">{appointment.gender || "Not specified"}</p>
+                                <p className="text-gray-900">{appointment.patientId?.gender || "Not specified"}</p>
                             </div>
                             <div>
                                 <span className="font-medium text-gray-700">Contact Number:</span>
                                 <p className="text-gray-900 flex items-center">
                                     <Phone className="h-3 w-3 mr-1" />
-                                    {appointment.contact_number || "Not specified"}
+                                    {appointment.patientId?.contact_number || "Not specified"}
                                 </p>
                             </div>
                         </div>
@@ -102,14 +102,14 @@ export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
                                 <span className="font-medium text-gray-700">Department:</span>
                                 <p className="text-gray-900 flex items-center">
                                     <MapPin className="h-3 w-3 mr-1" />
-                                    {appointment.speciality || "Not specified"}
+                                    {appointment.doctorId?.department || "Not specified"}
                                 </p>
                             </div>
                             <div>
                                 <span className="font-medium text-gray-700">Refer Doctor:</span>
                                 <p className="text-gray-900 flex items-center">
                                     <Stethoscope className="h-3 w-3 mr-1" />
-                                    {appointment.refer_doctor || "Not specified"}
+                                    {appointment.doctorId?.fullName || "Not specified"}
                                 </p>
                             </div>
                             <div>
