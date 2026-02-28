@@ -52,7 +52,6 @@ import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 import { useRouter } from "next/navigation";
 
-
 export default function DoctorsPage() {
   const router = useRouter();
   // Dynamic departments will be fetched from API
@@ -309,7 +308,7 @@ export default function DoctorsPage() {
           .includes(value.toLowerCase()) ||
         doctor.fullName?.toLowerCase().includes(value.toLowerCase()) ||
         doctor.department?.toLowerCase().includes(value.toLowerCase()) ||
-        doctor.regNo?.toLowerCase().includes(value.toLowerCase())
+        doctor.regNo?.toLowerCase().includes(value.toLowerCase()),
     );
     setFilteredDoctors(filtered);
   };
@@ -326,7 +325,7 @@ export default function DoctorsPage() {
       setFilteredDoctors(allDoctors);
     } else {
       const filtered = allDoctors.filter(
-        (doctor) => doctor.department === department
+        (doctor) => doctor.department === department,
       );
       setFilteredDoctors(filtered);
     }
@@ -377,28 +376,28 @@ export default function DoctorsPage() {
     try {
       const response = await API.doctor.deleteDoctor(
         doctorForAction._id,
-        authData?.access_token
+        authData?.access_token,
       );
 
       if (response && response.success !== false) {
         toast.success("Doctor deleted successfully");
         // Optimistically update local lists and counts
         setAllDoctors((prev) =>
-          prev.filter((d) => d._id !== doctorForAction._id)
+          prev.filter((d) => d._id !== doctorForAction._id),
         );
         setFilteredDoctors((prev) =>
-          prev.filter((d) => d._id !== doctorForAction._id)
+          prev.filter((d) => d._id !== doctorForAction._id),
         );
         setTotalDoctors((prev) =>
-          prev != null ? Math.max(prev - 1, 0) : prev
+          prev != null ? Math.max(prev - 1, 0) : prev,
         );
         if (doctorForAction.isActive) {
           setActiveDoctorsCount((prev) =>
-            prev != null ? Math.max(prev - 1, 0) : prev
+            prev != null ? Math.max(prev - 1, 0) : prev,
           );
         } else {
           setInactiveDoctorsCount((prev) =>
-            prev != null ? Math.max(prev - 1, 0) : prev
+            prev != null ? Math.max(prev - 1, 0) : prev,
           );
         }
         setDeleteConfirmationOpen(false);
@@ -445,7 +444,7 @@ export default function DoctorsPage() {
 
       const response = await API.doctor.updateDoctor(
         updatedDoctor,
-        authData?.access_token
+        authData?.access_token,
       );
 
       if (response && response !== false) {
@@ -453,10 +452,10 @@ export default function DoctorsPage() {
         toast.success(`Doctor ${status} successfully`);
         // Optimistically update local lists
         setAllDoctors((prev) =>
-          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d))
+          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d)),
         );
         setFilteredDoctors((prev) =>
-          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d))
+          prev.map((d) => (d._id === updatedDoctor._id ? updatedDoctor : d)),
         );
         // Update counts if we have them from backend
         setActiveDoctorsCount((prev) => {
@@ -469,8 +468,9 @@ export default function DoctorsPage() {
         });
       } else {
         toast.error(
-          `Failed to ${updatedDoctor.isActive ? "activate" : "deactivate"
-          } doctor`
+          `Failed to ${
+            updatedDoctor.isActive ? "activate" : "deactivate"
+          } doctor`,
         );
       }
     } catch (error) {
@@ -485,13 +485,13 @@ export default function DoctorsPage() {
         // Update existing doctor
         const response = await API.doctor.updateDoctor(
           data,
-          authData?.access_token
+          authData?.access_token,
         );
         console.log("Update doctor response:", response);
         console.log("Response type:", typeof response);
         console.log(
           "Response keys:",
-          response ? Object.keys(response) : "No response"
+          response ? Object.keys(response) : "No response",
         );
 
         // Check for success - response could be an object, array, or have success property
@@ -515,13 +515,13 @@ export default function DoctorsPage() {
         // Add new doctor
         const response = await API.doctor.addDoctor(
           data,
-          authData?.access_token
+          authData?.access_token,
         );
         console.log("Add doctor response:", response);
         console.log("Response type:", typeof response);
         console.log(
           "Response keys:",
-          response ? Object.keys(response) : "No response"
+          response ? Object.keys(response) : "No response",
         );
         console.log("Response === false:", response === false);
         console.log("Response truthy check:", !!response);
@@ -762,186 +762,65 @@ export default function DoctorsPage() {
                 className="border border-[#E2E2E2] cursor-pointer bg-white rounded-[10px] p-0 flex flex-col justify-between overflow-hidden shadow-none transition-shadow"
               >
                 <CardContent className="p-0">
-                  <div className="space-y-2 px-3  py-3 ">
-                    <div className="flex items-center justify-between">
-                      <Badge
-                        variant={doctor.isActive ? "success" : "secondary"}
-                        className={`${doctor.isActive
-                          ? "bg-[#ECFDF5] text-[#059669]"
-                          : "bg-gray-100 text-gray-500"
+                  <Link href={`/dashboard/doctors/${doctor._id}`}>
+                    <div className="space-y-2 px-3 py-3">
+                      <div className="flex items-center justify-between">
+                        <Badge
+                          variant={doctor.isActive ? "success" : "secondary"}
+                          className={`${
+                            doctor.isActive
+                              ? "bg-[#ECFDF5] text-[#059669]"
+                              : "bg-gray-100 text-gray-500"
                           } text-xs px-2 py-1 rounded-full border-none flex items-center gap-2 font-normal`}
-                      >
-                        <div
-                          className={`h-2 w-2 rounded-full ${doctor.isActive ? "bg-[#059669]" : "bg-gray-400"
-                            }`}
-                        ></div>
-                        {doctor.isActive ? "Available" : "Not Available"}
-                      </Badge>
-                      <div className="flex items-center ">
-                        <div className="text-[#4B4B4B] bg-[#F5F5F5] rounded-[3px] px-3 py-0.5 text-sm">
-                          {doctor.doctorId}
-                        </div>
-
-                        {/* DropdownMenu */}
-                        <div className=" ">
-                          <DropdownMenu
-                            key={`dropdown-${doctor._id}`}
-                            open={openDropdownId === doctor._id}
-                            onOpenChange={(open) => {
-                              setOpenDropdownId(open ? doctor._id : null);
-                            }}
-                          >
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  console.log(
-                                    "Dropdown trigger clicked for doctor:",
-                                    doctor.fullName
-                                  );
-                                }}
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log(
-                                    "View details clicked for:",
-                                    doctor.fullName
-                                  );
-                                  handleViewDetails(doctor);
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log(
-                                    "Edit doctor clicked for:",
-                                    doctor.fullName
-                                  );
-                                  handleEditDoctor(doctor);
-                                }}
-                                className="cursor-pointer"
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit Doctor
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log(
-                                    "Toggle status clicked for:",
-                                    doctor.fullName
-                                  );
-                                  handleToggleDoctorStatus(doctor);
-                                }}
-                                className={`cursor-pointer ${doctor.isActive
-                                  ? "text-orange-600 hover:text-orange-700"
-                                  : "text-green-600 hover:text-green-700"
-                                  }`}
-                              >
-                                {doctor.isActive ? (
-                                  <svg
-                                    className="h-4 w-4 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728"
-                                    />
-                                  </svg>
-                                ) : (
-                                  <svg
-                                    className="h-4 w-4 mr-2"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                )}
-                                {doctor.isActive ? "Deactivate" : "Activate"}{" "}
-                                Doctor
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log(
-                                    "Delete doctor clicked for:",
-                                    doctor.fullName
-                                  );
-                                  handleDeleteDoctor(doctor);
-                                }}
-                                className="cursor-pointer text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Doctor
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-start space-y-2">
-                      <div className="size-12 md:size-14 rounded-full bg-[#C3DDFF] flex items-center justify-center text-blue-600 overflow-hidden shrink-0">
-                        {doctor.profilePic ? (
-                          <Image
-                            width={100}
-                            height={100}
-                            className="w-full h-full object-top object-cover"
-                            src={doctor.profilePic || "/placeholder.svg"}
-                            alt={doctor.fullName}
-                          />
-                        ) : (
-                          <Image
-                            width={100}
-                            height={100}
-                            className="size-8 md:size-9 "
-                            src="/assets/images/doctor/avatar.svg"
-                            alt="avatar"
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <h3
-                          title={doctor.fullName}
-                          className="text-sm text-[#323232] truncate uppercase font-semibold"
                         >
-                          {doctor.fullName}
-                        </h3>
-                        <p className="text-xs text-[#7F7F7F]">
-                          {doctor.qualification}, {doctor.regNo}
-                        </p>
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              doctor.isActive ? "bg-[#059669]" : "bg-gray-400"
+                            }`}
+                          ></div>
+                          {doctor.isActive ? "Available" : "Not Available"}
+                        </Badge>
+                        <div className="flex items-center ">
+                          <div className="text-[#4B4B4B] bg-[#F5F5F5] rounded-[3px] px-3 py-0.5 text-sm">
+                            {doctor.doctorId}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-start space-y-2">
+                        <div className="size-12 md:size-14 rounded-full bg-[#C3DDFF] flex items-center justify-center text-blue-600 overflow-hidden shrink-0">
+                          {doctor.profilePic ? (
+                            <Image
+                              width={100}
+                              height={100}
+                              className="w-full h-full object-top object-cover"
+                              src={doctor.profilePic || "/placeholder.svg"}
+                              alt={doctor.fullName}
+                            />
+                          ) : (
+                            <Image
+                              width={100}
+                              height={100}
+                              className="size-8 md:size-9 "
+                              src="/assets/images/doctor/avatar.svg"
+                              alt="avatar"
+                            />
+                          )}
+                        </div>
+                        <div>
+                          <h3
+                            title={doctor.fullName}
+                            className="text-sm text-[#323232] truncate uppercase font-semibold"
+                          >
+                            {doctor.fullName}
+                          </h3>
+                          <p className="text-xs text-[#7F7F7F]">
+                            {doctor.qualification}, {doctor.regNo}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </CardContent>
               </Card>
             ))}
