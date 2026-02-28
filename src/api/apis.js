@@ -1,6 +1,6 @@
 // console.log(BASE_URL);
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5556";
 
 //**************** * AUTH ENDPOINTS ***************
 export const authEndpoints = {
@@ -123,15 +123,15 @@ export const PATIENTS_ENQUIRY_API = {
 // Dashboard Appointments APIs (Always Authenticated)
 export const APPOINTMENTS_API = {
   GET_ALL_APPOINTMENTS:
-    BASE_URL + "/v1/dashboard/patient_appointment/get_all_patients_data",
+    BASE_URL + "/v1/dashboard/appointments",
   ADD_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/patient_appointment/add_patients_data",
+    BASE_URL + "/v1/dashboard/appointments/add_patients_data",
   GET_APPOINTMENT_BY_ID:
-    BASE_URL + "/v1/dashboard/patient_appointment/get_patient_data",
+    BASE_URL + "/v1/dashboard/appointments/get_patient_data",
   UPDATE_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/patient_appointment/update_patients_data",
+    BASE_URL + "/v1/dashboard/appointments/update_patients_data",
   DELETE_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/patient_appointment/delete_patients_data",
+    BASE_URL + "/v1/dashboard/appointments/delete_patients_data",
 };
 
 // Dashboard Patients APIs (Always Authenticated)

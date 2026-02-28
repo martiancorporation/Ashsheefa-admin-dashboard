@@ -50,8 +50,11 @@ import {
 import API from "@/api";
 import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
+import { useRouter } from "next/navigation";
+
 
 export default function DoctorsPage() {
+  const router = useRouter();
   // Dynamic departments will be fetched from API
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
@@ -416,8 +419,10 @@ export default function DoctorsPage() {
 
   // Handle modal state changes
   const handleDetailsModalChange = (open) => {
-    setDetailsModalOpen(open);
-    if (!open) setDoctorForAction(null);
+    // setDetailsModalOpen(open);
+    // if (!open) setDoctorForAction(null);
+    setOpenDropdownId(null);
+    router.push(`/dashboard/doctors/${doctor._id}`);
   };
 
   const handleEditModalChange = (open) => {
@@ -464,8 +469,7 @@ export default function DoctorsPage() {
         });
       } else {
         toast.error(
-          `Failed to ${
-            updatedDoctor.isActive ? "activate" : "deactivate"
+          `Failed to ${updatedDoctor.isActive ? "activate" : "deactivate"
           } doctor`
         );
       }
@@ -477,7 +481,7 @@ export default function DoctorsPage() {
 
   const handleSaveDoctor = async (data) => {
     try {
-      if (data._id) {
+      if (editModalOpen) {
         // Update existing doctor
         const response = await API.doctor.updateDoctor(
           data,
@@ -762,16 +766,14 @@ export default function DoctorsPage() {
                     <div className="flex items-center justify-between">
                       <Badge
                         variant={doctor.isActive ? "success" : "secondary"}
-                        className={`${
-                          doctor.isActive
-                            ? "bg-[#ECFDF5] text-[#059669]"
-                            : "bg-gray-100 text-gray-500"
-                        } text-xs px-2 py-1 rounded-full border-none flex items-center gap-2 font-normal`}
+                        className={`${doctor.isActive
+                          ? "bg-[#ECFDF5] text-[#059669]"
+                          : "bg-gray-100 text-gray-500"
+                          } text-xs px-2 py-1 rounded-full border-none flex items-center gap-2 font-normal`}
                       >
                         <div
-                          className={`h-2 w-2 rounded-full ${
-                            doctor.isActive ? "bg-[#059669]" : "bg-gray-400"
-                          }`}
+                          className={`h-2 w-2 rounded-full ${doctor.isActive ? "bg-[#059669]" : "bg-gray-400"
+                            }`}
                         ></div>
                         {doctor.isActive ? "Available" : "Not Available"}
                       </Badge>
@@ -848,11 +850,10 @@ export default function DoctorsPage() {
                                   );
                                   handleToggleDoctorStatus(doctor);
                                 }}
-                                className={`cursor-pointer ${
-                                  doctor.isActive
-                                    ? "text-orange-600 hover:text-orange-700"
-                                    : "text-green-600 hover:text-green-700"
-                                }`}
+                                className={`cursor-pointer ${doctor.isActive
+                                  ? "text-orange-600 hover:text-orange-700"
+                                  : "text-green-600 hover:text-green-700"
+                                  }`}
                               >
                                 {doctor.isActive ? (
                                   <svg
