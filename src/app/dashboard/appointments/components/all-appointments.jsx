@@ -78,14 +78,7 @@ export default function AllAppointments({
             }
 
             if (appointmentsData) {
-                console.log('=== APPOINTMENTS DATA LOADED ===')
-                console.log('First 3 appointments data:', appointmentsData.slice(0, 3).map(a => ({
-                    name: a.patient_full_name,
-                    status: a.status,
-                    speciality: a.speciality
-                })))
-                console.log('=== END APPOINTMENTS DATA ===')
-
+                console.log(appointmentsData)
                 setAppointmentsList(appointmentsData)
                 setPagination(paginationData || {
                     current_page: 1,
@@ -195,32 +188,6 @@ export default function AllAppointments({
             appointment.speciality?.toLowerCase() === specialityExact.replace(/-/g, ' ')
             : true
 
-        // Debug logging for first appointment only to avoid spam
-        if ((selectedStatus || selectedSpeciality) && appointmentsList.indexOf(appointment) === 0) {
-            console.log('=== FILTER DEBUG ===')
-            console.log('Available appointments data:', appointmentsList.map(a => ({
-                name: a.patient_full_name,
-                status: a.status,
-                speciality: a.speciality
-            })))
-            console.log('Current filter values:', {
-                selectedStatus,
-                statusFilter,
-                selectedSpeciality,
-                specialityFilter
-            })
-            console.log('Current appointment being filtered:', {
-                name: appointment.patient_full_name,
-                status: appointment.status,
-                speciality: appointment.speciality
-            })
-            console.log('Matches:', {
-                matchesStatus,
-                matchesSpeciality
-            })
-            console.log('=== END DEBUG ===')
-        }
-
         const shouldInclude = matchesSearch && matchesStatus && matchesSpeciality
 
         return shouldInclude
@@ -307,7 +274,10 @@ export default function AllAppointments({
                             Appointment Date
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
-                            Status
+                            Appointment Status
+                        </TableHead>
+                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
+                            Payment Status
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] text-center font-normal py-3">
                             Actions
@@ -348,6 +318,15 @@ export default function AllAppointments({
                                 <div className="flex items-center justify-center gap-2">
                                     <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.status)}`}>
                                         {appointment.status || "N/A"}
+                                    </Badge>
+                                </div>
+                            </TableCell>
+                            <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                    <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.paymentStatus
+                                    )}`}>
+                                        {appointment.paymentStatus
+                                            || "N/A"}
                                     </Badge>
                                 </div>
                             </TableCell>
