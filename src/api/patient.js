@@ -57,15 +57,15 @@ const deletePatient = async (id) => {
   return handleResponse(response);
 };
 
-const getPatientDetails = async (id) => {
-  let response = null;
-  try {
-    response = await apiConnector("GET", `${GET_PATIENT_BY_ID}/${id}`);
-  } catch (error) {
-    response = error;
-  }
-  return handleResponse(response);
-};
+// const getPatientDetails = async (id) => {
+//   let response = null;
+//   try {
+//     response = await apiConnector("GET", `${GET_PATIENT_BY_ID}/${id}`);
+//   } catch (error) {
+//     response = error;
+//   }
+//   return handleResponse(response);
+// };
 
 const getPatientDataById = async (id) => {
   let response = null;
@@ -207,7 +207,6 @@ const patient = {
   addPatient,
   updatePatient,
   deletePatient,
-  getPatientDetails,
   getPatientDataById,
   uploadLabReport,
   getLabReports,

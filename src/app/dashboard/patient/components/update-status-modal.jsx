@@ -62,7 +62,6 @@ export function UpdateStatusModal({ open, onOpenChange, patient: patientData, on
         { value: "In Treatment", label: "In Treatment" },
         { value: "Discharged", label: "Discharged" },
         { value: "Under Observation", label: "Under Observation" },
-        { value: "Scheduled", label: "Scheduled" },
     ]
 
     return (

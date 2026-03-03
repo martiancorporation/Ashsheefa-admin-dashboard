@@ -33,7 +33,6 @@ export default function PatientPage() {
     { name: "In Treatment" },
     { name: "Discharged" },
     { name: "Under Observation" },
-    { name: "Scheduled" },
   ];
 
   // Fetch departments on component mount
