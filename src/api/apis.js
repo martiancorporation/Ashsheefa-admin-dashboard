@@ -93,7 +93,7 @@ export const INTERNATIONAL_PATIENT_API = {
     BASE_URL +
     "/v1/dashboard/international_patient/get_all_international_patients",
   ADD_INTERNATIONAL_PATIENT:
-    BASE_URL + "/v1/dashboard/international_patient/add_international_patient",
+    BASE_URL + "/v1/international-patients/add_international_patient",
   GET_INTERNATIONAL_PATIENT_BY_ID:
     BASE_URL +
     "/v1/dashboard/international_patient/get_international_patient_by_id",
@@ -151,6 +151,8 @@ export const PATIENTS_API = {
   DELETE_PRESCRIPTION: BASE_URL + "/v1/dashboard/patients/delete_prescription",
   GET_PATIENT_DOCUMENTS:
     BASE_URL + "/v1/dashboard/patients/get_patient_documents",
+  GET_PATIENT_APPOINTMENTS:
+    BASE_URL + "/v1/dashboard/appointments",
 };
 
 // Dashboard Departments APIs (Always Authenticated)

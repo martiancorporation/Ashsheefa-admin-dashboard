@@ -76,6 +76,7 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
         setLoading(true)
         try {
             const res = await appointments.updateAppointment(appointment._id, {
+                status: "Confirmed", 
                 paymentStatus: "paid",
                 amount: Number(amount),
                 paymentMode,
