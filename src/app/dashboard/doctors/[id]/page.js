@@ -17,6 +17,7 @@ import {
   Check,
   X,
   Save,
+  DollarSign,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ export default function DoctorDetailsPage() {
     bio: "",
     email: "",
     specialization: "",
+    fees: "",
     isActive: true,
   });
 
@@ -120,6 +122,7 @@ export default function DoctorDetailsPage() {
         email: doctor.email || "",
         specialization: doctor.specialization || "",
         isActive: doctor.isActive ?? true,
+        fees: doctor.fees || "",
       });
       setPhotoUrl(doctor.profilePic || "");
       setPhotoFile(null);
@@ -256,6 +259,7 @@ export default function DoctorDetailsPage() {
         isActive: formData.isActive,
         languages: selectedLanguages,
         availability: availability,
+        fees: formData.fees ? parseInt(formData.fees) : 0,
         profilePic: photoUrl, // Keep existing photo URL or updated one
       };
 
@@ -374,6 +378,7 @@ export default function DoctorDetailsPage() {
         email: data.email || "",
         specialization: data.specialization || "",
         isActive: data.isActive ?? true,
+        fees: data.fees || "",
       });
       setPhotoUrl(data.profilePic || "");
       setSelectedLanguages(data.languages || []);
@@ -640,7 +645,7 @@ export default function DoctorDetailsPage() {
                   <div className="text-xs text-gray-500">Available</div>
                   <div className="font-medium">
                     {Object.entries(schedule)
-                      .filter(([_, data]) => data.enabled)
+                      .filter(([_, data]) => data.active)
                       .map(
                         ([day]) =>
                           day.slice(0, 3).charAt(0).toUpperCase() +
@@ -700,6 +705,28 @@ export default function DoctorDetailsPage() {
                   ) : (
                     <div className="font-medium">
                       {selectedLanguages.join(", ") || "Not specified"}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <DollarSign size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Fees</div>
+                  {isEditMode ? (
+                    <Input
+                      name="fees"
+                      type="number"
+                      value={formData.fees}
+                      onChange={handleChange}
+                      className="font-medium h-8"
+                      placeholder="Fees"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      ₹ {formData.fees || 0}
                     </div>
                   )}
                 </div>
