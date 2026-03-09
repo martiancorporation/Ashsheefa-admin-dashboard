@@ -128,6 +128,7 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                 ...(patient && { status: formData.status.trim() }), // Only include status when editing
             }
 
+            console.log("Submitting international patient data:", submitData)
             let response
             if (patient) {
                 // Update existing patient
@@ -140,10 +141,10 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
             } else {
                 // Create new patient
                 response = await internationalPatient.addInternationalPatient(submitData)
-                if (response) {
+                if (response.data) {
                     toast.success("International patient added successfully")
                 } else {
-                    toast.error("Failed to add international patient")
+                    toast.error(response.error|| "Failed to add international patient. Please try again.");
                 }
             }
 
@@ -176,6 +177,26 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
         label: dept
     }))
 
+    console.log("Speciality options:", specialityOptions)
+    
+//   const specialityOptions = [
+//     { value: "Ortho", label: "Orthopedics" },
+//     { value: "Cardiology", label: "Cardiology" },
+//     { value: "Neurology", label: "Neurology" },
+//     { value: "Oncology", label: "Oncology" },
+//     { value: "General Surgery", label: "General Surgery" },
+//     { value: "Cardiac Science", label: "Cardiac Science" },
+//     { value: "Dermatology", label: "Dermatology" },
+//     { value: "Pediatrics", label: "Pediatrics" },
+//     { value: "Gynecology", label: "Gynecology" },
+//     { value: "ENT", label: "ENT" },
+//     { value: "Ophthalmology", label: "Ophthalmology" },
+//     { value: "Psychiatry", label: "Psychiatry" },
+//     { value: "Radiology", label: "Radiology" },
+//     { value: "Anesthesiology", label: "Anesthesiology" },
+//     { value: "Emergency Medicine", label: "Emergency Medicine" },
+//     { value: "Internal Medicine", label: "Internal Medicine" },
+//   ];
     const statusOptions = [
         { value: "Pending", label: "Pending" },
         { value: "In Progress", label: "In Progress" },

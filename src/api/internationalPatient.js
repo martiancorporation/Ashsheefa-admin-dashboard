@@ -27,14 +27,36 @@ const getAllInternationalPatients = async (params) => {
   return handleResponse(response);
 };
 
+// const addInternationalPatient = async (data) => {
+//   let response = null;
+//   try {
+//     response = await apiConnector("POST", ADD_INTERNATIONAL_PATIENT, data);
+//   } catch (error) {
+//     response = error;
+//   }
+//   return handleResponse(response);
+// };
+
 const addInternationalPatient = async (data) => {
   let response = null;
   try {
-    response = await apiConnector("POST", ADD_INTERNATIONAL_PATIENT, data);
+
+    response = await apiConnector(
+      "POST",
+      ADD_INTERNATIONAL_PATIENT,
+      data
+    );
+    if (response?.status === 201) {
+      console.log("API: International patient added successfully:", response.data);
+      return handleResponse(response);
+    } else {
+      console.warn("API: Unexpected response while adding international patient:", response);
+    }
+    return handleResponse(response);
   } catch (error) {
-    response = error;
+    console.error("API: Error adding international patient:", error);
+    throw error;
   }
-  return handleResponse(response);
 };
 
 const updateInternationalPatient = async (id, data) => {

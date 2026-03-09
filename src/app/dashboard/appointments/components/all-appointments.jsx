@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Ellipsis, Eye, Pencil, Trash2, Loader2, Calendar, Phone, MapPin, User } from "lucide-react"
+import { Ellipsis, Eye, Pencil, Trash2, Loader2, CheckCircle, Receipt, Phone, MapPin, User } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table"
 import { AppointmentDetailsModal } from "./appointment-details-modal"
 import { AddAppointmentModal } from "./add-appointment-modal"
+import { EditAppointmentModal } from "./edit-appointment-modal"
 import { DeleteConfirmationModal } from "./delete-confirmation-modal"
 import { UpdateStatusModal } from "./update-status-modal"
 import { toast } from "sonner"
@@ -78,14 +79,7 @@ export default function AllAppointments({
             }
 
             if (appointmentsData) {
-                console.log('=== APPOINTMENTS DATA LOADED ===')
-                console.log('First 3 appointments data:', appointmentsData.slice(0, 3).map(a => ({
-                    name: a.patient_full_name,
-                    status: a.status,
-                    speciality: a.speciality
-                })))
-                console.log('=== END APPOINTMENTS DATA ===')
-
+                console.log(appointmentsData)
                 setAppointmentsList(appointmentsData)
                 setPagination(paginationData || {
                     current_page: 1,
@@ -195,32 +189,6 @@ export default function AllAppointments({
             appointment.speciality?.toLowerCase() === specialityExact.replace(/-/g, ' ')
             : true
 
-        // Debug logging for first appointment only to avoid spam
-        if ((selectedStatus || selectedSpeciality) && appointmentsList.indexOf(appointment) === 0) {
-            console.log('=== FILTER DEBUG ===')
-            console.log('Available appointments data:', appointmentsList.map(a => ({
-                name: a.patient_full_name,
-                status: a.status,
-                speciality: a.speciality
-            })))
-            console.log('Current filter values:', {
-                selectedStatus,
-                statusFilter,
-                selectedSpeciality,
-                specialityFilter
-            })
-            console.log('Current appointment being filtered:', {
-                name: appointment.patient_full_name,
-                status: appointment.status,
-                speciality: appointment.speciality
-            })
-            console.log('Matches:', {
-                matchesStatus,
-                matchesSpeciality
-            })
-            console.log('=== END DEBUG ===')
-        }
-
         const shouldInclude = matchesSearch && matchesStatus && matchesSpeciality
 
         return shouldInclude
@@ -236,6 +204,10 @@ export default function AllAppointments({
                 return 'bg-red-100 text-red-800'
             case 'confirmed':
                 return 'bg-blue-100 text-blue-800'
+            case 'paid':
+                return 'bg-green-100 text-green-800'
+            case 'failed':
+                return 'bg-red-100 text-red-800'
             default:
                 return 'bg-gray-100 text-gray-800'
         }
@@ -249,6 +221,14 @@ export default function AllAppointments({
             month: 'short',
             day: 'numeric'
         })
+    }
+
+    const formatTime = (time) => {
+        if (!time) return ""
+        const [h, m] = time.split(":").map(Number)
+        const suffix = h >= 12 ? "PM" : "AM"
+        const hr = h % 12 || 12
+        return `${hr}:${String(m).padStart(2, "0")} ${suffix}`
     }
 
     if (loading) {
@@ -289,9 +269,6 @@ export default function AllAppointments({
                             Name
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Age
-                        </TableHead>
-                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
                             Gender
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -301,13 +278,19 @@ export default function AllAppointments({
                             Department
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Refer Doctor
+                            Doctor
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Appointment Date
+                            Appointment Date/Time
+                        </TableHead>
+                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+                            Fees
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
-                            Status
+                            Appointment Status
+                        </TableHead>
+                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
+                            Payment Status
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] text-center font-normal py-3">
                             Actions
@@ -324,30 +307,47 @@ export default function AllAppointments({
                                 {index + 1}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.patient_full_name || "N/A"}
+                                {appointment.patientId?.patient_full_name || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.age || "N/A"}
+                                {appointment.patientId?.gender || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.gender || "N/A"}
+                                {appointment.patientId?.contact_number || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.contact_number || "N/A"}
+                                {appointment.doctorId?.department || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.speciality || "N/A"}
+                                {appointment.doctorId?.fullName || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {appointment.refer_doctor || "N/A"}
+                                <div className="text-sm">
+                                    <div className="font-medium text-gray-800">{formatDate(appointment.appointment_date)}</div>
+                                    {appointment.slot_start_time && (
+                                        <div className="text-xs text-gray-500 mt-0.5">
+                                            {formatTime(appointment.slot_start_time)}
+                                            {appointment.slot_end_time && ` – ${formatTime(appointment.slot_end_time)}`}
+                                        </div>
+                                    )}
+                                </div>
                             </TableCell>
-                            <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                                {formatDate(appointment.appointment_date)}
+                            <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                                {appointment.amount || appointment.doctorId?.fees || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
                                 <div className="flex items-center justify-center gap-2">
                                     <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.status)}`}>
                                         {appointment.status || "N/A"}
+                                    </Badge>
+                                </div>
+                            </TableCell>
+                            <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                    <Badge className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.paymentStatus
+                                    )}`}>
+                                        {appointment.paymentStatus
+                                            || "N/A"}
                                     </Badge>
                                 </div>
                             </TableCell>
@@ -382,13 +382,23 @@ export default function AllAppointments({
                                                 Edit Appointment
                                             </DropdownMenuItem>
 
-                                            <DropdownMenuItem
-                                                className="flex items-center px-2 py-2 text-sm text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors"
-                                                onClick={() => handleUpdateStatus(appointment)}
-                                            >
-                                                <Calendar className="h-4 w-4 mr-2 text-blue-500" />
-                                                Update Status
-                                            </DropdownMenuItem>
+                                            {appointment.paymentStatus === "paid" ? (
+                                                <DropdownMenuItem
+                                                    className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
+                                                    onClick={() => handleUpdateStatus(appointment)}
+                                                >
+                                                    <Receipt className="h-4 w-4 mr-2 text-green-600" />
+                                                    Payment Details
+                                                </DropdownMenuItem>
+                                            ) : (
+                                                <DropdownMenuItem
+                                                    className="flex items-center px-2 py-2 text-sm text-green-600 hover:bg-green-50 cursor-pointer transition-colors"
+                                                    onClick={() => handleUpdateStatus(appointment)}
+                                                >
+                                                    <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                                                    Mark as Paid
+                                                </DropdownMenuItem>
+                                            )}
 
                                             <DropdownMenuItem
                                                 className="flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
@@ -416,13 +426,11 @@ export default function AllAppointments({
             )}
 
             {/* Edit Appointment Modal */}
-            <AddAppointmentModal
+            <EditAppointmentModal
                 open={editModalOpen}
                 onOpenChange={setEditModalOpen}
                 appointment={editingAppointment}
                 onSave={handleAppointmentUpdate}
-                departments={departments}
-                departmentsLoading={departmentsLoading}
             />
 
             {/* Delete Confirmation Modal */}

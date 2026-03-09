@@ -14,7 +14,7 @@ import {
   Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AddPatientModal } from "../components/add-patient-modal";
+import { EditPatientModal } from "../components/edit-patient-modal";
 import { DeleteConfirmationModal } from "../components/delete-confirmation-modal";
 import Image from "next/image";
 import {
@@ -49,7 +49,10 @@ export default function PatientDetailsPage({ params }) {
   const [activeTab, setActiveTab] = useState("lab");
   const [patientData, setPatientData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [documents, setDocuments] = useState([]);
+  // ── Separate state for each tab so they never bleed into each other ──
+  const [labReports, setLabReports] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -57,8 +60,12 @@ export default function PatientDetailsPage({ params }) {
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // ── Prescription: appointments list + which one is selected ──
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
-  // Fetch patient data
+  // Fetch patient data + initial lab reports
   useEffect(() => {
     const fetchPatientData = async () => {
       setLoading(true);
@@ -66,10 +73,10 @@ export default function PatientDetailsPage({ params }) {
         const response = await patient.getPatientDataById(params.id);
         if (response.data) {
           setPatientData(response.data);
-          // Fetch lab reports initially
+          // Only load lab reports on mount (prescription tab starts empty)
           const labReportsResponse = await patient.getLabReports(params.id);
           if (labReportsResponse.data) {
-            setDocuments(labReportsResponse.data);
+            setLabReports(labReportsResponse.data);
           }
         }
       } catch (error) {
@@ -122,63 +129,40 @@ export default function PatientDetailsPage({ params }) {
       toast.error("Please select a file");
       return;
     }
+    // For prescriptions, an appointment must be selected first
+    if (activeTab === "prescription" && !selectedAppointmentId) {
+      toast.error("Please select an appointment before uploading a prescription");
+      return;
+    }
 
     setUploading(true);
     try {
-      // Create FormData for file upload
       const formData = new FormData();
-      // Try the most common field name first
       formData.append("file", selectedFile);
-      formData.append("uploaded_by", "Admin"); // You can make this dynamic based on logged-in user
-
-      console.log("Upload data:", {
-        fileName: selectedFile.name,
-        fileType: selectedFile.type,
-        fileSize: selectedFile.size,
-        uploaded_by: "Admin",
-      });
-
-      console.log("FormData entries:");
-      for (let [key, value] of formData.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}:`, {
-            name: value.name,
-            type: value.type,
-            size: value.size,
-          });
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
+      formData.append("uploaded_by", "Admin");
 
       let response;
       if (activeTab === "lab") {
         response = await patient.uploadLabReport(params.id, formData);
       } else {
-        response = await patient.uploadPrescription(params.id, formData);
+        // Upload against the selected appointment ID
+        response = await patient.uploadPrescription(selectedAppointmentId, formData);
       }
 
       if (response) {
         toast.success(
-          `${
-            activeTab === "lab" ? "Lab report" : "Prescription"
-          } uploaded successfully`
+          `${activeTab === "lab" ? "Lab report" : "Prescription"} uploaded successfully`
         );
         setUploadModalOpen(false);
         setSelectedFile(null);
-        // Refresh documents based on type
+        // Refresh the correct list
         if (activeTab === "lab") {
           const labReportsResponse = await patient.getLabReports(params.id);
-          if (labReportsResponse.data) {
-            setDocuments(labReportsResponse.data);
-          }
+          if (labReportsResponse.data) setLabReports(labReportsResponse.data);
         } else {
-          const prescriptionsResponse = await patient.getPrescriptions(
-            params.id
-          );
-          if (prescriptionsResponse.data) {
-            setDocuments(prescriptionsResponse.data);
-          }
+          // Re-fetch prescriptions for the currently selected appointment
+          const prescriptionsResponse = await patient.getPrescriptions(selectedAppointmentId);
+          if (prescriptionsResponse.data) setPrescriptions(prescriptionsResponse.data);
         }
       } else {
         toast.error("Failed to upload document");
@@ -204,6 +188,31 @@ export default function PatientDetailsPage({ params }) {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const calculateAge = (dob) => {
+    if (!dob) return "Not specified";
+    const birth = new Date(dob);
+    if (isNaN(birth.getTime())) return "Not specified";
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const monthDiff = now.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+      age--;
+    }
+    return `${age} yrs`;
+  };
+
+  const buildAddress = (p) => {
+    const addr = p?.address || {};
+    const parts = [
+      addr.street || p?.street,
+      addr.city || p?.city,
+      addr.state || p?.state,
+      addr.pincode || p?.pincode,
+      addr.country || p?.country,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : null;
   };
 
   // Helper function to check if file is an image
@@ -309,21 +318,56 @@ export default function PatientDetailsPage({ params }) {
 
   const handleTabChange = async (tab) => {
     setActiveTab(tab);
-    try {
-      if (tab === "lab") {
+    if (tab === "lab") {
+      // Refresh lab reports
+      try {
         const labReportsResponse = await patient.getLabReports(params.id);
-        if (labReportsResponse.data) {
-          setDocuments(labReportsResponse.data);
+        if (labReportsResponse.data) setLabReports(labReportsResponse.data);
+      } catch (error) {
+        console.error("Error fetching lab reports:", error);
+        toast.error("Failed to fetch lab reports");
+      }
+    } else {
+      // Prescription tab: reset selection & prescriptions, then load appointments
+      setSelectedAppointmentId(null);
+      setPrescriptions([]);
+      setAppointmentsLoading(true);
+      try {
+        const appointmentsResponse = await patient.getPatientAppointments(params.id);
+        if (appointmentsResponse.data) {
+          setAppointments(
+            Array.isArray(appointmentsResponse.data) ? appointmentsResponse.data : []
+          );
+        } else {
+          setAppointments([]);
         }
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        setAppointments([]);
+      } finally {
+        setAppointmentsLoading(false);
+      }
+    }
+  };
+
+  // Called when user clicks an appointment in the right panel
+  const handleSelectAppointment = async (appointmentId) => {
+    setSelectedAppointmentId(appointmentId);
+    setPrescriptions([]);
+    setPrescriptionsLoading(true);
+    try {
+      const response = await patient.getPrescriptions(appointmentId);
+      if (response.data) {
+        setPrescriptions(Array.isArray(response.data) ? response.data : []);
       } else {
-        const prescriptionsResponse = await patient.getPrescriptions(params.id);
-        if (prescriptionsResponse.data) {
-          setDocuments(prescriptionsResponse.data);
-        }
+        setPrescriptions([]);
       }
     } catch (error) {
-      console.error("Error fetching documents:", error);
-      toast.error("Failed to fetch documents");
+      console.error("Error fetching prescriptions:", error);
+      toast.error("Failed to fetch prescriptions");
+      setPrescriptions([]);
+    } finally {
+      setPrescriptionsLoading(false);
     }
   };
 
@@ -350,33 +394,25 @@ export default function PatientDetailsPage({ params }) {
         );
       } else {
         response = await patient.deletePrescription(
-          params.id,
+          selectedAppointmentId,
           selectedDocument._id
         );
       }
 
       if (response) {
         toast.success(
-          `${
-            activeTab === "lab" ? "Lab report" : "Prescription"
-          } deleted successfully`
+          `${activeTab === "lab" ? "Lab report" : "Prescription"} deleted successfully`
         );
         setDeleteModalOpen(false);
         setSelectedDocument(null);
 
-        // Refresh documents
+        // Refresh the correct list
         if (activeTab === "lab") {
           const labReportsResponse = await patient.getLabReports(params.id);
-          if (labReportsResponse.data) {
-            setDocuments(labReportsResponse.data);
-          }
-        } else {
-          const prescriptionsResponse = await patient.getPrescriptions(
-            params.id
-          );
-          if (prescriptionsResponse.data) {
-            setDocuments(prescriptionsResponse.data);
-          }
+          if (labReportsResponse.data) setLabReports(labReportsResponse.data);
+        } else if (selectedAppointmentId) {
+          const prescriptionsResponse = await patient.getPrescriptions(selectedAppointmentId);
+          if (prescriptionsResponse.data) setPrescriptions(prescriptionsResponse.data);
         }
       } else {
         toast.error("Failed to delete document");
@@ -483,40 +519,30 @@ export default function PatientDetailsPage({ params }) {
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#7F7F7F]">Age</p>
+                  <p className="text-sm text-[#7F7F7F]">Date of Birth</p>
                   <p className="font-medium text-[#4B4B4B]">
-                    {patientData.age}
+                    {patientData.date_of_birth
+                      ? `${formatDate(patientData.date_of_birth)} (${calculateAge(patientData.date_of_birth)})`
+                      : "Not specified"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-[#7F7F7F]">Gender</p>
                   <p className="font-medium text-[#4B4B4B]">
-                    {patientData.gender}
+                    {patientData.gender || "Not specified"}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-[#7F7F7F]">Appointment Date</p>
+                  <p className="text-sm text-[#7F7F7F]">Contact</p>
                   <p className="font-medium text-[#4B4B4B]">
-                    {formatDate(patientData.appointment_date)}
+                    {patientData.contact_number || "Not specified"}
                   </p>
                 </div>
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Department</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.speciality}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Referral Doctor</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.refer_doctor || "Not specified"}
-                  </p>
-                </div>
-                {patientData.country && (
-                  <div>
-                    <p className="text-sm text-[#7F7F7F]">Country</p>
-                    <p className="font-medium text-[#4B4B4B]">
-                      {patientData.country}
+                {buildAddress(patientData) && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-[#7F7F7F]">Address</p>
+                    <p className="font-medium text-[#4B4B4B] text-sm">
+                      {buildAddress(patientData)}
                     </p>
                   </div>
                 )}
@@ -544,22 +570,20 @@ export default function PatientDetailsPage({ params }) {
               <div className="flex gap-2 bg-[#F7F7F7] px-2 py-1 border border-[#DDDDDD] rounded-[10px]">
                 <Button
                   variant={activeTab === "lab" ? "default" : "ghost"}
-                  className={`rounded-md text-sm px-4 py-1 ${
-                    activeTab === "lab"
-                      ? "bg-[#005CD4] text-white"
-                      : "text-[#414141]"
-                  }`}
+                  className={`rounded-md text-sm px-4 py-1 ${activeTab === "lab"
+                    ? "bg-[#005CD4] text-white"
+                    : "text-[#414141]"
+                    }`}
                   onClick={() => handleTabChange("lab")}
                 >
                   Lab report
                 </Button>
                 <Button
                   variant={activeTab === "prescription" ? "default" : "ghost"}
-                  className={`rounded-md text-sm px-4 py-2 ${
-                    activeTab === "prescription"
-                      ? "bg-[#0B5CF9] text-white"
-                      : "text-[#4B4B4B]"
-                  }`}
+                  className={`rounded-md text-sm px-4 py-2 ${activeTab === "prescription"
+                    ? "bg-[#0B5CF9] text-white"
+                    : "text-[#4B4B4B]"
+                    }`}
                   onClick={() => handleTabChange("prescription")}
                 >
                   Prescription
@@ -567,72 +591,30 @@ export default function PatientDetailsPage({ params }) {
               </div>
             </div>
 
-            {/* Documents Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Upload Box */}
-              <Card
-                className="border border-dashed border-[#BFBFBF] min-h-[250px] flex items-center justify-center text-center shadow-none cursor-pointer hover:border-[#005CD4] transition-colors"
-                onClick={() => setUploadModalOpen(true)}
-              >
-                <CardContent className="flex flex-col items-center justify-center p-6">
-                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                  <p className="font-medium text-[#4B4B4B] mb-1">Upload More</p>
-                  <p className="text-sm text-[#7F7F7F]">
-                    File type: jpg, png, Pdf (Max 4 MB)
-                  </p>
-                </CardContent>
-              </Card>
-              {/* Existing Documents */}
-              {documents.map((doc) => {
-                // Debug logging
-                console.log("Document:", {
-                  fileName: doc.file_name,
-                  fileUrl: doc.file_url || doc.fileUrl,
-                  isPdf: isPdfFile(doc.file_name, doc.file_url || doc.fileUrl),
-                  isImage: isImageFile(
-                    doc.file_name,
-                    doc.file_url || doc.fileUrl
-                  ),
-                  extension: getFileExtension(
-                    doc.file_name,
-                    doc.file_url || doc.fileUrl
-                  ),
-                });
-
-                return (
+            {activeTab === "lab" ? (
+              /* ── LAB REPORTS GRID (unchanged) ── */
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Existing Lab Report Documents */}
+                {labReports.map((doc) => (
                   <TooltipProvider key={doc._id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer">
                           <CardContent className="p-0">
                             <div className="mb-4">
-                              {/* Show appropriate preview based on file type */}
-                              {isPdfFile(
-                                doc.file_name,
-                                doc.file_url || doc.fileUrl
-                              ) ? (
+                              {isPdfFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
                                 <div className="w-full h-[150px] bg-white rounded-md flex items-center justify-center border border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-red-500 text-4xl mb-2">
-                                      📄
-                                    </div>
-                                    <p className="text-xs text-gray-500">
-                                      PDF Document
-                                    </p>
+                                    <div className="text-red-500 text-4xl mb-2">📄</div>
+                                    <p className="text-xs text-gray-500">PDF Document</p>
                                   </div>
                                 </div>
-                              ) : isImageFile(
-                                  doc.file_name,
-                                  doc.file_url || doc.fileUrl
-                                ) ? (
+                              ) : isImageFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
                                 <div className="w-full h-[150px] bg-white rounded-md border border-gray-200 overflow-hidden relative">
                                   <Image
                                     src={
                                       doc.file_url || doc.fileUrl
-                                        ? `${
-                                            process.env.NEXT_PUBLIC_API_URL ||
-                                            "http://localhost:3000"
-                                          }${doc.file_url || doc.fileUrl}`
+                                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}${doc.file_url || doc.fileUrl}`
                                         : "/placeholder.svg?height=150&width=300"
                                     }
                                     alt={doc.file_name || "Medical document"}
@@ -641,104 +623,58 @@ export default function PatientDetailsPage({ params }) {
                                     className="w-full h-full object-cover rounded-md"
                                     onError={(e) => {
                                       e.target.style.display = "none";
-                                      e.target.nextSibling.style.display =
-                                        "flex";
+                                      e.target.nextSibling.style.display = "flex";
                                     }}
                                   />
                                   <div className="w-full h-full bg-gray-100 rounded-md flex items-center justify-center hidden">
                                     <div className="text-center">
-                                      <div className="text-gray-400 text-2xl mb-1">
-                                        🖼️
-                                      </div>
-                                      <p className="text-xs text-gray-500">
-                                        Image
-                                      </p>
+                                      <div className="text-gray-400 text-2xl mb-1">🖼️</div>
+                                      <p className="text-xs text-gray-500">Image</p>
                                     </div>
                                   </div>
-                                  {/* Image overlay with file type indicator */}
                                   <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                                    {getFileExtension(
-                                      doc.file_name,
-                                      doc.file_url || doc.fileUrl
-                                    )?.toUpperCase()}
+                                    {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase()}
                                   </div>
                                 </div>
                               ) : (
                                 <div className="w-full h-[150px] bg-white rounded-md flex items-center justify-center border border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-gray-500 text-4xl mb-2">
-                                      📄
-                                    </div>
-                                    <p className="text-xs text-gray-500">
-                                      Document
-                                    </p>
+                                    <div className="text-gray-500 text-4xl mb-2">📄</div>
+                                    <p className="text-xs text-gray-500">Document</p>
                                   </div>
                                 </div>
                               )}
                             </div>
                             <div className="border-b-[1.4px] border-[#CCCCCC] pb-2">
                               <div className="flex items-center justify-between mb-1">
-                                <p className="text-xs text-[#989898]">
-                                  {formatDate(
-                                    doc.uploaded_at || doc.uploadDate
-                                  )}
-                                </p>
-                                <span
-                                  className={`px-2 py-1 text-xs rounded-full ${
-                                    isImageFile(
-                                      doc.file_name,
-                                      doc.file_url || doc.fileUrl
-                                    )
-                                      ? "bg-blue-100 text-blue-700"
-                                      : isPdfFile(
-                                          doc.file_name,
-                                          doc.file_url || doc.fileUrl
-                                        )
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-gray-100 text-gray-700"
-                                  }`}
-                                >
-                                  {getFileExtension(
-                                    doc.file_name,
-                                    doc.file_url || doc.fileUrl
-                                  )?.toUpperCase() || "FILE"}
+                                <p className="text-xs text-[#989898]">{formatDate(doc.uploaded_at || doc.uploadDate)}</p>
+                                <span className={`px-2 py-1 text-xs rounded-full ${isImageFile(doc.file_name, doc.file_url || doc.fileUrl)
+                                  ? "bg-blue-100 text-blue-700"
+                                  : isPdfFile(doc.file_name, doc.file_url || doc.fileUrl)
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-700"
+                                  }`}>
+                                  {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase() || "FILE"}
                                 </span>
                               </div>
-                              <h3 className="font-medium text-[#323232]">
-                                {doc.file_name ||
-                                  doc.title ||
-                                  "Medical Document"}
-                              </h3>
-                              <p className="text-[13px] text-[#7F7F7F]">
-                                By .{" "}
-                                {doc.uploaded_by ||
-                                  doc.hospital ||
-                                  "Ashsheefa Hospital"}
-                              </p>
-                              <p className="text-sm text-[#7F7F7F]">
-                                {activeTab === "lab"
-                                  ? "Lab Report"
-                                  : "Prescription"}
-                              </p>
+                              <h3 className="font-medium text-[#323232]">{doc.file_name || doc.title || "Medical Document"}</h3>
+                              <p className="text-[13px] text-[#7F7F7F]">By . {doc.uploaded_by || doc.hospital || "Ashsheefa Hospital"}</p>
+                              <p className="text-sm text-[#7F7F7F]">Lab Report</p>
                             </div>
                             <div className="flex items-center justify-center gap-2">
                               <Button
-                                variant="outline"
-                                size="sm"
-                                className="flex-1  border-none bg-transparent shadow-none text-[#4B4B4B]"
+                                variant="outline" size="sm"
+                                className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B]"
                                 onClick={() => handleViewDocument(doc)}
                               >
-                                <Eye className="h-4 w-4 " />
-                                View Details
+                                <Eye className="h-4 w-4" /> View Details
                               </Button>
                               <Button
-                                variant="outline"
-                                size="sm"
+                                variant="outline" size="sm"
                                 className="flex-1 border-none bg-transparent shadow-none text-[#FF0037]"
                                 onClick={() => handleDeleteDocument(doc)}
                               >
-                                <Trash2 className="h-4 w-4" />
-                                Delete Document
+                                <Trash2 className="h-4 w-4" /> Delete Document
                               </Button>
                             </div>
                           </CardContent>
@@ -747,31 +683,257 @@ export default function PatientDetailsPage({ params }) {
                       <TooltipContent>
                         <div className="text-sm">
                           <p className="font-medium">{doc.file_name}</p>
-                          <p className="text-xs text-gray-500">
-                            Type:{" "}
-                            {getFileExtension(
-                              doc.file_name,
-                              doc.file_url || doc.fileUrl
-                            )?.toUpperCase() || "FILE"}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            Uploaded:{" "}
-                            {formatDate(doc.uploaded_at || doc.uploadDate)}
-                          </p>
+                          <p className="text-xs text-gray-500">Type: {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase() || "FILE"}</p>
+                          <p className="text-xs text-gray-500">Uploaded: {formatDate(doc.uploaded_at || doc.uploadDate)}</p>
                         </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                );
-              })}
-            </div>
+                ))}
+                {/* Upload Box */}
+                <Card
+                  className="border border-dashed border-[#BFBFBF] min-h-[250px] flex items-center justify-center text-center shadow-none cursor-pointer hover:border-[#005CD4] transition-colors"
+                  onClick={() => setUploadModalOpen(true)}
+                >
+                  <CardContent className="flex flex-col items-center justify-center p-6">
+                    <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                    <p className="font-medium text-[#4B4B4B] mb-1">{labReports?.length === 0 ? "Upload" : "Upload More"}</p>
+                    <p className="text-sm text-[#7F7F7F]">
+                      File type: jpg, png, Pdf (Max 4 MB)
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              /*PRESCRIPTION TAB */
+              <div className="flex gap-4">
+                {/* Left: Prescription documents grid */}
+                <div className="flex-1">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Existing Prescription Documents */}
+                    {prescriptionsLoading ? (
+                      <div className="col-span-2 flex flex-col items-center justify-center py-10 gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#0B5CF9]" />
+                        <p className="text-xs text-[#7F7F7F]">Loading prescriptions...</p>
+                      </div>
+                    ) : !selectedAppointmentId ? (
+                      <div className="col-span-2 flex flex-col items-center justify-center py-10">
+                        <p className="text-sm text-[#BFBFBF] text-center">Select an appointment from the right panel to view its prescriptions.</p>
+                      </div>
+                    ) : prescriptions.length === 0 ? (
+                      <div className="col-span-2 flex flex-col items-center justify-center py-10">
+                        <p className="text-sm text-[#BFBFBF] text-center">No prescriptions found for this appointment.</p>
+                      </div>
+                    ) : prescriptions.map((doc) => (
+                      <TooltipProvider key={doc._id}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer">
+                              <CardContent className="p-0">
+                                <div className="mb-4">
+                                  {isPdfFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
+                                    <div className="w-full h-[130px] bg-white rounded-md flex items-center justify-center border border-gray-200">
+                                      <div className="text-center">
+                                        <div className="text-red-500 text-4xl mb-2">📄</div>
+                                        <p className="text-xs text-gray-500">PDF Document</p>
+                                      </div>
+                                    </div>
+                                  ) : isImageFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
+                                    <div className="w-full h-[130px] bg-white rounded-md border border-gray-200 overflow-hidden relative">
+                                      <Image
+                                        src={
+                                          doc.file_url || doc.fileUrl
+                                            ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}${doc.file_url || doc.fileUrl}`
+                                            : "/placeholder.svg?height=130&width=300"
+                                        }
+                                        alt={doc.file_name || "Medical document"}
+                                        width={300}
+                                        height={130}
+                                        className="w-full h-full object-cover rounded-md"
+                                        onError={(e) => {
+                                          e.target.style.display = "none";
+                                          e.target.nextSibling.style.display = "flex";
+                                        }}
+                                      />
+                                      <div className="w-full h-full bg-gray-100 rounded-md flex items-center justify-center hidden">
+                                        <div className="text-center">
+                                          <div className="text-gray-400 text-2xl mb-1">🖼️</div>
+                                          <p className="text-xs text-gray-500">Image</p>
+                                        </div>
+                                      </div>
+                                      <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                                        {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase()}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="w-full h-[130px] bg-white rounded-md flex items-center justify-center border border-gray-200">
+                                      <div className="text-center">
+                                        <div className="text-gray-500 text-4xl mb-2">📄</div>
+                                        <p className="text-xs text-gray-500">Document</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="border-b-[1.4px] border-[#CCCCCC] pb-2">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <p className="text-xs text-[#989898]">{formatDate(doc.uploaded_at || doc.uploadDate)}</p>
+                                    <span className={`px-2 py-1 text-xs rounded-full ${isImageFile(doc.file_name, doc.file_url || doc.fileUrl)
+                                      ? "bg-blue-100 text-blue-700"
+                                      : isPdfFile(doc.file_name, doc.file_url || doc.fileUrl)
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-gray-100 text-gray-700"
+                                      }`}>
+                                      {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase() || "FILE"}
+                                    </span>
+                                  </div>
+                                  <h3 className="font-medium text-[#323232]">{doc.file_name || doc.title || "Medical Document"}</h3>
+                                  <p className="text-[13px] text-[#7F7F7F]">By . {doc.uploaded_by || doc.hospital || "Ashsheefa Hospital"}</p>
+                                  <p className="text-sm text-[#7F7F7F]">Prescription</p>
+                                </div>
+                                <div className="flex items-center justify-center gap-2">
+                                  <Button
+                                    variant="outline" size="sm"
+                                    className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B]"
+                                    onClick={() => handleViewDocument(doc)}
+                                  >
+                                    <Eye className="h-4 w-4" /> View Details
+                                  </Button>
+                                  <Button
+                                    variant="outline" size="sm"
+                                    className="flex-1 border-none bg-transparent shadow-none text-[#FF0037]"
+                                    onClick={() => handleDeleteDocument(doc)}
+                                  >
+                                    <Trash2 className="h-4 w-4" /> Delete Document
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="text-sm">
+                              <p className="font-medium">{doc.file_name}</p>
+                              <p className="text-xs text-gray-500">Type: {getFileExtension(doc.file_name, doc.file_url || doc.fileUrl)?.toUpperCase() || "FILE"}</p>
+                              <p className="text-xs text-gray-500">Uploaded: {formatDate(doc.uploaded_at || doc.uploadDate)}</p>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                  {/* Upload Box */}
+                  <Card
+                    className="border border-dashed border-[#BFBFBF] min-h-[320px] flex items-center justify-center text-center shadow-none cursor-pointer hover:border-[#0B5CF9] transition-colors"
+                    onClick={() => setUploadModalOpen(true)}
+                  >
+                    <CardContent className="flex flex-col items-center justify-center p-6">
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="font-medium text-[#4B4B4B] mb-1">{prescriptions?.length === 0 ? "Upload" : "Upload More"}</p>
+                      <p className="text-sm text-[#7F7F7F]">File type: jpg, png, Pdf (Max 4 MB)</p>
+                    </CardContent>
+                  </Card>
+                  </div>
+                </div>
+
+                {/* Right: Appointment Dates Panel */}
+                <div className="w-auto shrink-0">
+                  <Card className="rounded-[12px] border-[#E2E2E2] shadow-none">
+                    <CardContent className="px-4 ">
+                      <h3 className="text-sm font-semibold text-[#323232] mb-1">Appointment Dates</h3>
+                      <p className="text-[11px] text-[#7F7F7F] mb-3">Click an appointment to load its prescriptions.</p>
+                      {appointmentsLoading ? (
+                        <div className="flex flex-col items-center justify-center py-8 gap-2">
+                          <Loader2 className="h-5 w-5 animate-spin text-[#0B5CF9]" />
+                          <p className="text-xs text-[#7F7F7F]">Loading appointments...</p>
+                        </div>
+                      ) : appointments.filter(a => (a.status || a.appointment_status) === "Confirmed").length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8">
+                          <p className="text-sm text-[#BFBFBF] text-center">No confirmed appointments found for this patient.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                          {appointments
+                            .filter(appt => (appt.status || appt.appointment_status) === "Confirmed")
+                            .map((appt, idx) => {
+                              const apptDate = appt.appointment_date || appt.date || appt.appointmentDate;
+                              const isSelected = selectedAppointmentId === appt._id;
+
+                              // ── Doctor name ──────────────────────────────
+                              const doctorName =
+                                appt.doctorId?.fullName ||
+                                appt.doctorId?.name ||
+                                appt.refer_doctor ||
+                                null;
+
+                              // ── Time formatting (24h → 12h AM/PM) ───────
+                              const fmt12h = (t) => {
+                                if (!t) return null;
+                                const [hStr, mStr] = t.split(":");
+                                let h = parseInt(hStr, 10);
+                                const m = mStr || "00";
+                                const meridiem = h >= 12 ? "PM" : "AM";
+                                if (h === 0) h = 12;
+                                else if (h > 12) h -= 12;
+                                return `${h}:${m} ${meridiem}`;
+                              };
+                              const startFmt = fmt12h(appt.slot_start_time);
+                              const endFmt = fmt12h(appt.slot_end_time);
+                              const timeDisplay = startFmt
+                                ? endFmt
+                                  ? `${startFmt} – ${endFmt}`
+                                  : startFmt
+                                : null;
+
+                              return (
+                                <div
+                                  key={appt._id || idx}
+                                  onClick={() => handleSelectAppointment(appt._id)}
+                                  className={`flex items-start gap-3 p-2.5 rounded-[8px] border cursor-pointer transition-all ${isSelected
+                                    ? "bg-[#EEF4FF] border-[#0B5CF9] shadow-sm"
+                                    : "bg-[#F7F9FF] border-[#E8EEFF] hover:border-[#0B5CF9]"
+                                    }`}
+                                >
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${isSelected ? "bg-[#0B5CF9]" : "bg-[#0B5CF9]/10"
+                                    }`}>
+                                    <span className={`text-xs font-bold ${isSelected ? "text-white" : "text-[#0B5CF9]"
+                                      }`}>{idx + 1}</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    {/* Date */}
+                                    <p className="text-xs font-semibold text-[#323232]">
+                                      {apptDate
+                                        ? new Date(apptDate).toLocaleDateString("en-GB", {
+                                          day: "2-digit",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                        : "Date not set"}
+                                    </p>
+                                    {/* Time */}
+                                    {timeDisplay && (
+                                      <p className="text-[11px] text-[#7F7F7F] mt-0.5">{timeDisplay}</p>
+                                    )}
+                                    {/* Doctor name */}
+                                    {doctorName && (
+                                      <p className="text-[11px] text-[#0B5CF9] mt-0.5 truncate font-medium">
+                                        Dr. {doctorName}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Edit Patient Modal */}
       {isEditModalOpen && (
-        <AddPatientModal
+        <EditPatientModal
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           patient={patientData}
@@ -880,20 +1042,19 @@ export default function PatientDetailsPage({ params }) {
                   {selectedDocument?.file_name || "Document"}
                 </DialogTitle>
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    isImageFile(
+                  className={`px-2 py-1 text-xs rounded-full ${isImageFile(
+                    selectedDocument?.file_name,
+                    selectedDocument?.file_url || selectedDocument?.fileUrl
+                  )
+                    ? "bg-blue-100 text-blue-700"
+                    : isPdfFile(
                       selectedDocument?.file_name,
-                      selectedDocument?.file_url || selectedDocument?.fileUrl
+                      selectedDocument?.file_url ||
+                      selectedDocument?.fileUrl
                     )
-                      ? "bg-blue-100 text-blue-700"
-                      : isPdfFile(
-                          selectedDocument?.file_name,
-                          selectedDocument?.file_url ||
-                            selectedDocument?.fileUrl
-                        )
                       ? "bg-red-100 text-red-700"
                       : "bg-gray-100 text-gray-700"
-                  }`}
+                    }`}
                 >
                   {getFileExtension(
                     selectedDocument?.file_name,
@@ -959,9 +1120,8 @@ export default function PatientDetailsPage({ params }) {
                     const baseURL =
                       process.env.NEXT_PUBLIC_API_URL ||
                       "http://localhost:3000";
-                    const fullUrl = `${baseURL}${
-                      selectedDocument?.file_url || selectedDocument?.fileUrl
-                    }`;
+                    const fullUrl = `${selectedDocument?.file_url || selectedDocument?.fileUrl
+                      }`;
                     window.open(fullUrl, "_blank");
                   }}
                 >
@@ -985,20 +1145,18 @@ export default function PatientDetailsPage({ params }) {
                   </div>
                 </div>
               ) : isImageFile(
-                  selectedDocument?.file_name,
-                  selectedDocument?.file_url || selectedDocument?.fileUrl
-                ) ? (
+                selectedDocument?.file_name,
+                selectedDocument?.file_url || selectedDocument?.fileUrl
+              ) ? (
                 <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
                   <Image
                     src={
                       selectedDocument?.file_url || selectedDocument?.fileUrl
-                        ? `${
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            "http://localhost:3000"
-                          }${
-                            selectedDocument?.file_url ||
-                            selectedDocument?.fileUrl
-                          }`
+                        ? `${process.env.NEXT_PUBLIC_API_URL ||
+                        "http://localhost:3000"
+                        }${selectedDocument?.file_url ||
+                        selectedDocument?.fileUrl
+                        }`
                         : "/placeholder.svg?height=400&width=600"
                     }
                     alt={selectedDocument?.file_name || "Document preview"}
@@ -1010,12 +1168,10 @@ export default function PatientDetailsPage({ params }) {
                       e.target.nextSibling.style.display = "flex";
                     }}
                     onClick={() => {
-                      const fullUrl = `${
-                        process.env.NEXT_PUBLIC_API_URL ||
+                      const fullUrl = `${process.env.NEXT_PUBLIC_API_URL ||
                         "http://localhost:3000"
-                      }${
-                        selectedDocument?.file_url || selectedDocument?.fileUrl
-                      }`;
+                        }${selectedDocument?.file_url || selectedDocument?.fileUrl
+                        }`;
                       window.open(fullUrl, "_blank");
                     }}
                   />

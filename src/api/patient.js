@@ -15,6 +15,7 @@ const {
   GET_PRESCRIPTIONS,
   DELETE_PRESCRIPTION,
   GET_PATIENT_DOCUMENTS,
+  GET_PATIENT_APPOINTMENTS,
 } = PATIENTS_API;
 
 const getAllPatients = async (params) => {
@@ -57,15 +58,6 @@ const deletePatient = async (id) => {
   return handleResponse(response);
 };
 
-const getPatientDetails = async (id) => {
-  let response = null;
-  try {
-    response = await apiConnector("GET", `${GET_PATIENT_BY_ID}/${id}`);
-  } catch (error) {
-    response = error;
-  }
-  return handleResponse(response);
-};
 
 const getPatientDataById = async (id) => {
   let response = null;
@@ -176,12 +168,12 @@ const deleteLabReport = async (patientId, reportId) => {
   return handleResponse(response);
 };
 
-const deletePrescription = async (patientId, prescriptionId) => {
+const deletePrescription = async (appointmentId, prescriptionId) => {
   let response = null;
   try {
     response = await apiConnector(
       "DELETE",
-      `${DELETE_PRESCRIPTION}/${patientId}/${prescriptionId}`
+      `${DELETE_PRESCRIPTION}/${appointmentId}/${prescriptionId}`
     );
   } catch (error) {
     response = error;
@@ -202,12 +194,28 @@ const getPatientDocuments = async (patientId) => {
   return handleResponse(response);
 };
 
+const getPatientAppointments = async (patientId, params = {}) => {
+  let response = null;
+
+  try {
+    response = await apiConnector(
+      "GET",
+      GET_PATIENT_APPOINTMENTS,
+      null,
+      null,
+      { ...params, patientId }
+    );
+  } catch (error) {
+    response = error;
+  }
+  return handleResponse(response);
+};
+
 const patient = {
   getAllPatients,
   addPatient,
   updatePatient,
   deletePatient,
-  getPatientDetails,
   getPatientDataById,
   uploadLabReport,
   getLabReports,
@@ -216,6 +224,7 @@ const patient = {
   getPrescriptions,
   deletePrescription,
   getPatientDocuments,
+  getPatientAppointments,
 };
 
 export default patient;

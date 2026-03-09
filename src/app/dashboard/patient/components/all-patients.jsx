@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { AddPatientModal } from "./add-patient-modal"
+import { EditPatientModal } from "./edit-patient-modal"
 import { DeleteConfirmationModal } from "./delete-confirmation-modal"
 import { UpdateStatusModal } from "./update-status-modal"
 import { toast } from "sonner"
@@ -238,8 +238,6 @@ export default function AllPatients({
                 return 'bg-green-100 text-green-800'
             case 'under observation':
                 return 'bg-yellow-100 text-yellow-800'
-            case 'scheduled':
-                return 'bg-purple-100 text-purple-800'
             default:
                 return 'bg-gray-100 text-gray-800'
         }
@@ -296,19 +294,13 @@ export default function AllPatients({
                             Name
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Age
+                            Date of Birth
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
                             Gender
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
                             Contact
-                        </TableHead>
-                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Department
-                        </TableHead>
-                        <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-                            Appointment Date
                         </TableHead>
                         <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 text-center">
                             Status
@@ -337,19 +329,13 @@ export default function AllPatients({
                                 {patient.patient_full_name || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                                {patient.age || "N/A"}
+                                {formatDate(patient.date_of_birth)}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                                 {patient.gender || "N/A"}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                                 {patient.contact_number || "N/A"}
-                            </TableCell>
-                            <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                                {patient.speciality || "N/A"}
-                            </TableCell>
-                            <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                                {formatDate(patient.appointment_date)}
                             </TableCell>
                             <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200 text-center">
                                 <div className="flex items-center justify-center gap-2">
@@ -416,7 +402,7 @@ export default function AllPatients({
 
 
             {/* Edit Patient Modal */}
-            <AddPatientModal
+            <EditPatientModal
                 open={editModalOpen}
                 onOpenChange={setEditModalOpen}
                 patient={editingPatient}

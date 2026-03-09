@@ -105,6 +105,17 @@ export function Sidebar() {
 
     // For more precise matching, check exact matches first, then startsWith
     return item.matchPaths.some(path => {
+
+      // Special case: prevent "Patients Enquiry" from matching "Patients"
+      if (item.label === 'Patients Enquiry') {
+        return pathname === '/dashboard/patients-enquiries'
+      }
+
+      // Special case: prevent "Patients" from matching "Patients Enquiry"
+      if (item.label === 'Patients') {
+        return pathname.startsWith('/dashboard/patient') && !pathname.startsWith('/dashboard/patients-enquiries')
+      }
+
       // Handle dynamic routes with [id]
       if (path.includes('[id]')) {
         const basePath = path.replace('/[id]', '')
@@ -121,17 +132,6 @@ export function Sidebar() {
       if (pathname.startsWith(path + '/')) {
         return true
       }
-
-      // Special case: prevent "Patients Enquiry" from matching "Patients"
-      if (item.label === 'Patients Enquiry') {
-        return pathname === '/dashboard/patients-enquiries'
-      }
-
-      // Special case: prevent "Patients" from matching "Patients Enquiry"
-      if (item.label === 'Patients') {
-        return pathname.startsWith('/dashboard/patient') && !pathname.startsWith('/dashboard/patients-enquiries')
-      }
-
       return false
     })
   }

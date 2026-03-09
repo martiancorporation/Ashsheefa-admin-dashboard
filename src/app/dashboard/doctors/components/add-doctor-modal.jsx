@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch"
 
 export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments = [], departmentsLoading = false }) {
     const fileInputRef = useRef(null)
+    const [photoFile, setPhotoFile] = useState(null);
     const [photoUrl, setPhotoUrl] = useState(doctor?.profilePic || "")
     const [selectedLanguages, setSelectedLanguages] = useState(doctor?.languages || [])
     const [validationError, setValidationError] = useState("")
@@ -77,6 +78,7 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments
                 return
             }
 
+            setPhotoFile(file);
             const reader = new FileReader()
             reader.onload = (event) => {
                 if (event.target?.result) {
@@ -187,16 +189,48 @@ export function AddDoctorModal({ open, onOpenChange, doctor, onSave, departments
             }))
 
             // Handle form submission
-            const formattedData = {
-                ...formData,
-                profilePic: photoUrl,
-                languages: selectedLanguages,
-                _id: doctor?._id, // Include _id if editing
-                availability: availability
+            // const formattedData = {
+            //     ...formData,
+            //     profilePic: photoUrl,
+            //     languages: selectedLanguages,
+            //     _id: doctor?._id, // Include _id if editing
+            //     availability: availability
+            // }
+            // console.log("Form submitted:", formattedData)
+            // if (onSave) {
+            //     await onSave(formattedData)
+            // }
+            const formPayload = new FormData();
+
+            // ✅ Append ONLY simple values
+            formPayload.append("fullName", formData.fullName);
+            formPayload.append("department", formData.department);
+            formPayload.append("regNo", formData.regNo);
+            formPayload.append("experience", formData.experience || "");
+            formPayload.append("contactNumber", formData.contactNumber || "");
+            formPayload.append("qualification", formData.qualification || "");
+            formPayload.append("bio", formData.bio || "");
+            formPayload.append("email", formData.email || "");
+            formPayload.append("specialization", formData.specialization || "");
+            formPayload.append("isActive", formData.isActive);
+
+            // ✅ Structured fields (ONLY here)
+            formPayload.append("languages", JSON.stringify(selectedLanguages));
+            formPayload.append("availability", JSON.stringify(availability));
+
+            // ✅ File
+            if (photoFile) {
+                formPayload.append("profilePic", photoFile);
             }
-            console.log("Form submitted:", formattedData)
+
+            // ✅ Edit mode
+            if (doctor?._id) {
+                formPayload.append("_id", doctor._id);
+            }
+
+            console.log("Submitting FormData...", formPayload);
             if (onSave) {
-                await onSave(formattedData)
+                await onSave(formPayload);
             }
         } catch (error) {
             console.error("Error submitting form:", error)

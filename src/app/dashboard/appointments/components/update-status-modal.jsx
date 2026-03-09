@@ -1,200 +1,282 @@
 "use client"
 
-import React from "react"
-import { useState } from "react"
-import { ArrowLeft, Loader2 } from "lucide-react"
+import React, { useState, useEffect } from "react"
+import { Loader2, IndianRupee, CreditCard, CheckCircle2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { toast } from "sonner"
 import appointments from "@/api/appointments"
 
+const PAYMENT_MODES = [
+    { value: "cash", label: "Cash" },
+    { value: "upi", label: "UPI" },
+    { value: "card", label: "Card" },
+]
+
+const MODE_LABEL = {
+    cash: "Cash",
+    upi: "UPI",
+    card: "Card",
+}
+
 export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
     const [loading, setLoading] = useState(false)
-    const [selectedStatus, setSelectedStatus] = useState("")
+    const [amount, setAmount] = useState("")
+    const [paymentMode, setPaymentMode] = useState("")
+    const [paid, setPaid] = useState(false)
+    const [confirmedAmount, setConfirmedAmount] = useState("")
+    const [confirmedMode, setConfirmedMode] = useState("")
 
-    // Initialize status when modal opens
-    React.useEffect(() => {
+    // Reset state whenever modal opens fresh
+    useEffect(() => {
         if (open && appointment) {
-            setSelectedStatus(appointment.status || "")
+            if (appointment.paymentStatus === "paid") {
+                // Already paid — jump straight to locked view
+                setConfirmedAmount(appointment.amount ?? "")
+                setConfirmedMode(appointment.paymentMode ?? "")
+                setPaid(true)
+            } else {
+                setAmount(appointment.amount ?? appointment.doctorId?.fees ?? "")
+                setPaymentMode("")
+                setPaid(false)
+                setConfirmedAmount("")
+                setConfirmedMode("")
+            }
         }
     }, [open, appointment])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
 
-        if (!selectedStatus.trim()) {
-            toast.error("Please select a status")
+        if (!paymentMode) {
+            toast.error("Please select a payment mode")
+            return
+        }
+        if (amount === "" || isNaN(Number(amount))) {
+            toast.error("Please enter a valid amount")
             return
         }
 
-        // Always refresh the base record to avoid missing fields
-        let existingRecord = appointment
-        try {
-            const details = await appointments.getAppointmentDetails(appointment._id)
-            // handleResponse may return data directly or within .data
-            existingRecord = details?.data || details || appointment
-        } catch (_) {
-            // ignore and use provided appointment object
-        }
-
-        // Helper to normalize date to ISO string so backend casting works
-        const normalizeDateToISO = (value) => {
-            if (!value) return new Date().toISOString()
-            if (value instanceof Date && !isNaN(value)) return value.toISOString()
-            if (typeof value === 'string') {
-                // dd/mm/yyyy
-                const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-                if (m) {
-                    const [, dd, mm, yyyy] = m
-                    const d = new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`)
-                    return isNaN(d) ? new Date().toISOString() : d.toISOString()
-                }
-                const d = new Date(value)
-                if (!isNaN(d)) return d.toISOString()
-            }
-            try {
-                const d = new Date(value)
-                if (!isNaN(d)) return d.toISOString()
-            } catch (_) { }
-            return new Date().toISOString()
-        }
-
-        // Prepare fields from the freshest record
-        const referDoctorValue = (String(existingRecord?.refer_doctor ?? "").trim())
-        const medicalIssueValue = (String(existingRecord?.medical_issue_details ?? "").trim())
-        // Use a valid enum default for gender when missing
-        const genderValue = (String(existingRecord?.gender ?? "").trim()) || "Other"
-        const specialityValue = (String(existingRecord?.speciality ?? "").trim())
-        const patientNameValue = (String(existingRecord?.patient_full_name ?? "").trim())
-        const contactNumberValue = (String(existingRecord?.contact_number ?? "").trim())
-        const ageValue = existingRecord?.age != null ? String(existingRecord.age).trim() : ""
-        const appointmentDateValue = normalizeDateToISO(existingRecord?.appointment_date)
-
         setLoading(true)
         try {
-            const updateData = {
-                // Required for backend validators; pulled from existing record
-                patient_full_name: patientNameValue,
-                contact_number: contactNumberValue,
-                appointment_date: appointmentDateValue,
-                status: selectedStatus.trim(),
-                gender: genderValue,
-            }
+            const res = await appointments.updateAppointment(appointment._id, {
+                status: "Confirmed", 
+                paymentStatus: "paid",
+                amount: Number(amount),
+                paymentMode,
+            })
 
-            // Only include optional fields if they exist to avoid enum errors
-            if (referDoctorValue) updateData.refer_doctor = referDoctorValue
-            if (medicalIssueValue) updateData.medical_issue_details = medicalIssueValue
-            if (specialityValue) updateData.speciality = specialityValue
-
-            // Include age only if present (backend may treat it as optional)
-            if (ageValue) {
-                updateData.age = ageValue
-            }
-
-            const response = await appointments.updateAppointment(appointment._id, updateData)
-
-            if (response) {
-                toast.success("Status updated successfully")
-                onOpenChange(false)
-                if (onSave) {
-                    onSave()
-                }
+            if (res?.success || res?.data) {
+                toast.success("Appointment marked as paid")
+                // Lock the modal into confirmation view
+                setConfirmedAmount(amount)
+                setConfirmedMode(paymentMode)
+                setPaid(true)
+                onSave?.()
             } else {
-                toast.error("Failed to update status")
+                toast.error("Failed to update payment status")
             }
         } catch (error) {
-            console.error("Error updating status:", error)
-            toast.error("An error occurred while updating the status")
+            console.error("Error marking as paid:", error)
+            toast.error("An error occurred while updating the payment status")
         } finally {
             setLoading(false)
         }
     }
 
-    const handleCancel = () => {
-        onOpenChange(false)
-    }
-
-    const statusOptions = [
-        { value: "Pending", label: "Pending" },
-        { value: "In Progress", label: "In Progress" },
-        { value: "Cancelled", label: "Cancelled" },
-        { value: "Confirmed", label: "Confirmed" },
-    ]
+    const patientName =
+        appointment?.patientId?.patient_full_name ||
+        appointment?.patient_full_name ||
+        "—"
+    const doctorName = appointment?.doctorId?.fullName || "—"
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
+        <Dialog open={open} onOpenChange={(val) => {
+            // Allow closing even in paid state
+            if (!loading) onOpenChange(val)
+        }}>
             <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <div className="flex items-center">
-                        <button onClick={handleCancel} className="mr-2">
-                            <ArrowLeft className="h-5 w-5" />
-                        </button>
-                        <DialogTitle className="text-[#4B4B4B] text-base">
-                            Update Appointment Status
-                        </DialogTitle>
-                    </div>
-                </DialogHeader>
+                {/* ── LOCKED / CONFIRMED VIEW ── */}
+                {paid ? (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-base text-green-700">
+                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                Payment Details
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-500">
+                                Last updated:{" "}
+                                {appointment?.updatedAt
+                                    ? new Date(appointment.updatedAt).toLocaleString("en-IN", {
+                                        day: "numeric",
+                                        month: "short",
+                                        year: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                    })
+                                    : "—"}
+                            </DialogDescription>
+                        </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Appointment Info */}
-                    {appointment && (
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h3 className="font-medium text-gray-900 mb-2">Appointment Information</h3>
-                            <div className="text-sm text-gray-600">
-                                <p><strong>Patient:</strong> {appointment.patient_full_name}</p>
-                                <p><strong>Department:</strong> {appointment.speciality}</p>
-                                <p><strong>Current Status:</strong> {appointment.status || "Not set"}</p>
+                        {/* Receipt-style locked card */}
+                        <div className="rounded-xl border border-green-200 bg-green-50 p-5 space-y-4 mt-1">
+
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-500">Patient</span>
+                                    <span className="text-sm font-medium text-gray-800">{patientName}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-gray-500">Doctor</span>
+                                    <span className="text-sm font-medium text-gray-800">{doctorName}</span>
+                                </div>
+
+                                <div className="border-t border-green-200 pt-3 space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Status</span>
+                                        <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">
+                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                            Paid
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Amount</span>
+                                        <span className="text-base font-bold text-gray-900">
+                                            ₹{Number(confirmedAmount).toLocaleString("en-IN")}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Payment Mode</span>
+                                        <span className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
+                                            {MODE_LABEL[confirmedMode] || confirmedMode}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Status Selection */}
-                    <div className="space-y-2">
-                        <Label htmlFor="status" className="text-[#4A4A4B] text-sm">
-                            New Status*
-                        </Label>
-                        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                            <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none">
-                                <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {statusOptions.map((option) => (
-                                    <SelectItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        {/* <DialogFooter className="mt-2">
+                            <Button
+                                type="button"
+                                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => onOpenChange(false)}
+                            >
+                                Done
+                            </Button>
+                        </DialogFooter> */}
+                    </>
+                ) : (
+                    /* ── INPUT / FORM VIEW ── */
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2 text-base text-[#4B4B4B]">
+                                <CreditCard className="w-4 h-4 text-green-600" />
+                                Mark as Paid
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-slate-500">
+                                Confirm the payment details below to mark this appointment as paid.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleCancel}
-                            disabled={loading}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="bg-[#005CD4] hover:bg-blue-700"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Updating...
-                                </>
-                            ) : (
-                                "Update Status"
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* Summary card */}
+                            {appointment && (
+                                <div className="bg-gray-50 border border-gray-100 p-3 rounded-lg text-sm text-gray-600 space-y-1">
+                                    <p>
+                                        <span className="font-medium text-gray-800">Patient: </span>
+                                        {patientName}
+                                    </p>
+                                    <p>
+                                        <span className="font-medium text-gray-800">Doctor: </span>
+                                        {doctorName}
+                                    </p>
+                                </div>
                             )}
-                        </Button>
-                    </DialogFooter>
-                </form>
+
+                            {/* Amount + Payment Mode side by side */}
+                            <div className="flex gap-3 items-center">
+                                {/* Amount */}
+                                <div className="flex-1 space-y-1.5">
+                                    <Label className="text-[#4A4A4B] text-sm">
+                                        Amount (₹) <span className="text-red-500">*</span>
+                                    </Label>
+                                    <div className="relative">
+                                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                        <Input
+                                            type="number"
+                                            min={0}
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            className="pl-8 bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Payment Mode */}
+                                <div className="flex-1 space-y-1.5">
+                                    <Label className="text-[#4A4A4B] text-sm">
+                                        Payment Mode <span className="text-red-500">*</span>
+                                    </Label>
+                                    <Select value={paymentMode} onValueChange={setPaymentMode}>
+                                        <SelectTrigger className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none">
+                                            <SelectValue placeholder="Select mode" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {PAYMENT_MODES.map((mode) => (
+                                                <SelectItem key={mode.value} value={mode.value}>
+                                                    {mode.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => onOpenChange(false)}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                    disabled={loading}
+                                >
+                                    {loading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        "Confirm Payment"
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     )
-} 
+}

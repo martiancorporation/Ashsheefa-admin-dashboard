@@ -13,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import AllPatients from "./components/all-patients";
-import { AddPatientModal } from "./components/add-patient-modal";
 import Image from "next/image";
 import API from "@/api";
 
@@ -22,9 +21,7 @@ export default function PatientPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedSpeciality, setSelectedSpeciality] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
-  const [addModalOpen, setAddModalOpen] = useState(false);
 
-  // Dynamic departments state
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
@@ -33,7 +30,6 @@ export default function PatientPage() {
     { name: "In Treatment" },
     { name: "Discharged" },
     { name: "Under Observation" },
-    { name: "Scheduled" },
   ];
 
   // Fetch departments on component mount
@@ -222,13 +218,13 @@ export default function PatientPage() {
             Refresh
           </Button>
 
-          <Button
+          {/* <Button
             onClick={() => setAddModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 whitespace-nowrap"
           >
             <Plus className="h-4 w-4" />
             Add Patient
-          </Button>
+          </Button> */}
         </div>
       </div>
 
@@ -244,15 +240,6 @@ export default function PatientPage() {
         />
       </div>
 
-      {/* Add Patient Modal */}
-      <AddPatientModal
-        open={addModalOpen}
-        onOpenChange={setAddModalOpen}
-        patient={null}
-        onSave={handlePatientUpdate}
-        departments={departments}
-        departmentsLoading={departmentsLoading}
-      />
     </>
   );
 }

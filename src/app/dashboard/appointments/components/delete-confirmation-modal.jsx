@@ -18,7 +18,7 @@ export function DeleteConfirmationModal({ appointment, onClose, onDeleteSuccess 
         try {
             const response = await appointments.deleteAppointment(appointment._id)
 
-            if (response) {
+            if (response?.success || response?.data || response) {
                 toast.success("Appointment deleted successfully")
                 onClose()
                 if (onDeleteSuccess) {
@@ -59,10 +59,10 @@ export function DeleteConfirmationModal({ appointment, onClose, onDeleteSuccess 
                 <div className="bg-red-50 p-4 rounded-lg">
                     <h3 className="font-medium text-red-900 mb-2">Appointment Details</h3>
                     <div className="text-sm text-red-700 space-y-1">
-                        <p><strong>Patient:</strong> {appointment.patient_full_name}</p>
-                        <p><strong>Department:</strong> {appointment.speciality}</p>
-                        <p><strong>Contact:</strong> {appointment.contact_number}</p>
-                        <p><strong>Status:</strong> {appointment.status}</p>
+                        <p><strong>Patient:</strong> {appointment.patientId?.patient_full_name || appointment.patient_full_name || "—"}</p>
+                        <p><strong>Doctor:</strong> {appointment.doctorId?.fullName || "—"}</p>
+                        <p><strong>Contact:</strong> {appointment.patientId?.contact_number || appointment.contact_number || "—"}</p>
+                        <p><strong>Status:</strong> {appointment.status || "—"}</p>
                     </div>
                 </div>
 
