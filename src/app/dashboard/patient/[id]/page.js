@@ -1120,7 +1120,7 @@ export default function PatientDetailsPage({ params }) {
                     const baseURL =
                       process.env.NEXT_PUBLIC_API_URL ||
                       "http://localhost:3000";
-                    const fullUrl = `${baseURL}${selectedDocument?.file_url || selectedDocument?.fileUrl
+                    const fullUrl = `${selectedDocument?.file_url || selectedDocument?.fileUrl
                       }`;
                     window.open(fullUrl, "_blank");
                   }}
