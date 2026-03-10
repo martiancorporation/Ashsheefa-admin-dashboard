@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import API from "@/api";
 
 export default function DoctorDetailsPage() {
   const { id } = useParams();
@@ -639,24 +640,6 @@ export default function DoctorDetailsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
-                  <Clock size={18} className="text-blue-600" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Available</div>
-                  <div className="font-medium">
-                    {Object.entries(schedule)
-                      .filter(([_, data]) => data.active)
-                      .map(
-                        ([day]) =>
-                          day.slice(0, 3).charAt(0).toUpperCase() +
-                          day.slice(1, 3),
-                      )
-                      .join(", ") || "Not Available"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
                   <Globe size={18} className="text-blue-600" />
                 </div>
                 <div className="flex-1">
@@ -673,12 +656,7 @@ export default function DoctorDetailsPage() {
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {[
-                          "English",
-                          "Hindi",
-                          "Bengali",
-                          "Urdu"
-                        ].map((lang) => (
+                        {["English", "Hindi", "Bengali", "Urdu"].map((lang) => (
                           <SelectItem
                             key={lang}
                             value={lang}
@@ -725,9 +703,7 @@ export default function DoctorDetailsPage() {
                       placeholder="Fees"
                     />
                   ) : (
-                    <div className="font-medium">
-                      ₹ {formData.fees || 0}
-                    </div>
+                    <div className="font-medium">₹ {formData.fees || 0}</div>
                   )}
                 </div>
               </div>
