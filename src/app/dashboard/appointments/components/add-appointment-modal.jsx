@@ -80,12 +80,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
         gender: "",
         medical_issue_details: "",
         email: "",
-        address: {
-            street: "",
-            city: "",
-            state: "",
-            pincode: "",
-        },
+        address: "",
         date_of_birth: "",
         amount: 0,
     });
@@ -367,12 +362,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
             payload.gender = formData.gender;
             payload.email = formData.email;
             payload.date_of_birth = dateOfBirth || "";
-            payload.address = {
-                street: formData.address.street || "",
-                city: formData.address.city || "",
-                state: formData.address.state || "",
-                pincode: formData.address.pincode || "",
-            };
+            payload.address = formData.address.trim();
         }
 
         setLoading(true);
@@ -403,7 +393,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
             gender: "",
             medical_issue_details: "",
             email: "",
-            address: { street: "", city: "", state: "", pincode: "" },
+            address: "",
             date_of_birth: "",
             amount: 0,
         });
@@ -618,52 +608,18 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                             </div>
 
                             {/* Address */}
-                            <div className="space-y-3">
+                            <div>
                                 <Label className="text-sm font-medium mb-1">Address</Label>
                                 <Input
-                                    placeholder="Street / House No."
-                                    value={formData.address.street}
+                                    placeholder="Enter full address"
+                                    value={formData.address}
                                     onChange={(e) =>
                                         setFormData((prev) => ({
                                             ...prev,
-                                            address: { ...prev.address, street: e.target.value },
+                                            address: e.target.value,
                                         }))
                                     }
                                     className="w-full"
-                                />
-                                <div className="grid grid-cols-2 gap-3">
-                                    <Input
-                                        placeholder="City"
-                                        value={formData.address.city}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                address: { ...prev.address, city: e.target.value },
-                                            }))
-                                        }
-                                    />
-                                    <Input
-                                        placeholder="State"
-                                        value={formData.address.state}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                address: { ...prev.address, state: e.target.value },
-                                            }))
-                                        }
-                                    />
-                                </div>
-                                <Input
-                                    placeholder="Pincode *"
-                                    value={formData.address.pincode}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            address: { ...prev.address, pincode: e.target.value },
-                                        }))
-                                    }
-                                    maxLength={10}
-                                    className="w-40"
                                 />
                             </div>
                         </div>

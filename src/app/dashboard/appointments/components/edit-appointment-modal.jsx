@@ -90,12 +90,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
     gender: "",
     email: "",
     contact_number: "",
-    address: {
-      street: "",
-      city: "",
-      state: "",
-      pincode: "",
-    },
+    address: "",
     medical_issue_details: "",
     speciality: "",
     refer_doctor: "",
@@ -118,12 +113,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
       gender: pat.gender || appointment.gender || "",
       email: pat.email || appointment.email || "",
       contact_number: pat.contact_number || appointment.contact_number || "",
-      address: {
-        street: pat.address?.street || "",
-        city: pat.address?.city || "",
-        state: pat.address?.state || "",
-        pincode: pat.address?.pincode || "",
-      },
+      address: pat.address || "",
       medical_issue_details: appointment.medical_issue_details || "",
       speciality: appointment.speciality || doc.specialization || "",
       refer_doctor: appointment.refer_doctor || "",
@@ -146,7 +136,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
     setSelectedDate(apptDate ? apptDate.toDateString() : null);
     setSelectedSlot(appointment.slot_start_time || "");
 
-    // ── Fetch full patient record to get email + address.pincode ─────────────
+    // ── Fetch full patient record to get email + address ─────────────
     // The list API only populates a subset of patient fields, so email and
     // pincode are often missing. We fetch them separately and apply on top.
     const patientId = pat._id || appointment.patientId;
@@ -158,12 +148,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
           setForm((prev) => ({
             ...prev,
             email: fullPat.email || prev.email || "",
-            address: {
-              street: fullPat.address?.street || prev.address?.street || "",
-              city: fullPat.address?.city || prev.address?.city || "",
-              state: fullPat.address?.state || prev.address?.state || "",
-              pincode: fullPat.address?.pincode || prev.address?.pincode || "",
-            },
+            address: fullPat.address || prev.address || "",
             patient_full_name: fullPat.patient_full_name || prev.patient_full_name,
             date_of_birth: toDateInput(fullPat.date_of_birth) || prev.date_of_birth,
             gender: fullPat.gender || prev.gender,
@@ -327,12 +312,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
       gender: form.gender || undefined,
       email: form.email || undefined,
       contact_number: form.contact_number || undefined,
-      address: {
-        street: form.address?.street || "",
-        city: form.address?.city || "",
-        state: form.address?.state || "",
-        pincode: form.address?.pincode || "",
-      },
+      address: form.address?.trim() || undefined,
 
       // Appointment fields
       doctorId: selectedDoctorId || undefined,
@@ -444,32 +424,13 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
             </div>
 
             {/* Address */}
-            <div className="space-y-3">
+            <div>
               <Label className="text-sm font-medium">Address</Label>
               <Input
                 className="mt-1"
-                placeholder="Street / House No."
-                value={form.address?.street || ""}
-                onChange={(e) => setForm((prev) => ({ ...prev, address: { ...prev.address, street: e.target.value } }))}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  placeholder="City"
-                  value={form.address?.city || ""}
-                  onChange={(e) => setForm((prev) => ({ ...prev, address: { ...prev.address, city: e.target.value } }))}
-                />
-                <Input
-                  placeholder="State"
-                  value={form.address?.state || ""}
-                  onChange={(e) => setForm((prev) => ({ ...prev, address: { ...prev.address, state: e.target.value } }))}
-                />
-              </div>
-              <Input
-                className="w-40"
-                placeholder="Pincode *"
-                value={form.address?.pincode || ""}
-                onChange={(e) => setForm((prev) => ({ ...prev, address: { ...prev.address, pincode: e.target.value } }))}
-                maxLength={10}
+                placeholder="Enter full address"
+                value={form.address || ""}
+                onChange={(e) => setField("address", e.target.value)}
               />
             </div>
           </div>
