@@ -118,7 +118,7 @@ export default function AppointmentsPage() {
               {statusOptions.map((status, index) => (
                 <SelectItem
                   key={index}
-                  value={status.name.toLowerCase().replace(" ", "-")}
+                  value={status.name.toLowerCase().replace(/\s+/g, "-")}
                 >
                   {status.name}
                 </SelectItem>
@@ -142,7 +142,7 @@ export default function AppointmentsPage() {
               {specialityOptions.map((speciality, index) => (
                 <SelectItem
                   key={index}
-                  value={speciality.name.toLowerCase().replace(" ", "-")}
+                  value={speciality.name.toLowerCase().replace(/\s+/g, "-")}
                 >
                   {speciality.name}
                 </SelectItem>

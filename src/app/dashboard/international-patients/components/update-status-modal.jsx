@@ -60,9 +60,8 @@ export function UpdateStatusModal({ open, onOpenChange, patient, onSave }) {
 
     const statusOptions = [
         { value: "Pending", label: "Pending" },
-        { value: "In Progress", label: "In Progress" },
+        { value: "Approved", label: "Approved" },
         { value: "Cancelled", label: "Cancelled" },
-        { value: "Confirmed", label: "Confirmed" },
     ]
 
     return (

@@ -16,6 +16,7 @@ import {
   Calendar,
   ListFilter,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -807,6 +808,7 @@ export default function DoctorsPage() {
                             />
                           )}
                         </div>
+                        <div className="flex justify-between items-end w-full">
                         <div>
                           <h3
                             title={doctor.fullName}
@@ -817,6 +819,11 @@ export default function DoctorsPage() {
                           <p className="text-xs text-[#7F7F7F]">
                             {doctor.qualification}, {doctor.regNo}
                           </p>
+                        </div>
+                        <div className="flex text-xs underline text-[#4B4B4B] group hover:text-blue-700 items-center">
+                          View details
+                         <ArrowRight className="h-3 w-3" />
+                        </div>
                         </div>
                       </div>
                     </div>

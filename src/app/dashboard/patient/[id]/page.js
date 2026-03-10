@@ -12,10 +12,13 @@ import {
   Loader2,
   X,
   Download,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EditPatientModal } from "../components/edit-patient-modal";
 import { DeleteConfirmationModal } from "../components/delete-confirmation-modal";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
 import {
   Tooltip,
@@ -38,14 +41,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import patient from "@/api/patient";
+import patientApi from "@/api/patient";
+import { useParams } from "next/navigation";
 
-export default function PatientDetailsPage({ params }) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+export default function PatientDetailsPage() {
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    patient_full_name: "",
+    date_of_birth: "",
+    contact_number: "",
+    gender: "",
+    status: "",
+    medical_issue_details: "",
+    address: "",
+  });
   const [activeTab, setActiveTab] = useState("lab");
   const [patientData, setPatientData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,16 +78,18 @@ export default function PatientDetailsPage({ params }) {
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
 
+  const params = useParams();
+  const id = params.id;
   // Fetch patient data + initial lab reports
   useEffect(() => {
     const fetchPatientData = async () => {
       setLoading(true);
       try {
-        const response = await patient.getPatientDataById(params.id);
+        const response = await patient.getPatientDataById(id);
         if (response.data) {
           setPatientData(response.data);
           // Only load lab reports on mount (prescription tab starts empty)
-          const labReportsResponse = await patient.getLabReports(params.id);
+          const labReportsResponse = await patient.getLabReports(id);
           if (labReportsResponse.data) {
             setLabReports(labReportsResponse.data);
           }
@@ -88,7 +103,7 @@ export default function PatientDetailsPage({ params }) {
     };
 
     fetchPatientData();
-  }, [params.id]);
+  }, [id]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -143,7 +158,7 @@ export default function PatientDetailsPage({ params }) {
 
       let response;
       if (activeTab === "lab") {
-        response = await patient.uploadLabReport(params.id, formData);
+        response = await patient.uploadLabReport(id, formData);
       } else {
         // Upload against the selected appointment ID
         response = await patient.uploadPrescription(selectedAppointmentId, formData);
@@ -157,7 +172,7 @@ export default function PatientDetailsPage({ params }) {
         setSelectedFile(null);
         // Refresh the correct list
         if (activeTab === "lab") {
-          const labReportsResponse = await patient.getLabReports(params.id);
+          const labReportsResponse = await patient.getLabReports(id);
           if (labReportsResponse.data) setLabReports(labReportsResponse.data);
         } else {
           // Re-fetch prescriptions for the currently selected appointment
@@ -176,8 +191,78 @@ export default function PatientDetailsPage({ params }) {
   };
 
   const handlePatientUpdate = () => {
-    // Refresh patient data
     window.location.reload();
+  };
+
+  const genderOptions = ["Male", "Female", "Other"];
+  const statusOptions = ["In Treatment", "Discharged", "Under Observation", "Scheduled"];
+
+  const enterEditMode = () => {
+    const addr = patientData?.address || {};
+    const dob = patientData?.date_of_birth
+      ? new Date(patientData.date_of_birth).toISOString().slice(0, 10)
+      : "";
+    setEditFormData({
+      patient_full_name: patientData?.patient_full_name || "",
+      date_of_birth: dob,
+      contact_number: patientData?.contact_number || "",
+      gender: patientData?.gender || "",
+      status: patientData?.status || "",
+      medical_issue_details: patientData?.medical_issue_details || "",
+      address: patientData?.address || "",
+    });
+    setIsEditMode(true);
+  };
+
+  const cancelEdit = () => setIsEditMode(false);
+
+  const handleEditFieldChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditSelectChange = (name, value) => {
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSavePatient = async () => {
+    if (!editFormData.patient_full_name.trim()) {
+      toast.error("Patient full name is required");
+      return;
+    }
+    if (!editFormData.contact_number.trim()) {
+      toast.error("Contact number is required");
+      return;
+    }
+    if (!editFormData.gender) {
+      toast.error("Gender is required");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const submitData = {
+        patient_full_name: editFormData.patient_full_name.trim(),
+        contact_number: editFormData.contact_number.trim(),
+        gender: editFormData.gender,
+        ...(editFormData.status && { status: editFormData.status }),
+        ...(editFormData.date_of_birth && { date_of_birth: editFormData.date_of_birth }),
+        ...(editFormData.medical_issue_details.trim() && { medical_issue_details: editFormData.medical_issue_details.trim() }),
+        ...(editFormData.address.trim() && { address: editFormData.address.trim() }),
+      };
+      const response = await patientApi.updatePatient(patientData._id, submitData);
+      if (response) {
+        toast.success("Patient updated successfully");
+        setIsEditMode(false);
+        handlePatientUpdate();
+      } else {
+        toast.error("Failed to update patient");
+      }
+    } catch (error) {
+      console.error("Error updating patient:", error);
+      toast.error("An error occurred while updating the patient");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -204,15 +289,7 @@ export default function PatientDetailsPage({ params }) {
   };
 
   const buildAddress = (p) => {
-    const addr = p?.address || {};
-    const parts = [
-      addr.street || p?.street,
-      addr.city || p?.city,
-      addr.state || p?.state,
-      addr.pincode || p?.pincode,
-      addr.country || p?.country,
-    ].filter(Boolean);
-    return parts.length > 0 ? parts.join(", ") : null;
+    return p?.address || null;
   };
 
   // Helper function to check if file is an image
@@ -321,7 +398,7 @@ export default function PatientDetailsPage({ params }) {
     if (tab === "lab") {
       // Refresh lab reports
       try {
-        const labReportsResponse = await patient.getLabReports(params.id);
+        const labReportsResponse = await patient.getLabReports(id);
         if (labReportsResponse.data) setLabReports(labReportsResponse.data);
       } catch (error) {
         console.error("Error fetching lab reports:", error);
@@ -333,7 +410,7 @@ export default function PatientDetailsPage({ params }) {
       setPrescriptions([]);
       setAppointmentsLoading(true);
       try {
-        const appointmentsResponse = await patient.getPatientAppointments(params.id);
+        const appointmentsResponse = await patient.getPatientAppointments(id);
         if (appointmentsResponse.data) {
           setAppointments(
             Array.isArray(appointmentsResponse.data) ? appointmentsResponse.data : []
@@ -389,7 +466,7 @@ export default function PatientDetailsPage({ params }) {
       let response;
       if (activeTab === "lab") {
         response = await patient.deleteLabReport(
-          params.id,
+          id,
           selectedDocument._id
         );
       } else {
@@ -408,7 +485,7 @@ export default function PatientDetailsPage({ params }) {
 
         // Refresh the correct list
         if (activeTab === "lab") {
-          const labReportsResponse = await patient.getLabReports(params.id);
+          const labReportsResponse = await patient.getLabReports(id);
           if (labReportsResponse.data) setLabReports(labReportsResponse.data);
         } else if (selectedAppointmentId) {
           const prescriptionsResponse = await patient.getPrescriptions(selectedAppointmentId);
@@ -439,7 +516,7 @@ export default function PatientDetailsPage({ params }) {
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg mb-4">Patient not found</div>
         <Link href="/dashboard/patient">
-          <Button variant="outline">Back to Patients</Button>
+          <div>Back to Patients</div>
         </Link>
       </div>
     );
@@ -471,92 +548,217 @@ export default function PatientDetailsPage({ params }) {
           </Breadcrumb>
         </div>
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-[#D9D9D9] text-[#005CD4]"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit Patient
-          </Button>
-          <Button
-            variant="outline"
-            className="border-[#D9D9D9] text-[#FF0037]"
-            onClick={() => setIsDeleteModalOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Patient
-          </Button>
+          {isEditMode ? (
+            <>
+              <Button
+                variant="outline"
+                className="border-[#D9D9D9] text-[#7F7F7F]"
+                onClick={cancelEdit}
+                disabled={isSaving}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button
+                className="bg-[#005CD4] hover:bg-blue-700 text-white"
+                onClick={handleSavePatient}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
+                ) : (
+                  <><Save className="h-4 w-4 mr-2" />Save Changes</>
+                )}
+              </Button>
+            </>
+          ) : (
+            <Button
+              variant="outline"
+              className="border-[#D9D9D9] text-[#005CD4]"
+              onClick={enterEditMode}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Patient
+            </Button>
+          )}
+          {!isEditMode && (
+            <Button
+              variant="outline"
+              className="border-[#D9D9D9] text-[#FF0037]"
+              onClick={() => setIsDeleteModalOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Patient
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="w-full h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll space-y-4">
         {/* Patient Details Card */}
         <Card className="rounded-[14px] border-[#E2E2E2] py-0 shadow-none">
-          <div className="flex divide-x-2 divide-[#DDDDDD]">
-            {/* Avatar and Name Section */}
-            <CardContent className="w-[25%] p-3 flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-full bg-[#B4D5FF] flex items-center justify-center">
-                <span className="text-3xl font-semibold text-white">
-                  {patientData.patient_full_name?.[0] || "A"}
-                </span>
+          {isEditMode ? (
+            /* ── EDIT MODE ── */
+            <CardContent className="p-5">
+              <h3 className="text-sm font-semibold text-[#323232] mb-4">Edit Patient Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Full Name */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Patient Full Name*</Label>
+                  <Input
+                    name="patient_full_name"
+                    value={editFormData.patient_full_name}
+                    onChange={handleEditFieldChange}
+                    placeholder="Full name"
+                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
+                    disabled={isSaving}
+                  />
+                </div>
+                {/* Date of Birth */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Date of Birth</Label>
+                  <Input
+                    name="date_of_birth"
+                    type="date"
+                    value={editFormData.date_of_birth}
+                    onChange={handleEditFieldChange}
+                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
+                    disabled={isSaving}
+                  />
+                </div>
+                {/* Gender */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Gender*</Label>
+                  <Select value={editFormData.gender} onValueChange={(v) => handleEditSelectChange("gender", v)}>
+                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm">
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {genderOptions.map((o) => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Contact */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Contact Number*</Label>
+                  <Input
+                    name="contact_number"
+                    value={editFormData.contact_number}
+                    onChange={handleEditFieldChange}
+                    placeholder="Contact number"
+                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
+                    disabled={isSaving}
+                  />
+                </div>
+                {/* Status */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Status</Label>
+                  <Select value={editFormData.status} onValueChange={(v) => handleEditSelectChange("status", v)}>
+                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((o) => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Medical Issue */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Medical Issue</Label>
+                  <Input
+                    name="medical_issue_details"
+                    value={editFormData.medical_issue_details}
+                    onChange={handleEditFieldChange}
+                    placeholder="Medical issue details"
+                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
+                    disabled={isSaving}
+                  />
+                </div>
+                {/* Address – single field */}
+                <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-1">
+                  <Label className="text-xs text-[#7F7F7F]">Address</Label>
+                  <Input
+                    name="address"
+                    value={editFormData.address}
+                    onChange={handleEditFieldChange}
+                    placeholder="Enter full address"
+                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
+                    disabled={isSaving}
+                  />
+                </div>
               </div>
-              <h2 className="text-lg text-[#4B4B4B] font-semibold mt-2">
-                {patientData.patient_full_name}
-              </h2>
-              <p className="text-[#7F7F7F] text-sm">
-                Phone no. {patientData.contact_number}
-              </p>
             </CardContent>
+          ) : (
+            /* ── VIEW MODE ── */
+            <div className="flex divide-x-2 divide-[#DDDDDD]">
+              {/* Avatar and Name Section */}
+              <CardContent className="w-[25%] p-3 flex flex-col items-center justify-center">
+                <div className="w-14 h-14 rounded-full bg-[#B4D5FF] flex items-center justify-center">
+                  <span className="text-3xl font-semibold text-white">
+                    {patientData.patient_full_name?.[0] || "A"}
+                  </span>
+                </div>
+                <h2 className="text-lg text-[#4B4B4B] font-semibold mt-2">
+                  {patientData.patient_full_name}
+                </h2>
+                <p className="text-[#7F7F7F] text-sm">
+                  Phone no. {patientData.contact_number}
+                </p>
+              </CardContent>
 
-            {/* Details Section */}
-            <CardContent className="w-[75%] p-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Patient UHID</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.uhid || "Not assigned"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Date of Birth</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.date_of_birth
-                      ? `${formatDate(patientData.date_of_birth)} (${calculateAge(patientData.date_of_birth)})`
-                      : "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Gender</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.gender || "Not specified"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-[#7F7F7F]">Contact</p>
-                  <p className="font-medium text-[#4B4B4B]">
-                    {patientData.contact_number || "Not specified"}
-                  </p>
-                </div>
-                {buildAddress(patientData) && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-[#7F7F7F]">Address</p>
-                    <p className="font-medium text-[#4B4B4B] text-sm">
-                      {buildAddress(patientData)}
+              {/* Details Section */}
+              <CardContent className="w-[75%] p-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-7">
+                  <div>
+                    <p className="text-sm text-[#7F7F7F]">Patient UHID</p>
+                    <p className="font-medium text-[#4B4B4B]">
+                      {patientData.uhid || "Not assigned"}
                     </p>
                   </div>
-                )}
-                {patientData.medical_issue_details && (
-                  <div className="col-span-2">
-                    <p className="text-sm text-[#7F7F7F]">Medical Issue</p>
-                    <p className="font-medium text-[#4B4B4B] text-sm">
-                      {patientData.medical_issue_details}
+                  <div>
+                    <p className="text-sm text-[#7F7F7F]">Date of Birth</p>
+                    <p className="font-medium text-[#4B4B4B]">
+                      {patientData.date_of_birth
+                        ? `${formatDate(patientData.date_of_birth)} (${calculateAge(patientData.date_of_birth)})`
+                        : "Not specified"}
                     </p>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </div>
+                  <div>
+                    <p className="text-sm text-[#7F7F7F]">Gender</p>
+                    <p className="font-medium text-[#4B4B4B]">
+                      {patientData.gender || "Not specified"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-[#7F7F7F]">Contact</p>
+                    <p className="font-medium text-[#4B4B4B]">
+                      {patientData.contact_number || "Not specified"}
+                    </p>
+                  </div>
+                  {buildAddress(patientData) && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-[#7F7F7F]">Address</p>
+                      <p className="font-medium text-[#4B4B4B] text-sm">
+                        {buildAddress(patientData)}
+                      </p>
+                    </div>
+                  )}
+                  {patientData.medical_issue_details && (
+                    <div className="col-span-2">
+                      <p className="text-sm text-[#7F7F7F]">Medical Issue</p>
+                      <p className="font-medium text-[#4B4B4B] text-sm">
+                        {patientData.medical_issue_details}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </div>
+          )}
         </Card>
 
         {/* Patient Documents Card */}
@@ -819,17 +1021,17 @@ export default function PatientDetailsPage({ params }) {
                         </Tooltip>
                       </TooltipProvider>
                     ))}
-                  {/* Upload Box */}
-                  <Card
-                    className="border border-dashed border-[#BFBFBF] min-h-[320px] flex items-center justify-center text-center shadow-none cursor-pointer hover:border-[#0B5CF9] transition-colors"
-                    onClick={() => setUploadModalOpen(true)}
-                  >
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="font-medium text-[#4B4B4B] mb-1">{prescriptions?.length === 0 ? "Upload" : "Upload More"}</p>
-                      <p className="text-sm text-[#7F7F7F]">File type: jpg, png, Pdf (Max 4 MB)</p>
-                    </CardContent>
-                  </Card>
+                    {/* Upload Box */}
+                    <Card
+                      className="border border-dashed border-[#BFBFBF] min-h-[320px] flex items-center justify-center text-center shadow-none cursor-pointer hover:border-[#0B5CF9] transition-colors"
+                      onClick={() => setUploadModalOpen(true)}
+                    >
+                      <CardContent className="flex flex-col items-center justify-center p-6">
+                        <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                        <p className="font-medium text-[#4B4B4B] mb-1">{prescriptions?.length === 0 ? "Upload" : "Upload More"}</p>
+                        <p className="text-sm text-[#7F7F7F]">File type: jpg, png, Pdf (Max 4 MB)</p>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
 
@@ -932,14 +1134,7 @@ export default function PatientDetailsPage({ params }) {
         </Card>
       </div>
 
-      {isEditModalOpen && (
-        <EditPatientModal
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-          patient={patientData}
-          onSave={handlePatientUpdate}
-        />
-      )}
+
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Ellipsis, Eye, Pencil, Trash2, Loader2, Calendar, Phone, MapPin, User, Hash } from "lucide-react"
+import { Ellipsis, Eye, Trash2, Loader2, Calendar } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { EditPatientModal } from "./edit-patient-modal"
 import { DeleteConfirmationModal } from "./delete-confirmation-modal"
 import { UpdateStatusModal } from "./update-status-modal"
 import { toast } from "sonner"
@@ -26,16 +25,12 @@ export default function AllPatients({
     selectedStatus = "",
     selectedSpeciality = "",
     onPatientUpdate,
-    departments = [],
-    departmentsLoading = false,
 }) {
     const router = useRouter()
     const [patientsList, setPatientsList] = useState([])
     const [loading, setLoading] = useState(true)
     const [openDropdownId, setOpenDropdownId] = useState(null)
     const [patientToDelete, setPatientToDelete] = useState(null)
-    const [editModalOpen, setEditModalOpen] = useState(false)
-    const [editingPatient, setEditingPatient] = useState(null)
     const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false)
     const [statusUpdatePatient, setStatusUpdatePatient] = useState(null)
     const [pagination, setPagination] = useState({
@@ -78,15 +73,6 @@ export default function AllPatients({
             }
 
             if (patientsData) {
-                console.log('=== PATIENTS DATA LOADED ===')
-                console.log('First 3 patients data:', patientsData.slice(0, 3).map(p => ({
-                    name: p.patient_full_name,
-                    uhid: p.uhid,
-                    status: p.status,
-                    speciality: p.speciality
-                })))
-                console.log('=== END PATIENTS DATA ===')
-
                 setPatientsList(patientsData)
                 setPagination(paginationData || {
                     current_page: 1,
@@ -114,11 +100,6 @@ export default function AllPatients({
 
     // Fetch data on component mount and when filters change
     useEffect(() => {
-        console.log('Filter values changed:', {
-            searchQuery,
-            selectedStatus,
-            selectedSpeciality
-        })
         fetchPatients()
     }, [searchQuery, selectedStatus, selectedSpeciality])
 
@@ -134,12 +115,6 @@ export default function AllPatients({
     const handleViewPatient = (patient) => {
         router.push(`/dashboard/patient/${patient._id}`)
         setOpenDropdownId(null) // Close dropdown when view details is clicked
-    }
-
-    const handleEditPatient = (patient) => {
-        setEditingPatient(patient)
-        setEditModalOpen(true)
-        setOpenDropdownId(null) // Close dropdown when edit is clicked
     }
 
     const handleUpdateStatus = (patient) => {
@@ -196,34 +171,6 @@ export default function AllPatients({
             patient.speciality?.toLowerCase() === specialityExact ||
             patient.speciality?.toLowerCase() === specialityExact.replace(/-/g, ' ')
             : true
-
-        // Debug logging for first patient only to avoid spam
-        if ((selectedStatus || selectedSpeciality) && patientsList.indexOf(patient) === 0) {
-            console.log('=== FILTER DEBUG ===')
-            console.log('Available patients data:', patientsList.map(p => ({
-                name: p.patient_full_name,
-                uhid: p.uhid,
-                status: p.status,
-                speciality: p.speciality
-            })))
-            console.log('Current filter values:', {
-                selectedStatus,
-                statusFilter,
-                selectedSpeciality,
-                specialityFilter
-            })
-            console.log('Current patient being filtered:', {
-                name: patient.patient_full_name,
-                uhid: patient.uhid,
-                status: patient.status,
-                speciality: patient.speciality
-            })
-            console.log('Matches:', {
-                matchesStatus,
-                matchesSpeciality
-            })
-            console.log('=== END DEBUG ===')
-        }
 
         const shouldInclude = matchesSearch && matchesStatus && matchesSpeciality
 
@@ -368,14 +315,6 @@ export default function AllPatients({
                                             </DropdownMenuItem>
 
                                             <DropdownMenuItem
-                                                className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-                                                onClick={() => handleEditPatient(patient)}
-                                            >
-                                                <Pencil className="h-4 w-4 mr-3 text-gray-500" />
-                                                Edit Patient
-                                            </DropdownMenuItem>
-
-                                            <DropdownMenuItem
                                                 className="flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors"
                                                 onClick={() => handleUpdateStatus(patient)}
                                             >
@@ -400,16 +339,6 @@ export default function AllPatients({
             </Table>
 
 
-
-            {/* Edit Patient Modal */}
-            <EditPatientModal
-                open={editModalOpen}
-                onOpenChange={setEditModalOpen}
-                patient={editingPatient}
-                onSave={handlePatientUpdate}
-                departments={departments}
-                departmentsLoading={departmentsLoading}
-            />
 
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal

@@ -32,9 +32,8 @@ export default function InternationalPatientsPage() {
   const statusOptions = [
     { name: "All Status" },
     { name: "Pending" },
-    { name: "In Progress" },
+    { name: "Approved" },
     { name: "Cancelled" },
-    { name: "Confirmed" },
   ];
 
   // Fetch departments on component mount

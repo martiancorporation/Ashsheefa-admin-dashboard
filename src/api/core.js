@@ -36,9 +36,8 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
   if (session?.access_token) {
     finalHeaders = {
       ...finalHeaders,
-      Authorization: `Bearer ${session.access_token}||${
-        session.active_session_refresh_token || ""
-      }`,
+      Authorization: `Bearer ${session.access_token}||${session.active_session_refresh_token || ""
+        }`,
     };
 
     // Only set Content-Type for non-FormData requests
@@ -82,8 +81,10 @@ export const handleResponse = (response) => {
       });
     } else if (response?.status === 401) {
       toast.error("Session expired", {
-        description: "Please logout and log in again.",
+        description: "Redirecting to login...",
       });
+      localStorage.removeItem("authentications");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
     } else if (response?.status === 500) {
       toast.error("Server error", {
         description: response?.data?.message || "Internal server error",
@@ -110,8 +111,10 @@ export const handleResponse = (response) => {
 
     if (status === 401) {
       toast.error("Session expired", {
-        description: "Please logout and log in again.",
+        description: "Redirecting to login...",
       });
+      localStorage.removeItem("authentications");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
     } else if (status === 400) {
       toast.error("Bad request", {
         description: data?.message || "Invalid request data",

@@ -50,42 +50,32 @@ export default function AllAppointments({
     const fetchAppointments = async () => {
         setLoading(true)
         try {
-            // Convert filter values back to original format for API
-            const statusParam = selectedStatus && selectedStatus !== 'all-status' ? selectedStatus.replace(/-/g, ' ') : ''
-            const specialityParam = selectedSpeciality && selectedSpeciality !== 'all-specialities' ? selectedSpeciality.replace(/-/g, ' ') : ''
-
+            // Fetch all appointments — status/speciality filtering is client-side
             const params = {
                 page: 1,
-                limit: 50,
-                search: searchQuery,
-                status: statusParam,
-                speciality: specialityParam,
+                limit: 200,
             }
 
             const response = await appointments.getAllAppointments(params)
 
-            // Check if the data is directly in response.data or nested
             let appointmentsData = null
             let paginationData = null
 
             if (response.data && response.data.data) {
-                // Direct structure: response.data.data
                 appointmentsData = response.data.data
                 paginationData = response.data.pagination
             } else if (response.data && Array.isArray(response.data)) {
-                // Direct array structure
                 appointmentsData = response.data
                 paginationData = null
             }
 
             if (appointmentsData) {
-                console.log(appointmentsData)
                 setAppointmentsList(appointmentsData)
                 setPagination(paginationData || {
                     current_page: 1,
                     total_pages: 1,
                     total_records: appointmentsData.length,
-                    limit: 50
+                    limit: 200
                 })
             } else {
                 setAppointmentsList([])
@@ -93,7 +83,7 @@ export default function AllAppointments({
                     current_page: 1,
                     total_pages: 1,
                     total_records: 0,
-                    limit: 50
+                    limit: 200
                 })
             }
         } catch (error) {
@@ -105,15 +95,10 @@ export default function AllAppointments({
         }
     }
 
-    // Fetch data on component mount and when filters change
+    // Re-fetch only when server-side filters change (search is handled client-side)
     useEffect(() => {
-        console.log('Filter values changed:', {
-            searchQuery,
-            selectedStatus,
-            selectedSpeciality
-        })
         fetchAppointments()
-    }, [searchQuery, selectedStatus, selectedSpeciality])
+    }, [selectedStatus, selectedSpeciality])
 
     // Handle appointment refresh after add/edit/delete
     const handleAppointmentUpdate = () => {
@@ -159,39 +144,31 @@ export default function AllAppointments({
         }
 
         const matchesSearch = searchQuery
-            ? appointment.patient_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            ? appointment.patientId?.patient_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            appointment.patient_full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            appointment.patientId?.contact_number?.includes(searchQuery) ||
             appointment.contact_number?.includes(searchQuery) ||
             appointment.refer_doctor?.toLowerCase().includes(searchQuery.toLowerCase())
             : true
 
-        // Convert filter values back to original format for comparison
-        const statusFilter = selectedStatus ? selectedStatus.replace(/-/g, ' ').toLowerCase() : ''
-        const specialityFilter = selectedSpeciality ? selectedSpeciality.replace(/-/g, ' ').toLowerCase() : ''
+        // Normalise the stored status — the API may return either field name
+        const apptStatus = (appointment.status || appointment.appointment_status || "").toLowerCase()
 
-        // Also try exact match with original dropdown values
-        const statusExact = selectedStatus ? selectedStatus : ''
-        const specialityExact = selectedSpeciality ? selectedSpeciality : ''
+        // Convert dropdown slug back to readable text  e.g. "in-progress" → "in progress"
+        const statusFilter = selectedStatus ? selectedStatus.replace(/-/g, " ").toLowerCase() : ""
 
-        // Handle "All" options - they should match everything
-        const matchesStatus = selectedStatus && selectedStatus !== 'all-status'
-            ? appointment.status?.toLowerCase() === statusFilter ||
-            appointment.status?.toLowerCase().includes(statusFilter) ||
-            statusFilter.includes(appointment.status?.toLowerCase()) ||
-            appointment.status?.toLowerCase() === statusExact ||
-            appointment.status?.toLowerCase() === statusExact.replace(/-/g, ' ')
+        const matchesStatus = selectedStatus && selectedStatus !== "all-status"
+            ? apptStatus === statusFilter || apptStatus.includes(statusFilter)
             : true
 
-        const matchesSpeciality = selectedSpeciality && selectedSpeciality !== 'all-specialities'
-            ? appointment.speciality?.toLowerCase() === specialityFilter ||
-            appointment.speciality?.toLowerCase().includes(specialityFilter) ||
-            specialityFilter.includes(appointment.speciality?.toLowerCase()) ||
-            appointment.speciality?.toLowerCase() === specialityExact ||
-            appointment.speciality?.toLowerCase() === specialityExact.replace(/-/g, ' ')
+        const specialityFilter = selectedSpeciality ? selectedSpeciality.replace(/-/g, " ").toLowerCase() : ""
+        const apptSpeciality = (appointment.speciality || appointment.doctorId?.department || "").toLowerCase()
+
+        const matchesSpeciality = selectedSpeciality && selectedSpeciality !== "all-specialities"
+            ? apptSpeciality === specialityFilter || apptSpeciality.includes(specialityFilter)
             : true
 
-        const shouldInclude = matchesSearch && matchesStatus && matchesSpeciality
-
-        return shouldInclude
+        return matchesSearch && matchesStatus && matchesSpeciality
     })
 
     const getStatusBadgeColor = (status) => {

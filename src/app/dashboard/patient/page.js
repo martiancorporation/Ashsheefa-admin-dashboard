@@ -25,6 +25,14 @@ export default function PatientPage() {
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
+  // ── Patient stats ──────────────────────────────────────────────────────────
+  const [stats, setStats] = useState({
+    total: "-",
+    inTreatment: "-",
+    discharged: "-",
+  });
+  const [statsLoading, setStatsLoading] = useState(true);
+
   const statusOptions = [
     { name: "All Status" },
     { name: "In Treatment" },
@@ -32,9 +40,10 @@ export default function PatientPage() {
     { name: "Under Observation" },
   ];
 
-  // Fetch departments on component mount
+  // Fetch departments + stats on mount
   useEffect(() => {
     fetchDepartments();
+    fetchStats();
   }, []);
 
   // ************** FETCH DEPARTMENTS API CALL *******************
@@ -91,29 +100,51 @@ export default function PatientPage() {
 
   const handlePatientUpdate = () => {
     setRefreshKey((prev) => prev + 1);
+    fetchStats(); // refresh stats whenever a patient is updated
   };
 
-  // Mock stats data - you can replace this with real API data
+  // ── Fetch and derive stats from patients list ──────────────────────────────
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const response = await API.patient.getAllPatients({ page: 1, limit: 1000 });
+      // Handle both response shapes: { data: [...] } or { data: { data: [...] } }
+      const patients =
+        response?.data?.data ??
+        (Array.isArray(response?.data) ? response.data : null);
+
+      if (patients) {
+        const total = patients.length;
+        const inTreatment = patients.filter(
+          (p) => p.status?.toLowerCase() === "in treatment"
+        ).length;
+        const discharged = patients.filter(
+          (p) => p.status?.toLowerCase() === "discharged"
+        ).length;
+        setStats({ total, inTreatment, discharged });
+      }
+    } catch (error) {
+      console.error("Error fetching patient stats:", error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   const statsData = [
     {
       icon: "/assets/images/internationalPatient/totalPatient.svg",
       name: "Total Patients",
-      value: "200",
+      value: statsLoading ? "..." : String(stats.total),
     },
     {
       icon: "/assets/images/internationalPatient/inPatient.svg",
       name: "In Treatment",
-      value: "100",
-    },
-    {
-      icon: "/assets/images/internationalPatient/emergency.svg",
-      name: "Emergency Cases",
-      value: "120",
+      value: statsLoading ? "..." : String(stats.inTreatment),
     },
     {
       icon: "/assets/images/internationalPatient/discharged.svg",
       name: "Discharged Patients",
-      value: "05",
+      value: statsLoading ? "..." : String(stats.discharged),
     },
   ];
 
