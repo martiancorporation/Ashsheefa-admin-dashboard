@@ -247,32 +247,54 @@ export default function DoctorDetailsPage() {
         endTime: data.enabled ? data.endTime : null,
       }));
 
-      // Build the update payload as JSON (matching the working implementation)
-      const updatePayload = {
-        _id: id,
-        fullName: formData.fullName,
-        department: formData.department,
-        regNo: formData.regNo,
-        experience: Number(formData.experience) || 0,
-        contactNumber: formData.contactNumber,
-        qualification: formData.qualification,
-        bio: formData.bio,
-        email: formData.email,
-        specialization: formData.specialization,
-        isActive: formData.isActive,
-        languages: selectedLanguages,
-        availability: availability,
-        fees: formData.fees ? parseInt(formData.fees) : 0,
-        profilePic: photoUrl, // Keep existing photo URL or updated one
-      };
+      let updatePayload;
 
+      if (photoFile) {
+        // Backend reads images from req.files (multipart/form-data), NOT from JSON body.
+        // So when a new photo is selected we must send FormData with the actual file.
+        updatePayload = new FormData();
+        updatePayload.append("_id", id);
+        updatePayload.append("fullName", formData.fullName);
+        updatePayload.append("department", formData.department);
+        updatePayload.append("regNo", formData.regNo);
+        updatePayload.append("experience", Number(formData.experience) || 0);
+        updatePayload.append("contactNumber", formData.contactNumber);
+        updatePayload.append("qualification", formData.qualification);
+        updatePayload.append("bio", formData.bio);
+        updatePayload.append("email", formData.email);
+        updatePayload.append("specialization", formData.specialization);
+        updatePayload.append("isActive", formData.isActive);
+        updatePayload.append("fees", formData.fees ? parseInt(formData.fees) : 0);
+        // Arrays must be stringified for FormData
+        updatePayload.append("languages", JSON.stringify(selectedLanguages));
+        updatePayload.append("availability", JSON.stringify(availability));
+        // Attach the actual file — backend reads req.files?.profilePic
+        updatePayload.append("profilePic", photoFile);
+      } else {
+        // No new photo — send plain JSON as before
+        updatePayload = {
+          _id: id,
+          fullName: formData.fullName,
+          department: formData.department,
+          regNo: formData.regNo,
+          experience: Number(formData.experience) || 0,
+          contactNumber: formData.contactNumber,
+          qualification: formData.qualification,
+          bio: formData.bio,
+          email: formData.email,
+          specialization: formData.specialization,
+          isActive: formData.isActive,
+          languages: selectedLanguages,
+          availability: availability,
+          fees: formData.fees ? parseInt(formData.fees) : 0,
+        };
+      }
       const response = await API.doctor.updateDoctor(updatePayload);
 
       if (!response || response.error) {
         throw new Error("No response from server");
       }
 
-      console.log(response)
       setIsEditMode(false);
       toast.success("Doctor updated successfully!");
 
@@ -492,7 +514,7 @@ export default function DoctorDetailsPage() {
           {/* Top Card */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <div className="flex gap-4">
-              <div className="relative">
+              <div className="relative w-20 h-20 flex-shrink-0">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -500,34 +522,73 @@ export default function DoctorDetailsPage() {
                   accept="image/jpeg, image/png, image/jpg"
                   className="hidden"
                 />
+
+                {/* Avatar circle */}
                 <div
                   onClick={isEditMode ? handlePhotoUpload : undefined}
-                  className={`w-20 h-20 rounded-full overflow-hidden border flex-shrink-0 ${isEditMode
-                    ? "cursor-pointer hover:opacity-75 transition-opacity relative group"
-                    : ""
-                    }`}
+                  className={`w-20 h-20 rounded-full overflow-hidden border-2 ${photoFile ? "border-blue-400" : "border-gray-200"
+                    } ${isEditMode ? "cursor-pointer group" : ""}`}
                 >
                   {photoUrl ? (
-                    <Image
+                    <img
                       src={photoUrl}
                       alt={formData.fullName}
-                      width={80}
-                      height={80}
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200" />
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <PencilLine size={18} className="text-gray-400" />
+                    </div>
                   )}
+
+                  {/* Hover overlay */}
                   {isEditMode && (
-                    <div className="absolute inset-0 bg-gray-500 bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                      <PencilLine
-                        size={20}
-                        className="text-white transition-opacity z-20"
-                      />
+                    <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                      <PencilLine size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   )}
                 </div>
+
+                {/* "New" badge when a file is staged */}
+                {photoFile && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full leading-none font-medium whitespace-nowrap">
+                    New
+                  </span>
+                )}
+
+                {/* Red X — discard staged file, revert to saved photo */}
+                {isEditMode && photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPhotoFile(null);
+                      setPhotoUrl(doctor?.profilePic || "");
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Discard new photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+
+                {/* Gray X — remove saved photo entirely (no new file staged) */}
+                {isEditMode && photoUrl && !photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePhoto();
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-500 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Remove photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
               </div>
+
 
               <div className="flex-1">
                 {isEditMode ? (
