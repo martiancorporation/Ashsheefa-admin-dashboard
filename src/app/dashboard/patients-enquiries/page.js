@@ -41,12 +41,6 @@ export default function PatientEnquiryPage() {
 
   // Filter patients based on search query and active filters
   useEffect(() => {
-    console.log("Filtering patients enquiry:", {
-      totalPatients: patientsEnquiry.length,
-      searchQuery,
-      activeFilters,
-      patientsEnquiry,
-    });
 
     let filtered = patientsEnquiry;
 
@@ -73,11 +67,6 @@ export default function PatientEnquiryPage() {
       }
     }
 
-    console.log("Filtered patients enquiry:", {
-      filteredCount: filtered.length,
-      filteredPatients: filtered,
-    });
-
     setFilteredPatients(filtered);
   }, [searchQuery, patientsEnquiry, activeFilters]);
 
@@ -90,12 +79,8 @@ export default function PatientEnquiryPage() {
       const response = await API.patientsEnquiry.getAllPatientsEnquiry(1);
 
       if (response.success === true) {
-        console.log("Full API response:", response);
-        console.log("Patients enquiry data:", response.data);
-        console.log("Data length:", response.data?.length);
         setPatientsEnquiry(response.data);
         setFilteredPatients(response.data);
-        console.log("Patients enquiry loaded:", response.data);
       } else {
         setError("Failed to fetch patients enquiry data");
         toast.error("Failed to fetch patients enquiry data");

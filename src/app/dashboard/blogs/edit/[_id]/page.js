@@ -38,7 +38,6 @@ const EditBlogPost = () => {
   const getPostDetails = async () => {
     try {
       const response = await API.blog.getBlogDetails({ _id });
-      console.log("Blog details response:", response);
 
       if (response) {
         setPostData(response);
@@ -131,30 +130,9 @@ const EditBlogPost = () => {
       }
     });
 
-    // Debug: Log what's being sent
-    console.log("Form data being sent:", Object.fromEntries(data.entries()));
-    console.log("Image file object:", formData.image_file);
-    console.log("Blog ID:", _id);
-
     setIsSubmitting(true);
     try {
-      console.log("Sending update request to API...");
       const response = await API.blog.updateBlog(data, _id);
-
-      console.log("API Response:", response);
-      console.log("Response type:", typeof response);
-      console.log(
-        "Response keys:",
-        response ? Object.keys(response) : "No response"
-      );
-      console.log("Response.success:", response?.success);
-      console.log("Response.message:", response?.message);
-      console.log("Response.status:", response?.status);
-      console.log("Response._id:", response?._id);
-      console.log("Response.title:", response?.title);
-      console.log("Response.error:", response?.error);
-      console.log("Full response object:", JSON.stringify(response, null, 2));
-
       // Check if response exists and is successful
       if (response) {
         // Check for different possible success indicators

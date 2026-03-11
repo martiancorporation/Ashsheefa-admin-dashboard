@@ -15,9 +15,7 @@ const department = {
     let response = null;
     try {
       const url = `${GET_ALL_DEPARTMENTS_API}?page=${page}&limit=${limit}`;
-      console.log("Calling API:", url);
       response = await apiConnector("GET", url);
-      console.log("Raw API response:", response);
     } catch (error) {
       console.error("API call error:", error);
       response = error;

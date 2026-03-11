@@ -73,27 +73,6 @@ const uploadLabReport = async (patientId, data) => {
   let response = null;
   try {
     const url = `${UPLOAD_LAB_REPORT}/${patientId}`;
-    console.log("Upload Lab Report URL:", url);
-    console.log("Patient ID:", patientId);
-
-    // Check if data is FormData
-    if (data instanceof FormData) {
-      console.log("Upload data is FormData");
-      console.log("FormData entries:");
-      for (let [key, value] of data.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}:`, {
-            name: value.name,
-            type: value.type,
-            size: value.size,
-          });
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
-    } else {
-      console.log("Upload data:", data);
-    }
 
     response = await apiConnector("POST", url, data);
   } catch (error) {
@@ -116,28 +95,6 @@ const uploadPrescription = async (patientId, data) => {
   let response = null;
   try {
     const url = `${UPLOAD_PRESCRIPTION}/${patientId}`;
-    console.log("Upload Prescription URL:", url);
-    console.log("Patient ID:", patientId);
-
-    // Check if data is FormData
-    if (data instanceof FormData) {
-      console.log("Upload data is FormData");
-      console.log("FormData entries:");
-      for (let [key, value] of data.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}:`, {
-            name: value.name,
-            type: value.type,
-            size: value.size,
-          });
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
-    } else {
-      console.log("Upload data:", data);
-    }
-
     response = await apiConnector("POST", url, data);
   } catch (error) {
     response = error;

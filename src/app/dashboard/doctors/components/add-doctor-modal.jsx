@@ -131,7 +131,6 @@ export function AddDoctorModal({
   };
 
   const handlePhotoUpload = () => {
-    console.log("Upload photo clicked");
     if (fileInputRef.current) {
       fileInputRef.current.click();
     } else {
@@ -141,7 +140,6 @@ export function AddDoctorModal({
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    console.log("File selected:", file);
 
     if (file) {
       // Validate file size (2MB limit)
@@ -160,7 +158,6 @@ export function AddDoctorModal({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          console.log("File loaded successfully");
           setPhotoUrl(event.target.result);
         }
       };
@@ -291,18 +288,6 @@ export function AddDoctorModal({
         endTime: value.enabled ? value.endTime : null,
       }));
 
-      // Handle form submission
-      // const formattedData = {
-      //     ...formData,
-      //     profilePic: photoUrl,
-      //     languages: selectedLanguages,
-      //     _id: doctor?._id, // Include _id if editing
-      //     availability: availability
-      // }
-      // console.log("Form submitted:", formattedData)
-      // if (onSave) {
-      //     await onSave(formattedData)
-      // }
       const formPayload = new FormData();
 
       // ✅ Append ONLY simple values
@@ -331,7 +316,6 @@ export function AddDoctorModal({
         formPayload.append("_id", doctor._id);
       }
 
-      console.log("Submitting FormData...", formPayload);
       if (onSave) {
         await onSave(formPayload);
       }

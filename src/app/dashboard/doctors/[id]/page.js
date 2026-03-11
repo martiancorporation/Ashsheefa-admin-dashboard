@@ -264,7 +264,6 @@ export default function DoctorDetailsPage() {
         profilePic: photoUrl, // Keep existing photo URL or updated one
       };
 
-      console.log("Update payload:", updatePayload);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/v1/dashboard/doctors/update_doctor_data/${id}`,

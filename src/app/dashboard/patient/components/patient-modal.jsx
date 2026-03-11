@@ -41,7 +41,6 @@ export function PatientModal({ isOpen, onClose, isEdit = false, patientData }) {
     const handleSubmit = (e) => {
         e.preventDefault()
         // Handle form submission
-        console.log("Form submitted:", formData)
         onClose()
     }
 

@@ -128,7 +128,6 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
                 ...(patient && { status: formData.status.trim() }), // Only include status when editing
             }
 
-            console.log("Submitting international patient data:", submitData)
             let response
             if (patient) {
                 // Update existing patient
@@ -177,7 +176,6 @@ export function AddInternationalPatientModal({ open, onOpenChange, patient, onSa
         label: dept
     }))
 
-    console.log("Speciality options:", specialityOptions)
     
 //   const specialityOptions = [
 //     { value: "Ortho", label: "Orthopedics" },

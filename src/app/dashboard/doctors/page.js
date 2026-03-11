@@ -193,11 +193,9 @@ export default function DoctorsPage() {
       setError(null);
     }
 
-    console.log("Fetching doctors...", { page, isLoadMore });
     API.doctor
       .getAllDoctors(page, doctorsPerPage)
       .then((response) => {
-        console.log("API Response:", response);
         if (response.success === true) {
           setDoctor(response);
           const newDoctors =
@@ -239,13 +237,6 @@ export default function DoctorsPage() {
               ? page * doctorsPerPage < totalFromResponse
               : newDoctors.length === doctorsPerPage;
           setHasMore(calculatedHasMore);
-
-          console.log("Doctors loaded:", {
-            newDoctors,
-            total: totalFromResponse,
-            currentPage: page,
-            hasMore: calculatedHasMore,
-          });
         } else {
           if (!isLoadMore) {
             setError("Failed to fetch doctors");
@@ -334,14 +325,12 @@ export default function DoctorsPage() {
 
   // ****************************** Dropdown Action Handlers ***********************************
   const handleViewDetails = (doctor) => {
-    console.log("Opening details modal for:", doctor);
     setOpenDropdownId(null); // Close dropdown
     setDoctorForAction(doctor);
     setDetailsModalOpen(true);
   };
 
   const handleEditDoctor = async (doctor) => {
-    console.log("Opening edit modal for:", doctor);
     setOpenDropdownId(null); // Close dropdown
     try {
       const response = await API.doctor.getDoctorById(doctor._id);
@@ -365,7 +354,6 @@ export default function DoctorsPage() {
   };
 
   const handleDeleteDoctor = (doctor) => {
-    console.log("Opening delete confirmation for:", doctor);
     setOpenDropdownId(null); // Close dropdown
     setDoctorForAction(doctor);
     setDeleteConfirmationOpen(true);
@@ -488,13 +476,6 @@ export default function DoctorsPage() {
           data,
           authData?.access_token,
         );
-        console.log("Update doctor response:", response);
-        console.log("Response type:", typeof response);
-        console.log(
-          "Response keys:",
-          response ? Object.keys(response) : "No response",
-        );
-
         // Check for success - response could be an object, array, or have success property
         const isSuccess =
           response &&
@@ -518,14 +499,6 @@ export default function DoctorsPage() {
           data,
           authData?.access_token,
         );
-        console.log("Add doctor response:", response);
-        console.log("Response type:", typeof response);
-        console.log(
-          "Response keys:",
-          response ? Object.keys(response) : "No response",
-        );
-        console.log("Response === false:", response === false);
-        console.log("Response truthy check:", !!response);
 
         // Check for success - response could be an object, array, or have success property
         const isSuccess =

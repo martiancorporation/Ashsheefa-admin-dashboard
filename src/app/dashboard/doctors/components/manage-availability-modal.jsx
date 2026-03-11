@@ -100,7 +100,6 @@ export function ManageAvailabilityModal({ open, onOpenChange, doctor, onSave }) 
             _id: doctor._id,
             availability
         }
-        console.log("Updated availability:", data)
 
         if (onSave) {
             onSave(data)

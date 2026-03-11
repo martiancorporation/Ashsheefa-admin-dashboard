@@ -25,12 +25,10 @@ export function DeleteNews({ newsId, newsTitle, onDelete }) {
     const handleDelete = async () => {
         setLoading(true);
         try {
-            console.log("Deleting news with ID:", newsId);
             const response = await API.news.deleteNews({
                 _id: newsId,
             });
 
-            console.log("Delete response:", response);
 
             if (response?.success) {
                 toast.success("News deleted successfully");

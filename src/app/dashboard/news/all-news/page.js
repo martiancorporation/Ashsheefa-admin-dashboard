@@ -42,7 +42,6 @@ export default function AllNews() {
     API.news
       .getAllNews()
       .then((response) => {
-        console.log("All news response:", response);
         if (response?.data) {
           setNews(response.data);
         }

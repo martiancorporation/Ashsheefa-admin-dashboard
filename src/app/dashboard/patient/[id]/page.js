@@ -107,12 +107,6 @@ export default function PatientDetailsPage() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    console.log("File selected:", file);
-    console.log("File details:", {
-      name: file?.name,
-      type: file?.type,
-      size: file?.size,
-    });
 
     if (file) {
       // Check file type
@@ -132,11 +126,8 @@ export default function PatientDetailsPage() {
         return;
       }
 
-      console.log("File validation passed, setting selected file");
       setSelectedFile(file);
-    } else {
-      console.log("No file selected");
-    }
+    } 
   };
 
   const handleUpload = async () => {

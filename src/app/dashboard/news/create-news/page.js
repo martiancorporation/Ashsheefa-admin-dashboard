@@ -66,7 +66,6 @@ export default function CreateNews() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        console.log("Image converted to base64 successfully");
         setFormData((prev) => ({
           ...prev,
           image: event.target.result,
@@ -121,23 +120,7 @@ export default function CreateNews() {
         image: formData.image, // This is now a base64 string
       };
 
-      // Debug: Log the data being sent
-      console.log("News data being sent:", {
-        title: newsData.title,
-        description: newsData.description,
-        news_channel_name: newsData.news_channel_name,
-        publish_date: newsData.publish_date,
-        image: newsData.image ? "Base64 image data present" : "No image",
-      });
-
-      console.log("About to send request...");
-
       const response = await API.news.addNews(newsData);
-
-      console.log("Response received:", response);
-      console.log("Response type:", typeof response);
-      console.log("Response success:", response?.success);
-      console.log("Response data:", response?.data);
 
       if (response && (response.success || response._id)) {
         toast.success("News created successfully");

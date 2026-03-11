@@ -182,7 +182,6 @@ export default function DepartmentsPage() {
   };
 
   const openAddModal = () => {
-    console.log("openAddModal called");
     setEditingDepartment(null);
     setModalType("add");
   };
