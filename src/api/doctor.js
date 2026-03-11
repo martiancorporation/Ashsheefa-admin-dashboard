@@ -53,7 +53,7 @@ const doctor = {
     try {
       const { _id, ...updateData } = data;
       const url = `${UPDATE_DOCTOR_DATA_API}/${_id}`;
-      response = await apiConnector("PUT", url, updateData);
+      response = await apiConnector("PUT", url, data);
     } catch (error) {
       response = error;
     }
