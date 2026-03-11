@@ -4,19 +4,10 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft,
   Plus,
   Search,
-  Filter,
-  MoreVertical,
-  Eye,
-  Pencil,
-  Trash2,
-  Clock,
-  Calendar,
-  ListFilter,
   Loader2,
-  ArrowRight,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -793,9 +784,9 @@ export default function DoctorsPage() {
                             {doctor.qualification}, {doctor.regNo}
                           </p>
                         </div>
-                        <div className="flex text-xs underline text-[#4B4B4B] group hover:text-blue-700 items-center">
-                          View details
-                         <ArrowRight className="h-3 w-3" />
+                        <div className="flex text-xs underline text-[#4B4B4B] group hover:text-blue-700 items-end">
+                          View details 
+                         <ChevronRight className="h-4 w-4" />
                         </div>
                         </div>
                       </div>
