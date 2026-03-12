@@ -47,7 +47,6 @@ const addInternationalPatient = async (data) => {
       data
     );
     if (response?.status === 201) {
-      console.log("API: International patient added successfully:", response.data);
       return handleResponse(response);
     } else {
       console.warn("API: Unexpected response while adding international patient:", response);

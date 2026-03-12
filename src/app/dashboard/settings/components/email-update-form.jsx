@@ -49,7 +49,6 @@ export function EmailUpdateForm() {
                 new_email: formData.new_email.trim(),
             })
 
-            console.log("Initiate email change response:", response)
 
             if (response && response.otp) {
                 toast.success("OTP sent to both email addresses")
@@ -90,7 +89,6 @@ export function EmailUpdateForm() {
                 newEmail: formData.new_email.trim(),
             })
 
-            console.log("Verify email change response:", response)
 
             if (response && response.updated) {
                 toast.success("Email updated successfully")

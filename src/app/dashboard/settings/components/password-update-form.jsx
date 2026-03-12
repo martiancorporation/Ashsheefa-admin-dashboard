@@ -57,7 +57,6 @@ export function PasswordUpdateForm() {
                 confirm_password: formData.confirm_password,
             })
 
-            console.log("Update password response:", response)
 
             // Check if response exists (successful update)
             if (response) {

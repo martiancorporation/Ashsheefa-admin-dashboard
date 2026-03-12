@@ -62,7 +62,6 @@ export function EditDetailsForm() {
                 phone_number: formData.phone_number.trim(),
             })
 
-            console.log("Update admin details response:", response)
 
             // Check if response exists and has user data (successful update)
             if (response && response.user) {

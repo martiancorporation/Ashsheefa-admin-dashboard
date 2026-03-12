@@ -55,13 +55,6 @@ export default function AllInternationalPatients({
             const specialityParam = selectedSpeciality && selectedSpeciality !== 'all-specialities' ? selectedSpeciality.replace(/-/g, ' ') : ''
             const countryParam = selectedCountry && selectedCountry !== 'all-countries' ? selectedCountry.replace(/-/g, ' ') : ''
 
-            console.log('API Filter Parameters:', {
-                status: statusParam,
-                speciality: specialityParam,
-                country: countryParam,
-                search: searchQuery
-            })
-
             const params = {
                 page: 1,
                 limit: 50,
@@ -72,8 +65,6 @@ export default function AllInternationalPatients({
             }
 
             const response = await internationalPatient.getAllInternationalPatients(params)
-
-            console.log('API Response:', response)
 
             // Check if the data is directly in response.data or nested
             let patientsData = null
@@ -94,14 +85,6 @@ export default function AllInternationalPatients({
             }
 
             if (patientsData) {
-                console.log('=== PATIENTS DATA LOADED ===')
-                console.log('First 3 patients data:', patientsData.slice(0, 3).map(p => ({
-                    name: p.patient_full_name,
-                    status: p.status,
-                    speciality: p.speciality,
-                    country: p.country
-                })))
-                console.log('=== END PATIENTS DATA ===')
 
                 setPatients(patientsData)
                 setPagination(paginationData || {
@@ -130,12 +113,6 @@ export default function AllInternationalPatients({
 
     // Fetch data on component mount and when filters change
     useEffect(() => {
-        console.log('Filter values changed:', {
-            searchQuery,
-            selectedStatus,
-            selectedSpeciality,
-            selectedCountry
-        })
         fetchInternationalPatients()
     }, [searchQuery, selectedStatus, selectedSpeciality, selectedCountry])
 
@@ -218,38 +195,7 @@ export default function AllInternationalPatients({
         const matchesCountry = countryFilter
             ? patient.country?.toLowerCase() === countryFilter
             : true
-
-        // Debug logging for first patient only to avoid spam
-        if ((selectedStatus || selectedSpeciality || selectedCountry) && patients.indexOf(patient) === 0) {
-            console.log('=== FILTER DEBUG ===')
-            console.log('Available patients data:', patients.map(p => ({
-                name: p.patient_full_name,
-                status: p.status,
-                speciality: p.speciality,
-                country: p.country
-            })))
-            console.log('Current filter values:', {
-                selectedStatus,
-                statusFilter,
-                selectedSpeciality,
-                specialityFilter,
-                selectedCountry,
-                countryFilter
-            })
-            console.log('Current patient being filtered:', {
-                name: patient.patient_full_name,
-                status: patient.status,
-                speciality: patient.speciality,
-                country: patient.country
-            })
-            console.log('Matches:', {
-                matchesStatus,
-                matchesSpeciality,
-                matchesCountry
-            })
-            console.log('=== END DEBUG ===')
-        }
-
+            
         const shouldInclude = matchesSearch && matchesStatus && matchesSpeciality && matchesCountry
 
         return shouldInclude

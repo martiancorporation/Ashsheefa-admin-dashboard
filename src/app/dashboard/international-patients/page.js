@@ -109,14 +109,6 @@ export default function InternationalPatientsPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
-  // Debug logging for filter changes
-  console.log("Current filter states:", {
-    selectedStatus,
-    selectedSpeciality,
-    selectedCountry,
-    searchQuery,
-  });
-
   return (
     <>
       <div className="w-full flex items-center justify-between">
