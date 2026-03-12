@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import Image from "next/image";
 import { ImagePlus, Eye, Loader2 } from "lucide-react";
+
 
 import API from "@/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ const EditBlogPost = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialEditorContent, setInitialEditorContent] = useState("");
   const [formData, setFormData] = useState({
     title: "",
     author: "",
@@ -50,8 +52,10 @@ const EditBlogPost = () => {
           meta_keywords: response.meta_keywords || "",
           short_description: response.short_description || "",
           main_content: response.main_content || "",
-          image_file: null, // We'll handle existing image separately
+          image_file: null,
         });
+        // Set ONCE — never updated again, so it doesn't re-seed on every keystroke
+        setInitialEditorContent(response.main_content || "");
 
         // Set existing image preview if available
         if (response.image) {
@@ -121,10 +125,9 @@ const EditBlogPost = () => {
 
     const data = new FormData();
     Object.keys(formData).forEach((key) => {
-      // For image file, try both image_file and image field names
-      if (key === "image_file" && formData[key]) {
-        data.append("image_file", formData[key]);
-        data.append("image", formData[key]); // Also try 'image' field name
+      if (key === "image_file") {
+        // Only append the file when one was actually selected
+        if (formData[key]) data.append("image_file", formData[key]);
       } else {
         data.append(key, formData[key]);
       }
@@ -151,7 +154,7 @@ const EditBlogPost = () => {
         ) {
           toast.success("Blog updated successfully!");
           resetForm();
-          router.push("/dashboard/blogs");
+          router.push("/dashboard/blogs/all-blogs");
         } else {
           // Check if it's actually an error response
           const errorMessage =
@@ -211,10 +214,10 @@ const EditBlogPost = () => {
               <div className="flex items-center gap-4">
                 <div className="relative w-full h-40 border-2 border-dashed rounded-lg flex flex-col  gap-y-4 items-center justify-center overflow-hidden">
                   {imagePreview ? (
-                    <Image
+                    /* Use plain <img> — Next.js Image blocks Cloudinary URLs
+                       that aren't in next.config domains, and blocks blob/data URIs */
+                    <img
                       src={imagePreview}
-                      width={200}
-                      height={200}
                       alt="Preview"
                       className="w-full h-full object-cover"
                     />
@@ -352,7 +355,7 @@ const EditBlogPost = () => {
               </Label>
               <RichTextEditor
                 name="main_content"
-                initialContent={formData.main_content}
+                initialContent={initialEditorContent}
                 onChange={(content) =>
                   setFormData((prevState) => ({
                     ...prevState,

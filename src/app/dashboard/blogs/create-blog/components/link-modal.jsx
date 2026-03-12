@@ -12,6 +12,7 @@ export function LinkModal({ isOpen, onClose, onSubmit }) {
 
     const handleSubmit = (e) => {
         e.preventDefault()
+        e.stopPropagation() // prevent bubbling to the parent page <form>
         onSubmit(url, text)
         setUrl("")
         setText("")
@@ -24,13 +25,16 @@ export function LinkModal({ isOpen, onClose, onSubmit }) {
                 <DialogHeader>
                     <DialogTitle>Add Link</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
+                <form
+                    onSubmit={handleSubmit}
+                    onKeyDown={(e) => e.stopPropagation()}
+                >
                     <div className="flex flex-col gap-4 py-4">
                         <div className="flex items-center gap-4">
                             <Label htmlFor="url" className="text-right">
                                 URL
                             </Label>
-                            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="h-10" placeholder='Enter your link here ..'/>
+                            <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} className="h-10" placeholder='Enter your link here ..' />
                         </div>
                         <div className="flex items-center gap-4">
                             <Label htmlFor="text" className="text-right">
