@@ -579,35 +579,37 @@ export default function DoctorDetailsPage() {
                       placeholder="Contact Number"
                     />
                   ) : (
-                    <span>+91 {formData.contactNumber}</span>
+                    <span>+91 {formData.contactNumber || "9836001515"}</span>
                   )}
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="flex items-center gap-2">
-                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
-                  <Calendar size={18} className="text-blue-600" />
+              {formData.experience && formData.experience > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                    <Calendar size={18} className="text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500">Experience</div>
+                    {isEditMode ? (
+                      <Input
+                        name="experience"
+                        type="number"
+                        value={formData.experience}
+                        onChange={handleChange}
+                        className="font-medium h-8"
+                        placeholder="Years"
+                      />
+                    ) : (
+                      <div className="font-medium">
+                        {formData.experience}+ Years
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="text-xs text-gray-500">Experience</div>
-                  {isEditMode ? (
-                    <Input
-                      name="experience"
-                      type="number"
-                      value={formData.experience}
-                      onChange={handleChange}
-                      className="font-medium h-8"
-                      placeholder="Years"
-                    />
-                  ) : (
-                    <div className="font-medium">
-                      {formData.experience || 0}+ Years
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
               <div className="flex items-center gap-2">
                 <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
                   <Stethoscope size={18} className="text-blue-600" />
