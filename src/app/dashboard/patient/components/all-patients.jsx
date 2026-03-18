@@ -30,7 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EditPatientModal } from "./edit-patient-modal";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import { UpdateStatusModal } from "./update-status-modal";
 import { toast } from "sonner";
@@ -42,8 +41,6 @@ export default function AllPatients({
   selectedStatus = "",
   selectedSpeciality = "",
   onPatientUpdate,
-  departments = [],
-  departmentsLoading = false,
 }) {
   const router = useRouter();
   const [patientsList, setPatientsList] = useState([]);
@@ -100,18 +97,6 @@ export default function AllPatients({
       }
 
       if (patientsData) {
-        console.log("=== PATIENTS DATA LOADED ===");
-        console.log(
-          "First 3 patients data:",
-          patientsData.slice(0, 3).map((p) => ({
-            name: p.patient_full_name,
-            uhid: p.uhid,
-            status: p.status,
-            speciality: p.speciality,
-          })),
-        );
-        console.log("=== END PATIENTS DATA ===");
-
         setPatientsList(patientsData);
         setPagination(
           paginationData || {
@@ -138,14 +123,8 @@ export default function AllPatients({
       setLoading(false);
     }
   };
-
   // Fetch data on component mount and when filters change
   useEffect(() => {
-    console.log("Filter values changed:", {
-      searchQuery,
-      selectedStatus,
-      selectedSpeciality,
-    });
     fetchPatients();
   }, [searchQuery, selectedStatus, selectedSpeciality]);
 

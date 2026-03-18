@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useEditor, EditorContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Placeholder from "@tiptap/extension-placeholder"
@@ -33,6 +33,7 @@ import { LinkModal } from "../../create-blog/components/link-modal"
 
 export function RichTextEditor({ name, initialContent = '', onChange }) {
   const [linkModalOpen, setLinkModalOpen] = useState(false)
+  const seededRef = useRef(false) // prevent re-seeding on every keystroke
 
   const editor = useEditor({
     extensions: [
@@ -75,6 +76,17 @@ export function RichTextEditor({ name, initialContent = '', onChange }) {
     },
     immediatelyRender: false,
   })
+
+  // Tiptap's `editor` starts as null and initialises asynchronously.
+  // `initialContent` also starts empty and is set after the API fetch.
+  // We watch both: once the editor exists AND real content has arrived,
+  // seed it exactly once (seededRef prevents overwriting user edits).
+  useEffect(() => {
+    if (editor && initialContent && !seededRef.current) {
+      editor.commands.setContent(initialContent, false)
+      seededRef.current = true
+    }
+  }, [editor, initialContent])
 
   if (!editor) {
     return null

@@ -30,7 +30,6 @@ export const DeleteBlog = ({ blog, getAllBlogs }) => {
     API.blog
       .deleteBlog(data)
       .then((response) => {
-        console.log("Delete blog response:", response);
         if (response) {
           toast.success("Blog post deleted successfully");
           getAllBlogs();

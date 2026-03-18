@@ -36,9 +36,8 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
   if (session?.access_token) {
     finalHeaders = {
       ...finalHeaders,
-      Authorization: `Bearer ${session.access_token}||${
-        session.active_session_refresh_token || ""
-      }`,
+      Authorization: `Bearer ${session.access_token}||${session.active_session_refresh_token || ""
+        }`,
     };
 
     // Only set Content-Type for non-FormData requests
@@ -49,14 +48,6 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
       delete finalHeaders["Content-Type"];
     }
   }
-
-  console.log("API Connector - Method:", method);
-  console.log("API Connector - URL:", url);
-  console.log("API Connector - Headers:", finalHeaders);
-  console.log(
-    "API Connector - Data type:",
-    bodyData ? bodyData.constructor.name : "null"
-  );
 
   const config = {
     method: `${method}`,
@@ -70,7 +61,6 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
 };
 
 export const handleResponse = (response) => {
-  console.log("HandleResponse - Full response:", response);
 
   // Handle fetch responses (for news add)
   if (response?.ok !== undefined) {
@@ -82,8 +72,10 @@ export const handleResponse = (response) => {
       });
     } else if (response?.status === 401) {
       toast.error("Session expired", {
-        description: "Please logout and log in again.",
+        description: "Redirecting to login...",
       });
+      localStorage.removeItem("authentications");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
     } else if (response?.status === 500) {
       toast.error("Server error", {
         description: response?.data?.message || "Internal server error",
@@ -110,8 +102,10 @@ export const handleResponse = (response) => {
 
     if (status === 401) {
       toast.error("Session expired", {
-        description: "Please logout and log in again.",
+        description: "Redirecting to login...",
       });
+      localStorage.removeItem("authentications");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
     } else if (status === 400) {
       toast.error("Bad request", {
         description: data?.message || "Invalid request data",
@@ -143,48 +137,3 @@ export const handleResponse = (response) => {
 
   return false;
 };
-
-// export const getToken = async () => {
-//   const session = localStorage.getItem("authentications")
-//     ? JSON.parse(localStorage.getItem("authentications"))
-//     : null;
-//   console.log(session);
-//
-//
-//   let response = session?.access_token;
-//   const token_expired =
-//     moment(session?.token_expiry).diff(moment(), "seconds") < 5 ? true : false;
-//
-//   if (session && token_expired) {
-//     //call refresh token and update client token
-//     // console.log("token refresh");
-//     try {
-//       const apiresponse = await apiConnector(
-//         "GET",
-//         REFRESH_TOKEN +
-//           session.email +
-//           "/" +
-//           session.active_session_refresh_token +
-//           "/" +
-//           session.device
-//       );
-//       if (apiresponse?.status === 200) {
-//         session.access_token = apiresponse.data.access_token;
-//         session.token_expiry = apiresponse.data.token_expiry;
-//         session.active_session_refresh_token =
-//           apiresponse.data.active_session_refresh_token;
-//         response = session.access_token;
-//         localStorage.setItem("userSession", JSON.stringify(session));
-//       } else {
-//         throw apiresponse.data.error;
-//       }
-//     } catch (e) {
-//       Config.UNAUTHORIZED_EXCEPTION = true;
-//       toast.error("Unauthorized api call", {
-//         description: "You are not authorized for the action.",
-//       });
-//     }
-//   }
-//
-//   return response + "||" + session?.device;
-// };

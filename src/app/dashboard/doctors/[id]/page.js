@@ -43,6 +43,8 @@ export default function DoctorDetailsPage() {
   const [showAvailability, setShowAvailability] = useState(true);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
 
@@ -245,45 +247,54 @@ export default function DoctorDetailsPage() {
         endTime: data.enabled ? data.endTime : null,
       }));
 
-      // Build the update payload as JSON (matching the working implementation)
-      const updatePayload = {
-        _id: id,
-        fullName: formData.fullName,
-        department: formData.department,
-        regNo: formData.regNo,
-        experience: Number(formData.experience) || 0,
-        contactNumber: formData.contactNumber,
-        qualification: formData.qualification,
-        bio: formData.bio,
-        email: formData.email,
-        specialization: formData.specialization,
-        isActive: formData.isActive,
-        languages: selectedLanguages,
-        availability: availability,
-        fees: formData.fees ? parseInt(formData.fees) : 0,
-        profilePic: photoUrl, // Keep existing photo URL or updated one
-      };
+      let updatePayload;
 
-      console.log("Update payload:", updatePayload);
+      if (photoFile) {
+        // Backend reads images from req.files (multipart/form-data), NOT from JSON body.
+        // So when a new photo is selected we must send FormData with the actual file.
+        updatePayload = new FormData();
+        updatePayload.append("_id", id);
+        updatePayload.append("fullName", formData.fullName);
+        updatePayload.append("department", formData.department);
+        updatePayload.append("regNo", formData.regNo);
+        updatePayload.append("experience", Number(formData.experience) || 0);
+        updatePayload.append("contactNumber", formData.contactNumber);
+        updatePayload.append("qualification", formData.qualification);
+        updatePayload.append("bio", formData.bio);
+        updatePayload.append("email", formData.email);
+        updatePayload.append("specialization", formData.specialization);
+        updatePayload.append("isActive", formData.isActive);
+        updatePayload.append("fees", formData.fees ? parseInt(formData.fees) : 0);
+        // Arrays must be stringified for FormData
+        updatePayload.append("languages", JSON.stringify(selectedLanguages));
+        updatePayload.append("availability", JSON.stringify(availability));
+        // Attach the actual file — backend reads req.files?.profilePic
+        updatePayload.append("profilePic", photoFile);
+      } else {
+        // No new photo — send plain JSON as before
+        updatePayload = {
+          _id: id,
+          fullName: formData.fullName,
+          department: formData.department,
+          regNo: formData.regNo,
+          experience: Number(formData.experience) || 0,
+          contactNumber: formData.contactNumber,
+          qualification: formData.qualification,
+          bio: formData.bio,
+          email: formData.email,
+          specialization: formData.specialization,
+          isActive: formData.isActive,
+          languages: selectedLanguages,
+          availability: availability,
+          fees: formData.fees ? parseInt(formData.fees) : 0,
+        };
+      }
+      const response = await API.doctor.updateDoctor(updatePayload);
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v1/dashboard/doctors/update_doctor_data/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData?.access_token}`,
-          },
-          body: JSON.stringify(updatePayload),
-        },
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update doctor");
+      if (!response || response.error) {
+        throw new Error("No response from server");
       }
 
-      const result = await response.json();
       setIsEditMode(false);
       toast.success("Doctor updated successfully!");
 
@@ -356,15 +367,7 @@ export default function DoctorDetailsPage() {
   const fetchDoctor = async () => {
     const authDataString = localStorage.getItem("authentications");
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/v1/dashboard/doctors/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${JSON.parse(authDataString)?.access_token}`,
-          },
-        },
-      );
-      const data = await res.json();
+      const data = await API.doctor.getDoctorById(id);
       setDoctor(data);
 
       // Initialize form data
@@ -413,6 +416,25 @@ export default function DoctorDetailsPage() {
     }
   };
 
+  const handleDeleteDoctor = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await API.doctor.deleteDoctor(id);
+      if (!response || response.error) {
+        throw new Error(response?.message || "Failed to delete doctor");
+      }
+      toast.success("Doctor deleted successfully!");
+      router.back();
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      toast.error(error.message || "Failed to delete doctor. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+
   useEffect(() => {
     if (id) {
       fetchDoctor();
@@ -448,7 +470,7 @@ export default function DoctorDetailsPage() {
                 Edit Doctor
               </button>
 
-              <button className="px-4 py-2 border rounded-md text-red-600 border-red-600 hover:bg-red-50 flex items-center font-medium">
+              <button onClick={() => setShowDeleteModal(true)} className="px-4 py-2 border rounded-md text-red-600 border-red-600 hover:bg-red-50 flex items-center font-medium">
                 <Trash2 className="mr-2" size={14} />
                 Delete Doctor
               </button>
@@ -492,7 +514,7 @@ export default function DoctorDetailsPage() {
           {/* Top Card */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <div className="flex gap-4">
-              <div className="relative">
+              <div className="relative w-20 h-20 flex-shrink-0">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -500,35 +522,73 @@ export default function DoctorDetailsPage() {
                   accept="image/jpeg, image/png, image/jpg"
                   className="hidden"
                 />
+
+                {/* Avatar circle */}
                 <div
                   onClick={isEditMode ? handlePhotoUpload : undefined}
-                  className={`w-20 h-20 rounded-full overflow-hidden border flex-shrink-0 ${
-                    isEditMode
-                      ? "cursor-pointer hover:opacity-75 transition-opacity relative group"
-                      : ""
-                  }`}
+                  className={`w-20 h-20 rounded-full overflow-hidden border-2 ${photoFile ? "border-blue-400" : "border-gray-200"
+                    } ${isEditMode ? "cursor-pointer group" : ""}`}
                 >
                   {photoUrl ? (
-                    <Image
+                    <img
                       src={photoUrl}
                       alt={formData.fullName}
-                      width={80}
-                      height={80}
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200" />
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                      <PencilLine size={18} className="text-gray-400" />
+                    </div>
                   )}
+
+                  {/* Hover overlay */}
                   {isEditMode && (
-                    <div className="absolute inset-0 bg-gray-500 bg-opacity-0 group-hover:bg-opacity-40 transition-all flex items-center justify-center">
-                      <PencilLine
-                        size={20}
-                        className="text-white transition-opacity z-20"
-                      />
+                    <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                      <PencilLine size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                   )}
                 </div>
+
+                {/* "New" badge when a file is staged */}
+                {photoFile && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full leading-none font-medium whitespace-nowrap">
+                    New
+                  </span>
+                )}
+
+                {/* Red X — discard staged file, revert to saved photo */}
+                {isEditMode && photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPhotoFile(null);
+                      setPhotoUrl(doctor?.profilePic || "");
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Discard new photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+
+                {/* Gray X — remove saved photo entirely (no new file staged) */}
+                {isEditMode && photoUrl && !photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePhoto();
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-500 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Remove photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
               </div>
+
 
               <div className="flex-1">
                 {isEditMode ? (
@@ -815,9 +875,8 @@ export default function DoctorDetailsPage() {
                 </span>
               </div>
               <ChevronRight
-                className={`h-5 w-5 text-blue-600 transition-transform ${
-                  showAvailability ? "rotate-90" : ""
-                }`}
+                className={`h-5 w-5 text-blue-600 transition-transform ${showAvailability ? "rotate-90" : ""
+                  }`}
               />
             </div>
 
@@ -894,6 +953,59 @@ export default function DoctorDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs"
+          onClick={() => !isDeleting && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+              <Trash2 className="text-red-600" size={22} />
+            </div>
+
+            {/* Text */}
+            <h2 className="text-lg font-semibold text-gray-900 text-center mb-1">
+              Delete Doctor
+            </h2>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-gray-700">{doctor?.fullName}</span>?
+              This action cannot be undone.
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteDoctor}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Yes, Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

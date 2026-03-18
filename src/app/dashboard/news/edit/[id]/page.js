@@ -37,21 +37,12 @@ export default function EditNews() {
 
   const fetchNewsDetails = async () => {
     try {
-      console.log("Fetching news details for ID:", params.id);
       const response = await API.news.getNewsDetails({
         _id: params.id,
       });
 
-      console.log("News details response:", response);
-      console.log("Response type:", typeof response);
-      console.log(
-        "Response keys:",
-        response ? Object.keys(response) : "No response"
-      );
-
       if (response?.success && response.data) {
         const news = response.data;
-        console.log("News data:", news);
         setFormData({
           title: news.title || "",
           description: news.description || "",
@@ -69,7 +60,6 @@ export default function EditNews() {
       } else if (response && (response._id || response.title)) {
         // Handle case where response is the news object directly
         const news = response;
-        console.log("News data (direct response):", news);
         setFormData({
           title: news.title || "",
           description: news.description || "",
@@ -137,7 +127,6 @@ export default function EditNews() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        console.log("Image converted to base64 successfully");
         setFormData((prev) => ({
           ...prev,
           image: event.target.result,
@@ -192,26 +181,8 @@ export default function EditNews() {
         image: formData.image, // This is now a base64 string
       };
 
-      // Debug: Log the data being sent
-      console.log("News update data being sent:", {
-        title: newsData.title,
-        description: newsData.description,
-        news_channel_name: newsData.news_channel_name,
-        publish_date: newsData.publish_date,
-        image: newsData.image ? "Base64 image data present" : "No image",
-      });
-
-      console.log("Updating news with ID:", params.id);
-
       const response = await API.news.updateNews(newsData, params.id);
-
-      console.log("Update response:", response);
-      console.log("Response type:", typeof response);
-      console.log(
-        "Response keys:",
-        response ? Object.keys(response) : "No response"
-      );
-
+      
       if (
         response?.success === true ||
         response?.message?.toLowerCase().includes("success") ||

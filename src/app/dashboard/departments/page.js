@@ -182,7 +182,6 @@ export default function DepartmentsPage() {
   };
 
   const openAddModal = () => {
-    console.log("openAddModal called");
     setEditingDepartment(null);
     setModalType("add");
   };
@@ -265,7 +264,7 @@ export default function DepartmentsPage() {
           <Button
             className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 ml-auto md:ml-0"
             onClick={() => {
-              console.log("Add Department button clicked");
+              // console.log("Add Department button clicked");
               openAddModal();
             }}
             type="button"
@@ -345,11 +344,10 @@ export default function DepartmentsPage() {
                         }
                         size="sm"
                         onClick={() => handlePageChange(pageNum)}
-                        className={`w-8 h-8 p-0 ${
-                          currentPage === pageNum
+                        className={`w-8 h-8 p-0 ${currentPage === pageNum
                             ? "bg-blue-600 text-white"
                             : "text-gray-700 hover:bg-gray-50"
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </Button>

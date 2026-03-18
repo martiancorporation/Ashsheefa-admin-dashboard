@@ -32,9 +32,8 @@ export default function InternationalPatientsPage() {
   const statusOptions = [
     { name: "All Status" },
     { name: "Pending" },
-    { name: "In Progress" },
+    { name: "Approved" },
     { name: "Cancelled" },
-    { name: "Confirmed" },
   ];
 
   // Fetch departments on component mount
@@ -109,14 +108,6 @@ export default function InternationalPatientsPage() {
   const handlePatientUpdate = () => {
     setRefreshKey((prev) => prev + 1);
   };
-
-  // Debug logging for filter changes
-  console.log("Current filter states:", {
-    selectedStatus,
-    selectedSpeciality,
-    selectedCountry,
-    searchQuery,
-  });
 
   return (
     <>

@@ -233,7 +233,6 @@ export default function AllAppointments({
             specialityExact.replace(/-/g, " ")
         : true;
 
-    // Date range filter
     const matchesDateRange = (() => {
       if (!dateRange) return true;
 

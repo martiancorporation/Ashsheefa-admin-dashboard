@@ -43,7 +43,6 @@ export default function HealthCheckupDetailsPage({
   };
 
   const handleDeletePackage = () => {
-    console.log("Delete package with ID:", params.id);
     // Here you would delete the package from your state or database
   };
 

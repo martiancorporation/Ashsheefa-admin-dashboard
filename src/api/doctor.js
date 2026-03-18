@@ -51,9 +51,10 @@ const doctor = {
   updateDoctor: async (data) => {
     let response = null;
     try {
-      const { _id, ...updateData } = data;
+      // data can be a plain object OR FormData (when uploading a new photo)
+      const _id = data instanceof FormData ? data.get("_id") : data._id;
       const url = `${UPDATE_DOCTOR_DATA_API}/${_id}`;
-      response = await apiConnector("PUT", url, updateData);
+      response = await apiConnector("PUT", url, data);
     } catch (error) {
       response = error;
     }

@@ -32,13 +32,13 @@ export function BlogPreviewModal({
                     <div className="space-y-4">
                         <h1 className="text-3xl font-bold">{title}</h1>
                         <div className="text-sm text-muted-foreground">
-                         { author ?   `By ${author}` : ''}
+                            {author ? `By ${author}` : ''}
                         </div>
                         <p className="text-lg text-muted-foreground">
                             {shortDescription}
                         </p>
                         <div
-                            className="prose prose-stone max-w-none"
+                            className="blog-content"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
                     </div>

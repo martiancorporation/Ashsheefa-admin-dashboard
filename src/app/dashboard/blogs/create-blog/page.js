@@ -97,31 +97,9 @@ const CreateBlogPost = () => {
       }
     });
 
-    // Debug: Log what's being sent
-    console.log("Form data being sent:", Object.fromEntries(data.entries()));
-    console.log("Image file object:", formData.image_file);
-    console.log("Image file type:", formData.image_file?.type);
-    console.log("Image file size:", formData.image_file?.size);
-    console.log("Image file name:", formData.image_file?.name);
-
     setIsSubmitting(true);
     try {
-      console.log("Sending request to API...");
       const response = await API.blog.addBlog(data);
-
-      console.log("API Response:", response);
-      console.log("Response type:", typeof response);
-      console.log(
-        "Response keys:",
-        response ? Object.keys(response) : "No response"
-      );
-      console.log("Response.success:", response?.success);
-      console.log("Response.message:", response?.message);
-      console.log("Response.status:", response?.status);
-      console.log("Response._id:", response?._id);
-      console.log("Response.title:", response?.title);
-      console.log("Response.error:", response?.error);
-      console.log("Full response object:", JSON.stringify(response, null, 2));
 
       // Check if response exists and is successful
       if (response) {
