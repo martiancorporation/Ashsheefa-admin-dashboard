@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, Search, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Search,
+  RefreshCw,
+  Calendar as CalendarIcon,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import AllAppointments from "./components/all-appointments";
 import { AddAppointmentModal } from "./components/add-appointment-modal";
 import API from "@/api";
@@ -22,6 +36,10 @@ export default function AppointmentsPage() {
   const [selectedSpeciality, setSelectedSpeciality] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
+
+  // Date filter state
+  const [dateRange, setDateRange] = useState(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   // Dynamic departments state
   const [departments, setDepartments] = useState([]);
@@ -96,6 +114,32 @@ export default function AppointmentsPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
+  const handleDateSelect = (range) => {
+    setDateRange(range);
+    // Close calendar after selection if it's a single date
+    if (range && !range.from && !range.to) {
+      setIsCalendarOpen(false);
+    }
+  };
+
+  const clearDateFilter = () => {
+    setDateRange(null);
+    setIsCalendarOpen(false);
+  };
+
+  const getDateRangeLabel = () => {
+    if (!dateRange) return "Select Date";
+
+    if (dateRange.from) {
+      if (dateRange.to) {
+        return `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd, yyyy")}`;
+      }
+      return format(dateRange.from, "MMM dd, yyyy");
+    }
+
+    return "Select Date";
+  };
+
   return (
     <>
       <div className="w-full flex items-center justify-between">
@@ -149,6 +193,43 @@ export default function AppointmentsPage() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Date Range Filter */}
+          <div className="flex items-center gap-2">
+            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={`w-full md:w-[240px] justify-start text-left font-normal ${
+                    !dateRange && "text-muted-foreground"
+                  }`}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {getDateRangeLabel()}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={handleDateSelect}
+                  numberOfMonths={2}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+
+            {dateRange && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={clearDateFilter}
+                className="h-9 w-9"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 w-full md:w-auto">
@@ -187,6 +268,7 @@ export default function AppointmentsPage() {
           searchQuery={searchQuery}
           selectedStatus={selectedStatus}
           selectedSpeciality={selectedSpeciality}
+          dateRange={dateRange}
           onAppointmentUpdate={handleAppointmentUpdate}
           departments={departments}
           departmentsLoading={departmentsLoading}
