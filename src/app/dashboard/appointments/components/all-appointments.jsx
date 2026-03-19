@@ -174,16 +174,10 @@ export default function AllAppointments({
 
   // Fetch data on component mount and when filters change
   useEffect(() => {
-    console.log("Filter values changed:", {
-      searchQuery,
-      selectedStatus,
-      selectedSpeciality,
-      dateRange,
-    });
     setCurrentPage(1);
     setHasMore(true);
     fetchAppointments(1, false);
-  }, [searchQuery, selectedStatus, selectedSpeciality, dateRange]);
+  }, [selectedStatus, selectedSpeciality, dateRange]);
 
   // Handle appointment refresh after add/edit/delete
   const handleAppointmentUpdate = () => {

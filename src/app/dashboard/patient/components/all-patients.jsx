@@ -145,7 +145,7 @@ export default function AllPatients({
     setCurrentPage(1);
     setHasMore(true);
     fetchPatients(1, false);
-  }, [searchQuery, selectedStatus, selectedSpeciality]);
+  }, [selectedStatus, selectedSpeciality]);
 
   // Handle patient refresh after add/edit/delete
   const handlePatientUpdate = () => {
