@@ -12,6 +12,12 @@ import {
   Phone,
   MapPin,
   User,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,16 +69,22 @@ export default function AllAppointments({
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
   const [statusUpdateAppointment, setStatusUpdateAppointment] = useState(null);
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    total_pages: 1,
-    total_records: 0,
-    limit: 10,
-  });
+  const [sortOrder, setSortOrder] = useState(null); // null, 'asc', or 'desc'
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalAppointments, setTotalAppointments] = useState(0);
+  const appointmentsPerPage = 50;
 
   // Fetch appointments from API
-  const fetchAppointments = async () => {
-    setLoading(true);
+  const fetchAppointments = async (page = 1, isLoadMore = false) => {
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
     try {
       // Convert filter values back to original format for API
       const statusParam =
@@ -85,8 +97,8 @@ export default function AllAppointments({
           : "";
 
       const params = {
-        page: 1,
-        limit: 50,
+        page: page,
+        limit: appointmentsPerPage,
         search: searchQuery,
         status: statusParam,
         speciality: specialityParam,
@@ -110,30 +122,53 @@ export default function AllAppointments({
 
       if (appointmentsData) {
         console.log(appointmentsData);
-        setAppointmentsList(appointmentsData);
-        setPagination(
-          paginationData || {
-            current_page: 1,
-            total_pages: 1,
-            total_records: appointmentsData.length,
-            limit: 50,
-          },
-        );
+        const newAppointments = appointmentsData;
+        const totalFromResponse =
+          paginationData?.total_records ??
+          response.data?.total ??
+          response.total ??
+          null;
+
+        if (isLoadMore) {
+          // Append new appointments to existing list
+          setAppointmentsList((prev) => [...prev, ...newAppointments]);
+        } else {
+          // Replace existing appointments
+          setAppointmentsList(newAppointments);
+        }
+
+        // Track total only if backend provides it
+        setTotalAppointments(totalFromResponse || 0);
+        setCurrentPage(page);
+
+        // If total is known, use it. Otherwise, assume more pages exist
+        // as long as the current page returned a full page of results
+        const calculatedHasMore =
+          totalFromResponse != null
+            ? page * appointmentsPerPage < totalFromResponse
+            : newAppointments.length === appointmentsPerPage;
+        setHasMore(calculatedHasMore);
       } else {
-        setAppointmentsList([]);
-        setPagination({
-          current_page: 1,
-          total_pages: 1,
-          total_records: 0,
-          limit: 50,
-        });
+        if (!isLoadMore) {
+          setAppointmentsList([]);
+          setTotalAppointments(0);
+        }
       }
     } catch (error) {
       console.error("Error fetching appointments:", error);
-      toast.error("Failed to fetch appointments");
-      setAppointmentsList([]);
+      if (!isLoadMore) {
+        toast.error("Failed to fetch appointments");
+        setAppointmentsList([]);
+        setTotalAppointments(0);
+      } else {
+        toast.error("Failed to load more appointments");
+      }
     } finally {
-      setLoading(false);
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -145,7 +180,9 @@ export default function AllAppointments({
       selectedSpeciality,
       dateRange,
     });
-    fetchAppointments();
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchAppointments(1, false);
   }, [searchQuery, selectedStatus, selectedSpeciality, dateRange]);
 
   // Handle appointment refresh after add/edit/delete
@@ -153,7 +190,9 @@ export default function AllAppointments({
     if (onAppointmentUpdate) {
       onAppointmentUpdate();
     } else {
-      fetchAppointments();
+      setCurrentPage(1);
+      setHasMore(true);
+      fetchAppointments(1, false);
     }
   };
 
@@ -180,8 +219,28 @@ export default function AllAppointments({
   };
 
   const handleDeleteSuccess = () => {
-    fetchAppointments(); // Refresh the list
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchAppointments(1, false); // Refresh the list
     setAppointmentToDelete(null);
+  };
+
+  // ****************************** Load More Function ***********************************
+  const handleLoadMore = () => {
+    if (hasMore && !loadingMore) {
+      fetchAppointments(currentPage + 1, true);
+    }
+  };
+
+  // Handle date sort toggle
+  const handleDateSort = () => {
+    if (sortOrder === null) {
+      setSortOrder("asc");
+    } else if (sortOrder === "asc") {
+      setSortOrder("desc");
+    } else {
+      setSortOrder(null);
+    }
   };
 
   // Filter appointments based on search and filters
@@ -275,6 +334,25 @@ export default function AllAppointments({
     return shouldInclude;
   });
 
+  // Sort filtered appointments by date
+  const sortedAppointments = [...filteredAppointments].sort((a, b) => {
+    if (sortOrder === null) {
+      // Sort by createdAt (most recent first)
+      const createdA = new Date(a.createdAt || a.created_at || 0);
+      const createdB = new Date(b.createdAt || b.created_at || 0);
+      return createdB - createdA; // Most recent at top
+    }
+
+    const dateA = new Date(a.appointment_date || a.date);
+    const dateB = new Date(b.appointment_date || b.date);
+
+    if (sortOrder === "asc") {
+      return dateA - dateB; // Ascending
+    } else {
+      return dateB - dateA; // Descending
+    }
+  });
+
   const getStatusBadgeColor = (status) => {
     switch (status?.toLowerCase()) {
       case "pending":
@@ -321,7 +399,7 @@ export default function AllAppointments({
     );
   }
 
-  if (filteredAppointments.length === 0) {
+  if (sortedAppointments.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="text-gray-500 text-lg mb-4">
@@ -362,7 +440,15 @@ export default function AllAppointments({
               Doctor
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
-              Appointment Date/Time
+              <button
+                onClick={handleDateSort}
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors cursor-pointer"
+              >
+                Appointment Date/Time
+                {sortOrder === null && <ChevronsUpDown className="h-4 w-4" />}
+                {sortOrder === "asc" && <ChevronUp className="h-4 w-4" />}
+                {sortOrder === "desc" && <ChevronDown className="h-4 w-4" />}
+              </button>
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
               Fees
@@ -379,7 +465,7 @@ export default function AllAppointments({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredAppointments.map((appointment, index) => (
+          {sortedAppointments.map((appointment, index) => (
             <TableRow
               key={appointment._id}
               className="hover:bg-blue-50 border-b border-gray-100 transition-all duration-200 hover:border-blue-200 group"
@@ -509,6 +595,52 @@ export default function AllAppointments({
           ))}
         </TableBody>
       </Table>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="flex flex-col items-center space-y-1 mt-6">
+          {totalAppointments > 0 ? (
+            <div className="text-sm text-gray-600">
+              Showing {appointmentsList.length} of {totalAppointments}{" "}
+              appointments
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Showing {appointmentsList.length} appointments
+            </div>
+          )}
+          <Button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            variant="outline"
+            className="flex items-center gap-2 px-6 py-2"
+          >
+            {loadingMore ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              "Load More Appointments"
+            )}
+          </Button>
+        </div>
+      )}
+
+      {/* Show total count when all appointments are loaded */}
+      {!hasMore && appointmentsList.length > 0 && (
+        <div className="flex justify-center mt-6">
+          {totalAppointments > 0 ? (
+            <div className="text-sm text-gray-600">
+              Showing all {totalAppointments} appointments
+            </div>
+          ) : (
+            <div className="text-sm text-gray-600">
+              Showing all {appointmentsList.length} appointments
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Appointment Details Modal */}
       {selectedAppointment && (
