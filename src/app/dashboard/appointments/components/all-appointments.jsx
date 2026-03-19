@@ -173,6 +173,7 @@ export default function AllAppointments({
   };
 
   // Fetch data on component mount and when filters change
+  // Note: searchQuery is handled client-side only, so it's not in the dependency array
   useEffect(() => {
     setCurrentPage(1);
     setHasMore(true);
@@ -245,11 +246,14 @@ export default function AllAppointments({
     }
 
     const matchesSearch = searchQuery
-      ? appointment.patient_full_name
+      ? appointment.patientId?.patient_full_name
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase()) ||
-        appointment.contact_number?.includes(searchQuery) ||
-        appointment.refer_doctor
+        appointment.patientId?.contact_number?.includes(searchQuery) ||
+        appointment.doctorId?.fullName
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        appointment.doctorId?.department
           ?.toLowerCase()
           .includes(searchQuery.toLowerCase())
       : true;
