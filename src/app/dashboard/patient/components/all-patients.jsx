@@ -46,7 +46,7 @@ export default function AllPatients({
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [totalPatients, setTotalPatients] = useState(0);
-  const patientsPerPage = 5;
+  const patientsPerPage = 50;
 
   // Fetch patients from API
   const fetchPatients = async (page = 1, isLoadMore = false) => {
