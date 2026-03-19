@@ -413,7 +413,6 @@ export default function AllAppointments({
       </div>
     );
   }
-
   return (
     <div className="w-full">
       <Table className="border-collapse border border-gray-200 ">
@@ -624,7 +623,6 @@ export default function AllAppointments({
           </Button>
         </div>
       )}
-
       {/* Show total count when all appointments are loaded */}
       {!hasMore && appointmentsList.length > 0 && (
         <div className="flex justify-center mt-6">
@@ -634,7 +632,7 @@ export default function AllAppointments({
             </div>
           ) : (
             <div className="text-sm text-gray-600">
-              Showing all {appointmentsList.length} appointments
+              Showing all {sortedAppointments.length} appointments
             </div>
           )}
         </div>

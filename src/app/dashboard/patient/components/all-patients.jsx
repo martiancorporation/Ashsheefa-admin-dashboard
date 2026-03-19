@@ -499,7 +499,7 @@ export default function AllPatients({
             </div>
           ) : (
             <div className="text-sm text-gray-600">
-              Showing all {patientsList.length} patients
+              Showing all {filteredPatients.length} patients
             </div>
           )}
         </div>
