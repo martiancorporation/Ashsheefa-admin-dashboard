@@ -200,7 +200,7 @@ export default function AppointmentsPage() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full md:w-[240px] justify-start text-left font-normal ${
+                  className={`w-full md:w-[200px] justify-start text-left font-normal ${
                     !dateRange && "text-muted-foreground"
                   }`}
                 >
@@ -216,6 +216,15 @@ export default function AppointmentsPage() {
                   numberOfMonths={2}
                   initialFocus
                 />
+                <div className="p-3 border-t">
+                  <Button
+                    onClick={() => setIsCalendarOpen(false)}
+                    className="w-full cursor-pointer"
+                    size="sm"
+                  >
+                    Done
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
 
@@ -239,7 +248,7 @@ export default function AppointmentsPage() {
               placeholder="Search appointments..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[300px]"
+              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[280px]"
             />
           </div>
 
