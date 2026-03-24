@@ -52,14 +52,6 @@ export function FilterModal({ isOpen, onClose, onApply, onClear, hasActiveFilter
                         <DialogTitle className="text-lg font-semibold">
                             Filter Patients Enquiry
                         </DialogTitle>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleClose}
-                            className="h-6 w-6"
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
                     </div>
                 </DialogHeader>
 
