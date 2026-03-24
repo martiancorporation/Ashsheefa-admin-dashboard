@@ -21,10 +21,10 @@ import {
 import API from "@/api";
 import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
+import moment from "moment";
 
 export default function PatientEnquiryPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState();
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,6 @@ export default function PatientEnquiryPage() {
 
   // Filter patients based on search query and active filters
   useEffect(() => {
-
     let filtered = patientsEnquiry;
 
     // Apply search filter
@@ -49,7 +48,7 @@ export default function PatientEnquiryPage() {
       filtered = filtered.filter(
         (patient) =>
           patient.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          patient.phone_number?.includes(searchQuery)
+          patient.phone_number?.includes(searchQuery),
       );
     }
 
@@ -57,12 +56,12 @@ export default function PatientEnquiryPage() {
     if (activeFilters) {
       if (activeFilters.department) {
         filtered = filtered.filter(
-          (patient) => patient.department === activeFilters.department
+          (patient) => patient.department === activeFilters.department,
         );
       }
       if (activeFilters.gender) {
         filtered = filtered.filter(
-          (patient) => patient.gender === activeFilters.gender
+          (patient) => patient.gender === activeFilters.gender,
         );
       }
     }
@@ -103,16 +102,6 @@ export default function PatientEnquiryPage() {
     }
   };
 
-  // Handle filter application
-  const handleApplyFilters = (filters) => {
-    // Convert "all" values to empty strings for filtering logic
-    const processedFilters = {
-      department: filters.department === "all" ? "" : filters.department,
-      gender: filters.gender === "all" ? "" : filters.gender,
-    };
-    setActiveFilters(processedFilters);
-  };
-
   // Clear all filters
   const clearAllFilters = () => {
     setActiveFilters({});
@@ -133,19 +122,26 @@ export default function PatientEnquiryPage() {
     {
       icon: "/assets/images/internationalPatient/inPatient.svg",
       name: "Today's Enquiries",
-      value: "0",
+      value:
+        patientsEnquiry.filter((item) =>
+          moment(item.createdAt).isSame(moment(), "day"),
+        ).length || "0",
       link: "",
     },
     {
       icon: "/assets/images/internationalPatient/emergency.svg",
       name: "This Week",
-      value: "0",
+      value: patientsEnquiry.filter((item) =>
+          moment(item.createdAt).isSame(moment(), "week"),
+        ).length || "0",
       link: "",
     },
     {
       icon: "/assets/images/internationalPatient/discharged.svg",
       name: "This Month",
-      value: "0",
+      value: patientsEnquiry.filter((item) =>
+          moment(item.createdAt).isSame(moment(), "month"),
+        ).length || "0",
       link: "",
     },
   ];
@@ -197,15 +193,6 @@ export default function PatientEnquiryPage() {
               />
             </svg>
             Refresh
-          </Button>
-          <Button
-            variant="outline"
-            className="flex items-center gap-2 text-[#4B4B4B]"
-            onClick={() => setIsFilterModalOpen(true)}
-            disabled={loading}
-          >
-            <ListFilter className="h-4 w-4" />
-            Filter
           </Button>
           <Button
             className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 ml-auto md:ml-0 cursor-pointer"
@@ -342,9 +329,15 @@ export default function PatientEnquiryPage() {
             <TableBody>
               {filteredPatients.map((patient, index) => (
                 <TableRow key={patient._id}>
-                  <TableCell className="border-r border-gray-300">{index + 1}</TableCell>
-                  <TableCell className="border-r border-gray-300">{patient.name}</TableCell>
-                  <TableCell className="border-r border-gray-300">{patient.phone_number}</TableCell>
+                  <TableCell className="border-r border-gray-300">
+                    {index + 1}
+                  </TableCell>
+                  <TableCell className="border-r border-gray-300">
+                    {patient.name}
+                  </TableCell>
+                  <TableCell className="border-r border-gray-300">
+                    {patient.phone_number}
+                  </TableCell>
                   <TableCell className="border-r border-gray-300">
                     {patient.created_at
                       ? new Date(patient.created_at).toLocaleDateString(
@@ -353,18 +346,18 @@ export default function PatientEnquiryPage() {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
-                          }
+                          },
                         )
                       : patient.createdAt
-                      ? new Date(patient.createdAt).toLocaleDateString(
-                          "en-GB",
-                          {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          }
-                        )
-                      : "N/A"}
+                        ? new Date(patient.createdAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
+                        : "N/A"}
                   </TableCell>
                   <TableCell className="text-center border-r border-gray-300">
                     <Button
@@ -389,17 +382,6 @@ export default function PatientEnquiryPage() {
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
           onSuccess={getAllPatientsEnquiry}
-        />
-      )}
-
-      {isFilterModalOpen && (
-        <FilterModal
-          isOpen={isFilterModalOpen}
-          onClose={() => setIsFilterModalOpen(false)}
-          onApply={handleApplyFilters}
-          onClear={clearAllFilters}
-          hasActiveFilters={hasActiveFilters}
-          patients={patientsEnquiry}
         />
       )}
     </>
