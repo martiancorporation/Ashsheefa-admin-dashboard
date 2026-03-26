@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { X, Calendar, Phone, MapPin, User, FileText, UserCheck, AlertTriangle } from "lucide-react"
+import { X, Calendar, Phone, MapPin, User, FileText, UserCheck, AlertTriangle, Stethoscope } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -145,6 +145,16 @@ export function InternationalPatientDetailsModal({ patient, onClose, onSave }) {
                                         <p className="text-sm text-blue-600">Refer Doctor</p>
                                         <p className="font-medium text-[#323232]">
                                             {patient.refer_doctor ? `Dr. ${patient.refer_doctor}` : "Not specified"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                                    <Stethoscope className="h-5 w-5 text-blue-500" />
+                                    <div>
+                                        <p className="text-sm text-blue-600">Consultant Doctor</p>
+                                        <p className="font-medium text-[#323232]">
+                                            {patient.consultant_doctor ? `${patient.consultant_doctor?.fullName}` : "Not specified"}
                                         </p>
                                     </div>
                                 </div>
