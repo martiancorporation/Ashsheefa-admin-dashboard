@@ -29,6 +29,14 @@ const nextConfig = {
         protocol: "https",
         hostname: "localhost",
       },
+      {
+        protocol: "https",
+        hostname: "sgp1.digitaloceanspaces.com",
+      },
+      {
+        protocol: "https",
+        hostname: "ashsheefa.sgp1.digitaloceanspaces.com",
+      },
     ],
   },
 };
