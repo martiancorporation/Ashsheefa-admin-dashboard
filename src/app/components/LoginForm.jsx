@@ -50,6 +50,10 @@ export default function LoginForm() {
         API.auth
             .Login(formData)
             .then((response) => {
+                if(response && response.error){
+                    toast.error(response.error);
+                    return;
+                }
                 if (response) {
                     setAuthData(response);
                     router.push("/dashboard");
