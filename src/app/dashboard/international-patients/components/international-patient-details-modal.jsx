@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { X, Calendar, Phone, MapPin, User, FileText, UserCheck, AlertTriangle, Stethoscope } from "lucide-react"
+import { X, Calendar, Phone, MapPin, User, FileText, UserCheck, AlertTriangle, Stethoscope, Mail } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -116,6 +116,16 @@ export function InternationalPatientDetailsModal({ patient, onClose, onSave }) {
                                         <p className="text-sm text-gray-600">Country</p>
                                         <p className="font-medium text-[#323232]">
                                             {patient.country || "Not specified"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center col-span-2 gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <Mail className="h-5 w-5 text-gray-500 shrink-0" />
+                                    <div className="">
+                                        <p className="text-sm text-gray-600">Email</p>
+                                        <p className="font-medium text-[#323232]">
+                                            {patient.email || "Not specified"}
                                         </p>
                                     </div>
                                 </div>

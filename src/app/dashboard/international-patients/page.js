@@ -46,7 +46,7 @@ export default function InternationalPatientsPage() {
     try {
       setDepartmentsLoading(true);
       const response = await API.department.getAllDepartments(1, 100); // Get all departments
-
+      console.log(response)
       if (response && response.departments) {
         const departmentNames = response.departments
           .map((dept) => dept.name || dept.department_name || dept.label)
@@ -62,22 +62,34 @@ export default function InternationalPatientsPage() {
       console.error("Error fetching departments:", error);
       // Fallback to static list if API fails
       setDepartments([
-        "Ortho",
+        "General Medicine",
+        "General Surgery",
         "Cardiology",
         "Neurology",
-        "Oncology",
-        "General Surgery",
-        "Dermatology",
+        "Neurosurgery",
+        "Orthopedics",
         "Pediatrics",
-        "Gynecology",
-        "ENT",
-        "Ophthalmology",
+        "Obstetrics & Gynecology",
+        "Dermatology",
         "Psychiatry",
+        "Ophthalmology",
+        "ENT",
+        "Oncology",
+        "Urology",
+        "Nephrology",
+        "Pulmonology",
+        "Gastroenterology",
+        "Endocrinology",
         "Radiology",
         "Anesthesiology",
-        "Emergency Medicine",
-        "Internal Medicine",
-        "Cardiac Science",
+        "Pathology",
+        "Hematology",
+        "Rheumatology",
+        "Plastic Surgery",
+        "Cardiothoracic Surgery",
+        "Forensic Medicine",
+        "Family Medicine",
+        "Sports Medicine",
       ]);
     } finally {
       setDepartmentsLoading(false);
@@ -99,6 +111,7 @@ export default function InternationalPatientsPage() {
     { name: "Afghanistan" },
     { name: "Sri Lanka" },
     { name: "South Africa" },
+    { name: "Others" },
   ];
 
   const handleRefresh = () => {

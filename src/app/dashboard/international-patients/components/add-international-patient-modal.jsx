@@ -21,7 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
+import { format, parse, isValid } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import internationalPatient from "@/api/internationalPatient";
 import doctor from "@/api/doctor";
 
@@ -35,6 +43,8 @@ export function AddInternationalPatientModal({
 }) {
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tempDate, setTempDate] = useState(undefined);
   const [formData, setFormData] = useState({
     patient_full_name: "",
     age: "",
@@ -77,8 +87,7 @@ export function AddInternationalPatientModal({
           status: patient.status || "",
         });
       } else {
-        // Reset form for new patient with current date as default
-        const today = new Date().toLocaleDateString("en-GB");
+        // Reset form for new patient
         setFormData({
           patient_full_name: "",
           age: "",
@@ -89,7 +98,7 @@ export function AddInternationalPatientModal({
           medical_issue_details: "",
           refer_doctor: "",
           consultant_doctor: "",
-          appointment_date: today,
+          appointment_date: "",
           passport_number: "",
           email: "",
           status: "",
@@ -156,11 +165,12 @@ export function AddInternationalPatientModal({
 
     setLoading(true);
     try {
-      // Set current date if no appointment date is provided
+      // Set tomorrow's date if no appointment date is provided
       let appointmentDate = formData.appointment_date.trim();
       if (!appointmentDate) {
-        const today = new Date();
-        appointmentDate = today.toLocaleDateString("en-GB"); // DD/MM/YYYY format
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        appointmentDate = format(tomorrow, "dd/MM/yyyy");
       }
 
       const submitData = {
@@ -186,7 +196,9 @@ export function AddInternationalPatientModal({
           patient._id,
           submitData,
         );
-        if (response) {
+        if (response.error) {
+          toast.error(response.error);
+        } else if (response) {
           toast.success("International patient updated successfully");
         } else {
           toast.error("Failed to update international patient");
@@ -206,7 +218,7 @@ export function AddInternationalPatientModal({
       }
 
       if (response) {
-        onOpenChange(false);
+        // onOpenChange(false);
         if (onSave) {
           onSave();
         }
@@ -254,9 +266,8 @@ export function AddInternationalPatientModal({
   //   ];
   const statusOptions = [
     { value: "Pending", label: "Pending" },
-    { value: "In Progress", label: "In Progress" },
-    { value: "Cancelled", label: "Cancelled" },
-    { value: "Confirmed", label: "Confirmed" },
+    { value: "Approved", label: "Approved" },
+    { value: "Cancelled", label: "Cancelled" }
   ];
 
   const countryOptions = [
@@ -268,6 +279,7 @@ export function AddInternationalPatientModal({
     { value: "Afghanistan", label: "Afghanistan" },
     { value: "Sri Lanka", label: "Sri Lanka" },
     { value: "South Africa", label: "South Africa" },
+    { value: "Others", label: "Others" },
   ];
 
   return (
@@ -433,17 +445,73 @@ export function AddInternationalPatientModal({
                 htmlFor="appointment_date"
                 className="text-[#4A4A4B] text-sm"
               >
-                Appointment Date (DD/MM/YYYY)
+                Appointment Date
               </Label>
-              <Input
-                id="appointment_date"
-                name="appointment_date"
-                value={formData.appointment_date}
-                onChange={handleChange}
-                placeholder="DD/MM/YYYY (optional)"
-                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
-                disabled={loading}
-              />
+              <Popover
+                modal={true}
+                open={calendarOpen}
+                onOpenChange={(isOpen) => {
+                  setCalendarOpen(isOpen);
+                  if (isOpen) {
+                    setTempDate(
+                      formData.appointment_date
+                        ? parse(
+                            formData.appointment_date,
+                            "dd/MM/yyyy",
+                            new Date(),
+                          )
+                        : undefined,
+                    );
+                  }
+                }}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`w-full justify-start text-left font-normal bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none ${
+                      !formData.appointment_date && "text-muted-foreground"
+                    }`}
+                    disabled={loading}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.appointment_date
+                      ? formData.appointment_date
+                      : "Pick a date (optional)"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-99" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={tempDate}
+                    onSelect={setTempDate}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return date <= today;
+                    }}
+                    initialFocus
+                  />
+                  <div className="p-3 border-t">
+                    <Button
+                      type="button"
+                      className="w-full"
+                      size="sm"
+                      onClick={() => {
+                        if (tempDate) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            appointment_date: format(tempDate, "dd/MM/yyyy"),
+                          }));
+                        }
+                        setCalendarOpen(false);
+                      }}
+                    >
+                      Done
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-2">
               <Label
@@ -474,46 +542,48 @@ export function AddInternationalPatientModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-            <Label htmlFor="speciality" className="text-[#4A4A4B] text-sm">
-              Speciality
-            </Label>
-            <Select
-              value={formData.speciality}
-              onValueChange={(value) => handleSelectChange("speciality", value)}
-              disabled={departmentsLoading}
-            >
-              <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none w-full">
-                <SelectValue
-                  placeholder={
-                    departmentsLoading
-                      ? "Loading departments..."
-                      : "Select speciality"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {specialityOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="refer_doctor" className="text-[#4A4A4B] text-sm">
-              Refer Doctor
-            </Label>
-            <Input
-              id="refer_doctor"
-              name="refer_doctor"
-              value={formData.refer_doctor}
-              onChange={handleChange}
-              placeholder="Enter referring doctor's name"
-              className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
-              disabled={loading}
-            />
-          </div>
+              <Label htmlFor="speciality" className="text-[#4A4A4B] text-sm">
+                Speciality
+              </Label>
+              <Select
+                value={formData.speciality}
+                onValueChange={(value) =>
+                  handleSelectChange("speciality", value)
+                }
+                disabled={departmentsLoading}
+              >
+                <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none w-full">
+                  <SelectValue
+                    placeholder={
+                      departmentsLoading
+                        ? "Loading departments..."
+                        : "Select speciality"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {specialityOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="refer_doctor" className="text-[#4A4A4B] text-sm">
+                Refer Doctor
+              </Label>
+              <Input
+                id="refer_doctor"
+                name="refer_doctor"
+                value={formData.refer_doctor}
+                onChange={handleChange}
+                placeholder="Enter referring doctor's name"
+                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* Status - Only show when editing */}
