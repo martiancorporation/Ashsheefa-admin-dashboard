@@ -429,14 +429,6 @@ export default function AllPatients({
                       className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
                     >
                       <DropdownMenuItem
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleEditPatient(patient)}
-                      >
-                        <Pencil className="h-4 w-4 mr-3 text-gray-500" />
-                        Edit Patient
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
                         className="flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors"
                         onClick={() => handleUpdateStatus(patient)}
                       >

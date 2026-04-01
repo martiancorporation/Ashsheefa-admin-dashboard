@@ -30,6 +30,7 @@ export default function PatientPage() {
     total: "-",
     inTreatment: "-",
     discharged: "-",
+    underObservation: "-",
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -121,7 +122,10 @@ export default function PatientPage() {
         const discharged = patients.filter(
           (p) => p.status?.toLowerCase() === "discharged"
         ).length;
-        setStats({ total, inTreatment, discharged });
+        const underObservation = patients.filter(
+          (p) => p.status?.toLowerCase() === "under observation"
+        ).length;
+        setStats({ total, inTreatment, discharged, underObservation });
       }
     } catch (error) {
       console.error("Error fetching patient stats:", error);
