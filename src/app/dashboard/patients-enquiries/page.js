@@ -22,6 +22,7 @@ import API from "@/api";
 import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 import moment from "moment";
+import TablePagination from "@/app/components/common/Pagination";
 
 export default function PatientEnquiryPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,6 +32,8 @@ export default function PatientEnquiryPage() {
   const [patientsEnquiry, setPatientsEnquiry] = useState([]);
   const [filteredPatients, setFilteredPatients] = useState([]);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   const authData = useAuthDataStore((state) => state.authData);
 
@@ -69,13 +72,20 @@ export default function PatientEnquiryPage() {
     setFilteredPatients(filtered);
   }, [searchQuery, patientsEnquiry, activeFilters]);
 
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
+
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   // Get all patients enquiry data
   const getAllPatientsEnquiry = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await API.patientsEnquiry.getAllPatientsEnquiry(1);
+      const response = await API.patientsEnquiry.getAllPatientsEnquiries();
 
       if (response.success === true) {
         setPatientsEnquiry(response.data);
@@ -112,6 +122,9 @@ export default function PatientEnquiryPage() {
   const hasActiveFilters =
     activeFilters && Object.values(activeFilters).some((value) => value !== "");
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeFilters]);
   const data = [
     {
       icon: "/assets/images/internationalPatient/totalPatient.svg",
@@ -131,7 +144,8 @@ export default function PatientEnquiryPage() {
     {
       icon: "/assets/images/internationalPatient/emergency.svg",
       name: "This Week",
-      value: patientsEnquiry.filter((item) =>
+      value:
+        patientsEnquiry.filter((item) =>
           moment(item.createdAt).isSame(moment(), "week"),
         ).length || "0",
       link: "",
@@ -139,13 +153,13 @@ export default function PatientEnquiryPage() {
     {
       icon: "/assets/images/internationalPatient/discharged.svg",
       name: "This Month",
-      value: patientsEnquiry.filter((item) =>
+      value:
+        patientsEnquiry.filter((item) =>
           moment(item.createdAt).isSame(moment(), "month"),
         ).length || "0",
       link: "",
     },
   ];
-
   return (
     <>
       <div className="w-full flex items-center justify-between">
@@ -327,10 +341,10 @@ export default function PatientEnquiryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients.map((patient, index) => (
+              {paginatedPatients.map((patient, index) => (
                 <TableRow key={patient._id}>
                   <TableCell className="border-r border-gray-300">
-                    {index + 1}
+                    {patient.no}
                   </TableCell>
                   <TableCell className="border-r border-gray-300">
                     {patient.name}
@@ -374,6 +388,11 @@ export default function PatientEnquiryPage() {
               ))}
             </TableBody>
           </Table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+          />
         </>
       )}
 

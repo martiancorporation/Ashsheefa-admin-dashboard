@@ -39,3 +39,32 @@ export const getEncodedUserAgent = () => {
   }
   return "Server-Side"; // Fallback value
 };
+
+export const getPaginationPages = (currentPage, totalPages, maxVisible = 3) => {
+  const pages = [];
+
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  pages.push(1);
+
+  if (currentPage > Math.ceil(maxVisible / 2) + 1) {
+    pages.push("...");
+  }
+
+  const start = Math.max(2, currentPage - Math.floor(maxVisible / 2));
+  const end = Math.min(totalPages - 1, currentPage + Math.floor(maxVisible / 2));
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - Math.floor(maxVisible / 2) - 1) {
+    pages.push("...");
+  }
+
+  pages.push(totalPages);
+
+  return pages;
+};
