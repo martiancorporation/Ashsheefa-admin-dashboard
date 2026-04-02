@@ -16,7 +16,7 @@ export function EmailUpdateForm() {
     const setAuthData = useAuthDataStore((state) => state.setAuthData)
 
     const [formData, setFormData] = useState({
-        new_email: "admin001@gmail.com",
+        new_email: authData?.email || "",
         oldEmailOtp: "",
         newEmailOtp: "",
     })
@@ -134,7 +134,7 @@ export function EmailUpdateForm() {
                                 type="email"
                                 value={formData.new_email}
                                 onChange={handleChange}
-                                placeholder="admin001@gmail.com"
+                                placeholder={authData?.email || "Enter new email"}
                                 required
                                 className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
                                 disabled={loading}
@@ -171,7 +171,7 @@ export function EmailUpdateForm() {
                 <form onSubmit={handleVerifyEmailChange}>
                     <div className="space-y-3">
                         <div className="space-y-1">
-                            <Label htmlFor="oldEmailOtp" className={`text-[#4A4A4B] text-sm`}>OTP for Current email (admin001@gmail.com)*</Label>
+                            <Label htmlFor="oldEmailOtp" className={`text-[#4A4A4B] text-sm`}>OTP for Current email ({authData?.email})*</Label>
                             <Input
                                 id="oldEmailOtp"
                                 name="oldEmailOtp"
