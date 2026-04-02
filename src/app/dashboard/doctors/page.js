@@ -467,6 +467,10 @@ export default function DoctorsPage() {
           data,
           authData?.access_token,
         );
+
+        if(response.error){
+          toast.error(response.error || "Failed to update doctor");
+        }
         // Check for success - response could be an object, array, or have success property
         const isSuccess =
           response &&
@@ -490,6 +494,10 @@ export default function DoctorsPage() {
           data,
           authData?.access_token,
         );
+
+        if(response.error){
+          toast.error(response.error || "Failed to add doctor");
+        }
 
         // Check for success - response could be an object, array, or have success property
         const isSuccess =
@@ -638,7 +646,7 @@ export default function DoctorsPage() {
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
                       fill="currentColor"
-                      className="h-5 w-5"
+                      className="h-10 w-10"
                     >
                       <path d="M9 12l2 2 4-4 1.5 1.5L11 16l-3.5-3.5L9 12z" />
                     </svg>

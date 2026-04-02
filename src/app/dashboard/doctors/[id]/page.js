@@ -534,7 +534,7 @@ export default function DoctorDetailsPage() {
                 <div
                   onClick={isEditMode ? handlePhotoUpload : undefined}
                   className={`w-20 h-20 rounded-full overflow-hidden border-2 ${
-                    photoFile ? "border-blue-400" : "border-gray-200"
+                    photoFile ? "border-blue-400" : "border-none"
                   } ${isEditMode ? "cursor-pointer group" : ""}`}
                 >
                   {photoUrl ? (
@@ -544,8 +544,12 @@ export default function DoctorDetailsPage() {
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <PencilLine size={18} className="text-gray-400" />
+                    <div className="w-full h-full bg-[#C3DDFF] flex items-center justify-center">
+                      <img
+                        src="/assets/images/doctor/avatar.svg"
+                        alt={formData.fullName}
+                        className="w-15 h-15"
+                      />
                     </div>
                   )}
 
@@ -675,7 +679,7 @@ export default function DoctorDetailsPage() {
                     />
                   ) : (
                     <div className="font-medium">
-                      {formData.experience}+ Years
+                      {formData.experience ? `${formData.experience} years` : "Not specified"}
                     </div>
                   )}
                 </div>
