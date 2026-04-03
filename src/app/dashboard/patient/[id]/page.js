@@ -238,6 +238,9 @@ export default function PatientDetailsPage() {
         ...(editFormData.address.trim() && { address: editFormData.address.trim() }),
       };
       const response = await patientApi.updatePatient(patientData._id, submitData);
+      if(response.error) {
+        toast.error(response.error);
+      }
       if (response) {
         toast.success("Patient updated successfully");
         setIsEditMode(false);

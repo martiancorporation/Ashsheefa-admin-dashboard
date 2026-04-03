@@ -45,6 +45,7 @@ export function AddInternationalPatientModal({
   const [doctors, setDoctors] = useState([]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tempDate, setTempDate] = useState(undefined);
+  const [cancellationReason, setCancellationReason] = useState("");
   const [formData, setFormData] = useState({
     patient_full_name: "",
     age: "",
@@ -86,6 +87,7 @@ export function AddInternationalPatientModal({
           email: patient.email || "",
           status: patient.status || "",
         });
+        setCancellationReason("");
       } else {
         // Reset form for new patient
         setFormData({
@@ -103,6 +105,7 @@ export function AddInternationalPatientModal({
           email: "",
           status: "",
         });
+        setCancellationReason("");
       }
     }
   }, [open, patient]);
@@ -162,6 +165,15 @@ export function AddInternationalPatientModal({
       toast.error("Status is required");
       return;
     }
+    // Cancellation reason is required when status is Cancelled
+    if (
+      patient &&
+      formData.status === "Cancelled" &&
+      !cancellationReason.trim()
+    ) {
+      toast.error("Please enter a reason for cancellation");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -187,6 +199,10 @@ export function AddInternationalPatientModal({
         passport_number: formData.passport_number.trim(),
         email: formData.email.trim() || null,
         ...(patient && { status: formData.status.trim() }), // Only include status when editing
+        ...(patient &&
+          formData.status === "Cancelled" && {
+            cancellation_reason: cancellationReason.trim(),
+          }),
       };
 
       let response;
@@ -267,7 +283,7 @@ export function AddInternationalPatientModal({
   const statusOptions = [
     { value: "Pending", label: "Pending" },
     { value: "Approved", label: "Approved" },
-    { value: "Cancelled", label: "Cancelled" }
+    { value: "Cancelled", label: "Cancelled" },
   ];
 
   const countryOptions = [
@@ -607,6 +623,28 @@ export function AddInternationalPatientModal({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {/* Cancellation Reason - Only show when editing and status is Cancelled */}
+          {patient && formData.status === "Cancelled" && (
+            <div className="space-y-2">
+              <Label
+                htmlFor="cancellation_reason"
+                className="text-[#4A4A4B] text-sm"
+              >
+                Reason for Cancellation*
+              </Label>
+              <Textarea
+                id="cancellation_reason"
+                name="cancellation_reason"
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="Please enter the reason for cancellation..."
+                className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none min-h-[100px]"
+                disabled={loading}
+                required
+              />
             </div>
           )}
 
