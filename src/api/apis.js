@@ -1,4 +1,3 @@
-
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5556";
 
 //**************** * AUTH ENDPOINTS ***************
@@ -18,6 +17,8 @@ export const authEndpoints = {
 export const enquiryEndpoints = {
   GET_ALL_ENQUIRY_USER_API:
     BASE_URL + "/v1/dashboard/enquiry/get_all_enquiry_data",
+  GET_ALL_PATIENTS_ENQUIRIES_API:
+    BASE_URL + "/v1/dashboard/patients_enquiry/get_all_patients_enquiries",
   GET_ALL_PATIENTS_ENQUIRY_API:
     BASE_URL + "/v1/dashboard/patients_enquiry/get_all_patients_enquiry_data",
   ADD_PATIENTS_ENQUIRY_API:
@@ -90,7 +91,7 @@ export const dashboardDoctorEndpoints = {
 export const INTERNATIONAL_PATIENT_API = {
   GET_ALL_INTERNATIONAL_PATIENTS:
     BASE_URL +
-    "/v1/dashboard/international_patient/get_all_international_patients",
+    "/v1/dashboard/international_patient/get_international_patients",
   ADD_INTERNATIONAL_PATIENT:
     BASE_URL + "/v1/international-patients/add_international_patient",
   GET_INTERNATIONAL_PATIENT_BY_ID:
@@ -113,6 +114,8 @@ export const INTERNATIONAL_PATIENT_API = {
 export const PATIENTS_ENQUIRY_API = {
   GET_ALL_PATIENTS_ENQUIRY_API:
     BASE_URL + "/v1/dashboard/patients_enquiry/get_all_patients_enquiry_data",
+  GET_ALL_PATIENTS_ENQUIRIES_API:
+    BASE_URL + "/v1/dashboard/patients_enquiry/get_all_patients_enquiries",
   ADD_PATIENTS_ENQUIRY_API:
     BASE_URL + "/v1/dashboard/patients_enquiry/add_patients_enquiry",
   GET_PATIENTS_ENQUIRY_STATS:
@@ -121,27 +124,22 @@ export const PATIENTS_ENQUIRY_API = {
 
 // Dashboard Appointments APIs (Always Authenticated)
 export const APPOINTMENTS_API = {
-  GET_ALL_APPOINTMENTS:
-    BASE_URL + "/v1/dashboard/appointments",
-  ADD_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/appointments/add",
-  GET_APPOINTMENT_BY_ID:
-    BASE_URL + "/v1/dashboard/appointments",
-  UPDATE_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/appointments",
-  DELETE_APPOINTMENT:
-    BASE_URL + "/v1/dashboard/appointments",
+  GET_ALL_APPOINTMENTS: BASE_URL + "/v1/dashboard/appointments",
+  GET_ALL_APPOINTMENTS_WITHOUT_PAGINATION: BASE_URL + "/v1/dashboard/all-appointments",
+  ADD_APPOINTMENT: BASE_URL + "/v1/dashboard/appointments/add",
+  GET_APPOINTMENT_BY_ID: BASE_URL + "/v1/dashboard/appointments",
+  UPDATE_APPOINTMENT: BASE_URL + "/v1/dashboard/appointments",
+  DELETE_APPOINTMENT: BASE_URL + "/v1/dashboard/appointments",
   AVAILABLE_SLOTS_API: BASE_URL + "/v1/public/appointments/available-slots",
 };
 
 // Dashboard Patients APIs (Always Authenticated)
 export const PATIENTS_API = {
-  GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients_data",
+  GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients",
   ADD_PATIENT: BASE_URL + "/v1/dashboard/patients/add_patients_data",
-  GET_PATIENT_DATA_BY_ID:
-    BASE_URL + "/v1/dashboard/get_patients_data_by_id",
+  GET_PATIENT_DATA_BY_ID: BASE_URL + "/v1/dashboard/get_patients_data_by_id",
   UPDATE_PATIENT: BASE_URL + "/v1/dashboard/update_patients_data",
-  DELETE_PATIENT: BASE_URL + "/v1/dashboard/delete_patient_data",
+  DELETE_PATIENT: BASE_URL + "/v1/dashboard/delete_patients_data",
   UPLOAD_LAB_REPORT: BASE_URL + "/v1/dashboard/patients/upload_lab_report",
   GET_LAB_REPORTS: BASE_URL + "/v1/dashboard/patients/get_lab_reports",
   DELETE_LAB_REPORT: BASE_URL + "/v1/dashboard/patients/delete_lab_report",
@@ -150,8 +148,7 @@ export const PATIENTS_API = {
   DELETE_PRESCRIPTION: BASE_URL + "/v1/dashboard/patients/delete_prescription",
   GET_PATIENT_DOCUMENTS:
     BASE_URL + "/v1/dashboard/patients/get_patient_documents",
-  GET_PATIENT_APPOINTMENTS:
-    BASE_URL + "/v1/dashboard/appointments",
+  GET_PATIENT_APPOINTMENTS: BASE_URL + "/v1/dashboard/appointments",
 };
 
 // Dashboard Departments APIs (Always Authenticated)

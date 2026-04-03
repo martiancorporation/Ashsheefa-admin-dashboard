@@ -7,7 +7,8 @@ const {
   UPDATE_APPOINTMENT,
   DELETE_APPOINTMENT,
   GET_APPOINTMENT_BY_ID,
-  AVAILABLE_SLOTS_API
+  AVAILABLE_SLOTS_API,
+  GET_ALL_APPOINTMENTS_WITHOUT_PAGINATION,
 } = APPOINTMENTS_API;
 
 const getAllAppointments = async (params) => {
@@ -18,7 +19,21 @@ const getAllAppointments = async (params) => {
       GET_ALL_APPOINTMENTS,
       null,
       null,
-      params
+      params,
+    );
+  } catch (error) {
+    response = error;
+  }
+  return handleResponse(response);
+};
+
+const getAllAppointmentsWithoutPagination = async (params) => {
+  let response = null;
+  try {
+    response = await apiConnector(
+      "GET",
+      GET_ALL_APPOINTMENTS_WITHOUT_PAGINATION,
+      params,
     );
   } catch (error) {
     response = error;
@@ -87,6 +102,7 @@ const appointments = {
   deleteAppointment,
   getAppointmentDetails,
   getAvailableSlots,
+  getAllAppointmentsWithoutPagination,
 };
 
 export default appointments;

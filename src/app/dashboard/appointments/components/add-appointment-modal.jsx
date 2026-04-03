@@ -842,7 +842,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                     />
 
                     <DialogFooter>
-                        <Button type="submit" disabled={loading}>
+                        <Button className="bg-blue-600 hover:bg-blue-700" type="submit" disabled={loading}>
                             {loading ? (
                                 <Loader2 className="animate-spin w-4 h-4" />
                             ) : (

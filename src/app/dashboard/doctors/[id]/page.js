@@ -264,7 +264,10 @@ export default function DoctorDetailsPage() {
         updatePayload.append("email", formData.email);
         updatePayload.append("specialization", formData.specialization);
         updatePayload.append("isActive", formData.isActive);
-        updatePayload.append("fees", formData.fees ? parseInt(formData.fees) : 0);
+        updatePayload.append(
+          "fees",
+          formData.fees ? parseInt(formData.fees) : 0,
+        );
         // Arrays must be stringified for FormData
         updatePayload.append("languages", JSON.stringify(selectedLanguages));
         updatePayload.append("availability", JSON.stringify(availability));
@@ -427,13 +430,14 @@ export default function DoctorDetailsPage() {
       router.back();
     } catch (error) {
       console.error("Error deleting doctor:", error);
-      toast.error(error.message || "Failed to delete doctor. Please try again.");
+      toast.error(
+        error.message || "Failed to delete doctor. Please try again.",
+      );
     } finally {
       setIsDeleting(false);
       setShowDeleteModal(false);
     }
   };
-
 
   useEffect(() => {
     if (id) {
@@ -470,7 +474,10 @@ export default function DoctorDetailsPage() {
                 Edit Doctor
               </button>
 
-              <button onClick={() => setShowDeleteModal(true)} className="px-4 py-2 border rounded-md text-red-600 border-red-600 hover:bg-red-50 flex items-center font-medium">
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 border rounded-md text-red-600 border-red-600 hover:bg-red-50 flex items-center font-medium"
+              >
                 <Trash2 className="mr-2" size={14} />
                 Delete Doctor
               </button>
@@ -526,8 +533,9 @@ export default function DoctorDetailsPage() {
                 {/* Avatar circle */}
                 <div
                   onClick={isEditMode ? handlePhotoUpload : undefined}
-                  className={`w-20 h-20 rounded-full overflow-hidden border-2 ${photoFile ? "border-blue-400" : "border-gray-200"
-                    } ${isEditMode ? "cursor-pointer group" : ""}`}
+                  className={`w-20 h-20 rounded-full overflow-hidden border-2 ${
+                    photoFile ? "border-blue-400" : "border-none"
+                  } ${isEditMode ? "cursor-pointer group" : ""}`}
                 >
                   {photoUrl ? (
                     <img
@@ -536,15 +544,22 @@ export default function DoctorDetailsPage() {
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <PencilLine size={18} className="text-gray-400" />
+                    <div className="w-full h-full bg-[#C3DDFF] flex items-center justify-center">
+                      <img
+                        src="/assets/images/doctor/avatar.svg"
+                        alt={formData.fullName}
+                        className="w-15 h-15"
+                      />
                     </div>
                   )}
 
                   {/* Hover overlay */}
                   {isEditMode && (
                     <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
-                      <PencilLine size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <PencilLine
+                        size={16}
+                        className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
                     </div>
                   )}
                 </div>
@@ -589,7 +604,6 @@ export default function DoctorDetailsPage() {
                 )}
               </div>
 
-
               <div className="flex-1">
                 {isEditMode ? (
                   <>
@@ -608,7 +622,6 @@ export default function DoctorDetailsPage() {
                       placeholder="Qualification"
                     />
                     <div className="flex items-center gap-2">
-                      <Label className="text-sm">Reg No:</Label>
                       <Input
                         name="regNo"
                         value={formData.regNo}
@@ -622,8 +635,11 @@ export default function DoctorDetailsPage() {
                   <>
                     <h2 className="text-xl font-bold">{formData.fullName}</h2>
                     <p className="text-gray-500">
-                      {formData.qualification}
-                      {formData.regNo && `, Reg No. ${formData.regNo}`}
+                      {formData.qualification}{" "}
+                      {formData.regNo &&
+                        (formData.regNo.toLowerCase().startsWith("reg no")
+                          ? `${formData.regNo}`
+                          : ` Reg No. ${formData.regNo}`)}
                     </p>
                   </>
                 )}
@@ -646,30 +662,28 @@ export default function DoctorDetailsPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-6">
-              {formData.experience && formData.experience > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
-                    <Calendar size={18} className="text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500">Experience</div>
-                    {isEditMode ? (
-                      <Input
-                        name="experience"
-                        type="number"
-                        value={formData.experience}
-                        onChange={handleChange}
-                        className="font-medium h-8"
-                        placeholder="Years"
-                      />
-                    ) : (
-                      <div className="font-medium">
-                        {formData.experience}+ Years
-                      </div>
-                    )}
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <Calendar size={18} className="text-blue-600" />
                 </div>
-              )}
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Experience</div>
+                  {isEditMode ? (
+                    <Input
+                      name="experience"
+                      type="number"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      className="font-medium h-8"
+                      placeholder="Years"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      {formData.experience ? `${formData.experience} years` : "Not specified"}
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
                   <Stethoscope size={18} className="text-blue-600" />
@@ -875,8 +889,9 @@ export default function DoctorDetailsPage() {
                 </span>
               </div>
               <ChevronRight
-                className={`h-5 w-5 text-blue-600 transition-transform ${showAvailability ? "rotate-90" : ""
-                  }`}
+                className={`h-5 w-5 text-blue-600 transition-transform ${
+                  showAvailability ? "rotate-90" : ""
+                }`}
               />
             </div>
 
@@ -975,8 +990,10 @@ export default function DoctorDetailsPage() {
             </h2>
             <p className="text-sm text-gray-500 text-center mb-6">
               Are you sure you want to delete{" "}
-              <span className="font-medium text-gray-700">{doctor?.fullName}</span>?
-              This action cannot be undone.
+              <span className="font-medium text-gray-700">
+                {doctor?.fullName}
+              </span>
+              ? This action cannot be undone.
             </p>
 
             {/* Actions */}

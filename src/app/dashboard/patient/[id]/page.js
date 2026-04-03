@@ -56,7 +56,6 @@ export default function PatientDetailsPage() {
     contact_number: "",
     gender: "",
     status: "",
-    medical_issue_details: "",
     address: "",
   });
   const [activeTab, setActiveTab] = useState("lab");
@@ -186,7 +185,7 @@ export default function PatientDetailsPage() {
   };
 
   const genderOptions = ["Male", "Female", "Other"];
-  const statusOptions = ["In Treatment", "Discharged", "Under Observation", "Scheduled"];
+  const statusOptions = ["In Treatment", "Discharged", "Under Observation"];
 
   const enterEditMode = () => {
     const addr = patientData?.address || {};
@@ -199,7 +198,6 @@ export default function PatientDetailsPage() {
       contact_number: patientData?.contact_number || "",
       gender: patientData?.gender || "",
       status: patientData?.status || "",
-      medical_issue_details: patientData?.medical_issue_details || "",
       address: patientData?.address || "",
     });
     setIsEditMode(true);
@@ -237,10 +235,12 @@ export default function PatientDetailsPage() {
         gender: editFormData.gender,
         ...(editFormData.status && { status: editFormData.status }),
         ...(editFormData.date_of_birth && { date_of_birth: editFormData.date_of_birth }),
-        ...(editFormData.medical_issue_details.trim() && { medical_issue_details: editFormData.medical_issue_details.trim() }),
         ...(editFormData.address.trim() && { address: editFormData.address.trim() }),
       };
       const response = await patientApi.updatePatient(patientData._id, submitData);
+      if(response.error) {
+        toast.error(response.error);
+      }
       if (response) {
         toast.success("Patient updated successfully");
         setIsEditMode(false);
@@ -621,7 +621,7 @@ export default function PatientDetailsPage() {
                 <div className="space-y-1">
                   <Label className="text-xs text-[#7F7F7F]">Gender*</Label>
                   <Select value={editFormData.gender} onValueChange={(v) => handleEditSelectChange("gender", v)}>
-                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm">
+                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm w-full">
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
@@ -647,7 +647,7 @@ export default function PatientDetailsPage() {
                 <div className="space-y-1">
                   <Label className="text-xs text-[#7F7F7F]">Status</Label>
                   <Select value={editFormData.status} onValueChange={(v) => handleEditSelectChange("status", v)}>
-                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm">
+                    <SelectTrigger className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm w-full">
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -656,18 +656,6 @@ export default function PatientDetailsPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-                {/* Medical Issue */}
-                <div className="space-y-1">
-                  <Label className="text-xs text-[#7F7F7F]">Medical Issue</Label>
-                  <Input
-                    name="medical_issue_details"
-                    value={editFormData.medical_issue_details}
-                    onChange={handleEditFieldChange}
-                    placeholder="Medical issue details"
-                    className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none h-9 text-sm"
-                    disabled={isSaving}
-                  />
                 </div>
                 {/* Address – single field */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-3 space-y-1">
@@ -735,14 +723,6 @@ export default function PatientDetailsPage() {
                       <p className="text-sm text-[#7F7F7F]">Address</p>
                       <p className="font-medium text-[#4B4B4B] text-sm">
                         {buildAddress(patientData)}
-                      </p>
-                    </div>
-                  )}
-                  {patientData.medical_issue_details && (
-                    <div className="col-span-2">
-                      <p className="text-sm text-[#7F7F7F]">Medical Issue</p>
-                      <p className="font-medium text-[#4B4B4B] text-sm">
-                        {patientData.medical_issue_details}
                       </p>
                     </div>
                   )}
@@ -1106,8 +1086,8 @@ export default function PatientDetailsPage() {
                                     )}
                                     {/* Doctor name */}
                                     {doctorName && (
-                                      <p className="text-[11px] text-[#0B5CF9] mt-0.5 truncate font-medium">
-                                        Dr. {doctorName}
+                                      <p className="text-[11px] text-[#0B5CF9] mt-0.5 truncate font-medium capitalize">
+                                        {doctorName.toLowerCase().startsWith("dr") ? doctorName : `DR. ${doctorName}`}
                                       </p>
                                     )}
                                   </div>

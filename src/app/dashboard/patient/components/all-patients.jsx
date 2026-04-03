@@ -24,6 +24,7 @@ import { UpdateStatusModal } from "./update-status-modal";
 import { toast } from "sonner";
 import patient from "@/api/patient";
 import { useRouter } from "next/navigation";
+import TablePagination from "@/app/components/common/Pagination";
 
 export default function AllPatients({
   searchQuery = "",
@@ -33,7 +34,7 @@ export default function AllPatients({
 }) {
   const router = useRouter();
   const [patientsList, setPatientsList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [patientToDelete, setPatientToDelete] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -43,18 +44,11 @@ export default function AllPatients({
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [totalPatients, setTotalPatients] = useState(0);
-  const patientsPerPage = 50;
+  const itemsPerPage = 10;
 
   // Fetch patients from API
-  const fetchPatients = async (page = 1, isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLoading(true);
-    }
+  const fetchPatients = async () => {
+    setLoading(true);
     try {
       // Convert filter values back to original format for API
       const statusParam =
@@ -67,8 +61,6 @@ export default function AllPatients({
           : "";
 
       const params = {
-        page: page,
-        limit: patientsPerPage,
         search: searchQuery,
         status: statusParam,
         speciality: specialityParam,
@@ -76,75 +68,25 @@ export default function AllPatients({
 
       const response = await patient.getAllPatients(params);
 
-      // Check if the data is directly in response.data or nested
-      let patientsData = null;
-      let paginationData = null;
-
-      if (response.data && response.data.data) {
-        // Direct structure: response.data.data
-        patientsData = response.data.data;
-        paginationData = response.data.pagination;
-      } else if (response.data && Array.isArray(response.data)) {
-        // Direct array structure
-        patientsData = response.data;
-        paginationData = null;
+      if(response.error) {
+        toast.error("Failed to load patients");
+        setPatientsList([]);
       }
-
-      if (patientsData) {
-        const newPatients = patientsData;
-        const totalFromResponse =
-          paginationData?.total_records ??
-          response.data?.total ??
-          response.total ??
-          null;
-
-        if (isLoadMore) {
-          // Append new patients to existing list
-          setPatientsList((prev) => [...prev, ...newPatients]);
-        } else {
-          // Replace existing patients
-          setPatientsList(newPatients);
-        }
-
-        // Track total only if backend provides it
-        setTotalPatients(totalFromResponse || 0);
-        setCurrentPage(page);
-
-        // If total is known, use it. Otherwise, assume more pages exist
-        // as long as the current page returned a full page of results
-        const calculatedHasMore =
-          totalFromResponse != null
-            ? page * patientsPerPage < totalFromResponse
-            : newPatients.length === patientsPerPage;
-        setHasMore(calculatedHasMore);
-      } else {
-        if (!isLoadMore) {
-          setPatientsList([]);
-          setTotalPatients(0);
-        }
+      if(response.success === true && response.data) {
+        setPatientsList(response.data);
       }
     } catch (error) {
       console.error("Error fetching patients:", error);
-      if (!isLoadMore) {
-        toast.error("Failed to fetch patients");
-        setPatientsList([]);
-        setTotalPatients(0);
-      } else {
-        toast.error("Failed to load more patients");
-      }
+      setPatientsList([]);
+      toast.error("Failed to load more patients");
     } finally {
-      if (isLoadMore) {
-        setLoadingMore(false);
-      } else {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
   // Fetch data on component mount and when filters change
   useEffect(() => {
     setCurrentPage(1);
-    setHasMore(true);
-    fetchPatients(1, false);
+    fetchPatients();
   }, [selectedStatus, selectedSpeciality]);
 
   // Handle patient refresh after add/edit/delete
@@ -153,8 +95,7 @@ export default function AllPatients({
       onPatientUpdate();
     } else {
       setCurrentPage(1);
-      setHasMore(true);
-      fetchPatients(1, false);
+      fetchPatients();
     }
   };
 
@@ -181,16 +122,8 @@ export default function AllPatients({
 
   const handleDeleteSuccess = () => {
     setCurrentPage(1);
-    setHasMore(true);
-    fetchPatients(1, false); // Refresh the list
+    fetchPatients(); // Refresh the list
     setPatientToDelete(null);
-  };
-
-  // ****************************** Load More Function ***********************************
-  const handleLoadMore = () => {
-    if (hasMore && !loadingMore) {
-      fetchPatients(currentPage + 1, true);
-    }
   };
 
   // Filter patients based on search and filters
@@ -279,7 +212,6 @@ export default function AllPatients({
 
     return shouldInclude;
   });
-
   const getStatusBadgeColor = (status) => {
     switch (status?.toLowerCase()) {
       case "in treatment":
@@ -329,6 +261,13 @@ export default function AllPatients({
     );
   }
 
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
+
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
   return (
     <div className="w-full">
       <Table className="border-collapse border border-gray-200">
@@ -364,13 +303,13 @@ export default function AllPatients({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredPatients.map((patient, index) => (
+          {paginatedPatients.map((patient, index) => (
             <TableRow
               key={patient._id}
               className="hover:bg-blue-50 border-b border-gray-100 transition-all duration-200 hover:border-blue-200 group"
             >
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                {index + 1}
+                {patient.no}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                 <div className="flex items-center gap-2">
@@ -429,14 +368,6 @@ export default function AllPatients({
                       className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
                     >
                       <DropdownMenuItem
-                        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleEditPatient(patient)}
-                      >
-                        <Pencil className="h-4 w-4 mr-3 text-gray-500" />
-                        Edit Patient
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
                         className="flex items-center px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 cursor-pointer transition-colors"
                         onClick={() => handleUpdateStatus(patient)}
                       >
@@ -459,51 +390,11 @@ export default function AllPatients({
           ))}
         </TableBody>
       </Table>
-
-      {/* Load More Button */}
-      {hasMore && (
-        <div className="flex flex-col items-center space-y-1 mt-6">
-          {totalPatients > 0 ? (
-            <div className="text-sm text-gray-600">
-              Showing {patientsList.length} of {totalPatients} patients
-            </div>
-          ) : (
-            <div className="text-sm text-gray-600">
-              Showing {patientsList.length} patients
-            </div>
-          )}
-          <Button
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            variant="outline"
-            className="flex items-center gap-2 px-6 py-2"
-          >
-            {loadingMore ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              "Load More Patients"
-            )}
-          </Button>
-        </div>
-      )}
-
-      {/* Show total count when all patients are loaded */}
-      {!hasMore && patientsList.length > 0 && (
-        <div className="flex justify-center mt-6">
-          {totalPatients > 0 ? (
-            <div className="text-sm text-gray-600">
-              Showing all {totalPatients} patients
-            </div>
-          ) : (
-            <div className="text-sm text-gray-600">
-              Showing all {filteredPatients.length} patients
-            </div>
-          )}
-        </div>
-      )}
+      <TablePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        setCurrentPage={setCurrentPage}
+      />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

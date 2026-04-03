@@ -1,7 +1,7 @@
 import { enquiryEndpoints } from "./apis";
 import { apiConnector, handleResponse } from "./core";
 
-const { GET_ALL_PATIENTS_ENQUIRY_API, ADD_PATIENTS_ENQUIRY_API } =
+const { GET_ALL_PATIENTS_ENQUIRY_API, ADD_PATIENTS_ENQUIRY_API, GET_ALL_PATIENTS_ENQUIRIES_API } =
   enquiryEndpoints;
 
 const patientsEnquiry = {
@@ -11,6 +11,19 @@ const patientsEnquiry = {
       response = await apiConnector(
         "GET",
         `${GET_ALL_PATIENTS_ENQUIRY_API}?page=${page}&limit=${limit}`
+      );
+    } catch (error) {
+      response = error;
+    }
+    return handleResponse(response);
+  },
+
+  getAllPatientsEnquiries: async () => {
+    let response = null;
+    try {
+      response = await apiConnector(
+        "GET",
+        `${GET_ALL_PATIENTS_ENQUIRIES_API}`
       );
     } catch (error) {
       response = error;

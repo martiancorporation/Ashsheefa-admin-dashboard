@@ -29,6 +29,7 @@ import { format } from "date-fns";
 import AllAppointments from "./components/all-appointments";
 import { AddAppointmentModal } from "./components/add-appointment-modal";
 import API from "@/api";
+import { useDepartments } from "@/hooks/useDepartment.hook";
 
 export default function AppointmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -36,14 +37,18 @@ export default function AppointmentsPage() {
   const [selectedSpeciality, setSelectedSpeciality] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Date filter state
   const [dateRange, setDateRange] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Dynamic departments state
-  const [departments, setDepartments] = useState([]);
-  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+  const {
+    departments,
+    loading: departmentsLoading,
+    error: departmentsError,
+  } = useDepartments();
 
   const statusOptions = [
     { name: "All Status" },
@@ -52,54 +57,6 @@ export default function AppointmentsPage() {
     { name: "Cancelled" },
     { name: "Confirmed" },
   ];
-
-  // Fetch departments on component mount
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
-  // ************** FETCH DEPARTMENTS API CALL *******************
-  const fetchDepartments = async () => {
-    try {
-      setDepartmentsLoading(true);
-      const response = await API.department.getAllDepartments(1, 100); // Get all departments
-
-      if (response && response.departments) {
-        const departmentNames = response.departments
-          .map((dept) => dept.name || dept.department_name || dept.label)
-          .filter(Boolean);
-        setDepartments(departmentNames);
-      } else if (response && response.data) {
-        const departmentNames = response.data
-          .map((dept) => dept.name || dept.department_name || dept.label)
-          .filter(Boolean);
-        setDepartments(departmentNames);
-      }
-    } catch (error) {
-      console.error("Error fetching departments:", error);
-      // Fallback to static list if API fails
-      setDepartments([
-        "Ortho",
-        "Cardiology",
-        "Neurology",
-        "Oncology",
-        "General Surgery",
-        "Dermatology",
-        "Pediatrics",
-        "Gynecology",
-        "ENT",
-        "Ophthalmology",
-        "Psychiatry",
-        "Radiology",
-        "Anesthesiology",
-        "Emergency Medicine",
-        "Internal Medicine",
-        "Cardiac Science",
-      ]);
-    } finally {
-      setDepartmentsLoading(false);
-    }
-  };
 
   const specialityOptions = [
     { name: "All Specialities" },

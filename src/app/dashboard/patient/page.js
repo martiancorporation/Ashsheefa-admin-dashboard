@@ -30,6 +30,7 @@ export default function PatientPage() {
     total: "-",
     inTreatment: "-",
     discharged: "-",
+    underObservation: "-",
   });
   const [statsLoading, setStatsLoading] = useState(true);
 
@@ -121,7 +122,10 @@ export default function PatientPage() {
         const discharged = patients.filter(
           (p) => p.status?.toLowerCase() === "discharged"
         ).length;
-        setStats({ total, inTreatment, discharged });
+        const underObservation = patients.filter(
+          (p) => p.status?.toLowerCase() === "under observation"
+        ).length;
+        setStats({ total, inTreatment, discharged, underObservation });
       }
     } catch (error) {
       console.error("Error fetching patient stats:", error);
@@ -145,6 +149,11 @@ export default function PatientPage() {
       icon: "/assets/images/internationalPatient/discharged.svg",
       name: "Discharged Patients",
       value: statsLoading ? "..." : String(stats.discharged),
+    },
+    {
+      icon: "/assets/images/internationalPatient/discharged.svg",
+      name: "Patients Under Observation",
+      value: statsLoading ? "..." : String(stats.underObservation),
     },
   ];
 
@@ -203,33 +212,6 @@ export default function PatientPage() {
               ))}
             </SelectContent>
           </Select>
-
-          <Select
-            value={selectedSpeciality}
-            onValueChange={setSelectedSpeciality}
-            disabled={departmentsLoading}
-          >
-            <SelectTrigger className="w-full md:w-[140px]">
-              <SelectValue
-                placeholder={
-                  departmentsLoading ? "Loading..." : "All Specialities"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {specialityOptions.map((speciality, index) => (
-                <SelectItem
-                  key={index}
-                  value={speciality.name.toLowerCase().replace(" ", "-")}
-                >
-                  {speciality.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-auto">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
@@ -239,6 +221,9 @@ export default function PatientPage() {
               className="pl-8 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[250px]"
             />
           </div>
+        </div>
+
+        <div className="flex gap-3 w-full md:w-auto">
 
           <Button
             onClick={handleRefresh}
