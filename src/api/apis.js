@@ -91,7 +91,7 @@ export const dashboardDoctorEndpoints = {
 export const INTERNATIONAL_PATIENT_API = {
   GET_ALL_INTERNATIONAL_PATIENTS:
     BASE_URL +
-    "/v1/dashboard/international_patient/get_all_international_patients",
+    "/v1/dashboard/international_patient/get_international_patients",
   ADD_INTERNATIONAL_PATIENT:
     BASE_URL + "/v1/international-patients/add_international_patient",
   GET_INTERNATIONAL_PATIENT_BY_ID:
@@ -135,7 +135,7 @@ export const APPOINTMENTS_API = {
 
 // Dashboard Patients APIs (Always Authenticated)
 export const PATIENTS_API = {
-  GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients_data",
+  GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients",
   ADD_PATIENT: BASE_URL + "/v1/dashboard/patients/add_patients_data",
   GET_PATIENT_DATA_BY_ID: BASE_URL + "/v1/dashboard/get_patients_data_by_id",
   UPDATE_PATIENT: BASE_URL + "/v1/dashboard/update_patients_data",
