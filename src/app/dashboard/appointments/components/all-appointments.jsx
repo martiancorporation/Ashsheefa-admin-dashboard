@@ -95,7 +95,8 @@ export default function AllAppointments({
         speciality: specialityParam,
       };
 
-      const response = await appointments.getAllAppointmentsWithoutPagination(params);
+      const response =
+        await appointments.getAllAppointmentsWithoutPagination(params);
 
       if (response.success === true) {
         setAppointmentsList(response.data);
@@ -106,7 +107,7 @@ export default function AllAppointments({
     } catch (error) {
       toast.error("Failed to fetch appointments");
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -190,10 +191,10 @@ export default function AllAppointments({
     const statusFilter = selectedStatus
       ? selectedStatus.replace(/-/g, " ").toLowerCase()
       : "";
-    const specialityFilter = selectedSpeciality
-      ? selectedSpeciality.replace(/-/g, " ").toLowerCase()
-      : "";
-
+    const specialityFilter =
+      selectedSpeciality && selectedSpeciality !== "all-specialities"
+        ? selectedSpeciality.replace(/-/g, " ").toLowerCase()
+        : "";
     // Also try exact match with original dropdown values
     const statusExact = selectedStatus ? selectedStatus : "";
     const specialityExact = selectedSpeciality ? selectedSpeciality : "";
@@ -208,15 +209,9 @@ export default function AllAppointments({
           appointment.status?.toLowerCase() === statusExact.replace(/-/g, " ")
         : true;
 
-    const matchesSpeciality =
-      selectedSpeciality && selectedSpeciality !== "all-specialities"
-        ? appointment.speciality?.toLowerCase() === specialityFilter ||
-          appointment.speciality?.toLowerCase().includes(specialityFilter) ||
-          specialityFilter.includes(appointment.speciality?.toLowerCase()) ||
-          appointment.speciality?.toLowerCase() === specialityExact ||
-          appointment.speciality?.toLowerCase() ===
-            specialityExact.replace(/-/g, " ")
-        : true;
+    const matchesSpeciality = specialityFilter
+      ? appointment.speciality?.toLowerCase() === specialityFilter
+      : true;
 
     const matchesDateRange = (() => {
       if (!dateRange) return true;
@@ -330,7 +325,6 @@ export default function AllAppointments({
       </div>
     );
   }
-
 
   if (sortedAppointments.length === 0) {
     return (

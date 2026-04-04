@@ -120,6 +120,7 @@ export default function AllInternationalPatients({
 
   // Fetch data on component mount and when filters change
   useEffect(() => {
+    setCurrentPage(1); 
     fetchInternationalPatients();
   }, [searchQuery, selectedStatus, selectedSpeciality, selectedCountry]);
 
@@ -184,14 +185,20 @@ export default function AllInternationalPatients({
       : true;
 
     // Status filter - convert filter value back to original format
+    const statusExact = selectedStatus ? selectedStatus : "";
     const statusFilter =
       selectedStatus && selectedStatus !== "all-status"
         ? selectedStatus.replace(/-/g, " ").toLowerCase()
         : "";
 
-    const matchesStatus = statusFilter
-      ? patient.status?.toLowerCase() === statusFilter
-      : true;
+    const matchesStatus =
+      selectedStatus && selectedStatus !== "all-status"
+        ? patient.status?.toLowerCase() === statusFilter ||
+          patient.status?.toLowerCase().includes(statusFilter) ||
+          statusFilter.includes(patient.status?.toLowerCase()) ||
+          patient.status?.toLowerCase() === statusExact ||
+          patient.status?.toLowerCase() === statusExact.replace(/-/g, " ")
+        : true;
 
     // Speciality filter
     const specialityFilter =
