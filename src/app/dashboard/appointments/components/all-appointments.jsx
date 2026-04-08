@@ -18,6 +18,8 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  X,
+  Ban,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,7 @@ import { AddAppointmentModal } from "./add-appointment-modal";
 import { EditAppointmentModal } from "./edit-appointment-modal";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import { UpdateStatusModal } from "./update-status-modal";
+import { CancelAppointmentModal } from "./cancel-appointment-modal";
 import { toast } from "sonner";
 import appointments from "@/api/appointments";
 import {
@@ -70,6 +73,8 @@ export default function AllAppointments({
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [statusUpdateModalOpen, setStatusUpdateModalOpen] = useState(false);
   const [statusUpdateAppointment, setStatusUpdateAppointment] = useState(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelAppointment, setCancelAppointment] = useState(null);
   const [sortOrder, setSortOrder] = useState(null); // null, 'asc', or 'desc'
 
   // Pagination states
@@ -143,6 +148,12 @@ export default function AllAppointments({
     setStatusUpdateAppointment(appointment);
     setStatusUpdateModalOpen(true);
     setOpenDropdownId(null); // Close dropdown when update status is clicked
+  };
+
+  const handleCancelAppointment = (appointment) => {
+    setCancelAppointment(appointment);
+    setCancelModalOpen(true);
+    setOpenDropdownId(null); // Close dropdown when cancel is clicked
   };
 
   const handleDeleteAppointment = (appointment) => {
@@ -391,134 +402,159 @@ export default function AllAppointments({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {paginatedAppointments.map((appointment, index) => (
-            <TableRow
-              key={appointment._id}
-              className="hover:bg-blue-50 border-b border-gray-100 transition-all duration-200 hover:border-blue-200 group"
-            >
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {index + 1}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {appointment.patientId?.patient_full_name || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {appointment.patientId?.gender || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {appointment.patientId?.contact_number || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {appointment.doctorId?.department || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {appointment.doctorId?.fullName || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                <div className="text-sm">
-                  <div className="font-medium text-gray-800">
-                    {formatDate(appointment.appointment_date)}
-                  </div>
-                  {appointment.slot_start_time && (
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {formatTime(appointment.slot_start_time)}
-                      {appointment.slot_end_time &&
-                        ` – ${formatTime(appointment.slot_end_time)}`}
+          {paginatedAppointments.map((appointment, index) => {
+            const isCancelled =
+              appointment.status?.toLowerCase() === "cancelled";
+            const isPaid = appointment.paymentStatus === "paid";
+            return (
+              <TableRow
+                key={appointment._id}
+                className="hover:bg-blue-50 border-b border-gray-100 transition-all duration-200 hover:border-blue-200 group"
+              >
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {index + 1}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {appointment.patientId?.patient_full_name || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {appointment.patientId?.gender || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {appointment.patientId?.contact_number || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {appointment.doctorId?.department || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  {appointment.doctorId?.fullName || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                  <div className="text-sm">
+                    <div className="font-medium text-gray-800">
+                      {formatDate(appointment.appointment_date)}
                     </div>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
-                {appointment.amount || appointment.doctorId?.fees || "N/A"}
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Badge
-                    className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.status)}`}
-                  >
-                    {appointment.status || "N/A"}
-                  </Badge>
-                </div>
-              </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Badge
-                    className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
-                      appointment.paymentStatus,
-                    )}`}
-                  >
-                    {appointment.paymentStatus || "N/A"}
-                  </Badge>
-                </div>
-              </TableCell>
-              <TableCell className="py-3">
-                <div className="flex justify-center gap-2">
-                  <DropdownMenu
-                    open={openDropdownId === appointment._id}
-                    onOpenChange={(open) =>
-                      setOpenDropdownId(open ? appointment._id : null)
-                    }
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-gray-100 cursor-pointer"
-                      >
-                        <Ellipsis className="h-4 w-4 text-gray-600" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-48 bg-white border border-gray-200 rounded-lg shadow-lg"
+                    {appointment.slot_start_time && (
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        {formatTime(appointment.slot_start_time)}
+                        {appointment.slot_end_time &&
+                          ` – ${formatTime(appointment.slot_end_time)}`}
+                      </div>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                  {appointment.amount || appointment.doctorId?.fees || "N/A"}
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Badge
+                      className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.status)}`}
                     >
-                      <DropdownMenuItem
-                        className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleViewAppointment(appointment)}
-                      >
-                        <Eye className="h-4 w-4 mr-2 text-gray-500" />
-                        View Details
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem
-                        className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={() => handleEditAppointment(appointment)}
-                      >
-                        <Pencil className="h-4 w-4 mr-2 text-gray-500" />
-                        Edit Appointment
-                      </DropdownMenuItem>
-
-                      {appointment.paymentStatus === "paid" ? (
-                        <DropdownMenuItem
-                          className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
-                          onClick={() => handleUpdateStatus(appointment)}
+                      {appointment.status || "N/A"}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Badge
+                      className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
+                        appointment.paymentStatus,
+                      )}`}
+                    >
+                      {appointment.paymentStatus || "N/A"}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="py-3">
+                  <div className="flex justify-center gap-2">
+                    <DropdownMenu
+                      open={openDropdownId === appointment._id}
+                      onOpenChange={(open) =>
+                        setOpenDropdownId(open ? appointment._id : null)
+                      }
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 hover:bg-gray-100 cursor-pointer"
                         >
-                          <Receipt className="h-4 w-4 mr-2 text-green-600" />
-                          Payment Details
-                        </DropdownMenuItem>
-                      ) : (
-                        <DropdownMenuItem
-                          className="flex items-center px-2 py-2 text-sm text-green-600 hover:bg-green-50 cursor-pointer transition-colors"
-                          onClick={() => handleUpdateStatus(appointment)}
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                          Mark as Paid
-                        </DropdownMenuItem>
-                      )}
-
-                      <DropdownMenuItem
-                        className="flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
-                        onClick={() => handleDeleteAppointment(appointment)}
+                          <Ellipsis className="h-4 w-4 text-gray-600" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-64 bg-white border border-gray-200 rounded-lg shadow-lg"
                       >
-                        <Trash2 className="h-4 w-4 mr-2 text-red-500" />
-                        Delete Appointment
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+                        <DropdownMenuItem
+                          className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => handleViewAppointment(appointment)}
+                        >
+                          <Eye className="h-4 w-4 mr-2 text-gray-500" />
+                          View Details
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => handleEditAppointment(appointment)}
+                        >
+                          <Pencil className="h-4 w-4 mr-2 text-gray-500" />
+                          Edit Appointment
+                        </DropdownMenuItem>
+
+                        {/* PAYMENT ACTION */}
+                        {!isCancelled &&
+                          (isPaid ? (
+                            <DropdownMenuItem
+                              className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
+                              onClick={() => handleUpdateStatus(appointment)}
+                            >
+                              <Receipt className="h-4 w-4 mr-2 text-green-600" />
+                              Payment Details
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              className="flex items-center px-2 py-2 text-sm text-green-600 hover:bg-green-50 cursor-pointer transition-colors"
+                              onClick={() => handleUpdateStatus(appointment)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                              Mark as Paid
+                            </DropdownMenuItem>
+                          ))}
+
+                        {/* CANCEL ACTION */}
+                        {isCancelled ? (
+                          <DropdownMenuItem className="flex items-center px-2 py-2 text-sm text-red-700 hover:bg-red-50 cursor-pointer transition-colors">
+                            <Ban className="h-4 w-4 mr-2 text-red-600" />
+                            Appointment Cancelled
+                          </DropdownMenuItem>
+                        ) : (
+                          !isPaid && (
+                            <DropdownMenuItem
+                              className="flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                              onClick={() => handleCancelAppointment(appointment)}
+                            >
+                              <X className="h-4 w-4 mr-2 text-red-500" />
+                              Cancel Appointment
+                            </DropdownMenuItem>
+                          )
+                        )}
+
+                        <DropdownMenuItem
+                          className="flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                          onClick={() => handleDeleteAppointment(appointment)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2 text-red-500" />
+                          Delete Appointment
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
@@ -558,6 +594,14 @@ export default function AllAppointments({
         onOpenChange={setStatusUpdateModalOpen}
         appointment={statusUpdateAppointment}
         onSave={handleAppointmentUpdate}
+      />
+
+      {/* Cancel Appointment Modal */}
+      <CancelAppointmentModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        appointment={cancelAppointment}
+        onSuccess={handleAppointmentUpdate}
       />
     </div>
   );
