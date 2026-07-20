@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck } from 'lucide-react'
+import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck, Siren } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import Image from 'next/image'
 import {
@@ -35,6 +35,12 @@ const menuItems = [
     label: 'Appointments',
     href: '/dashboard/appointments',
     matchPaths: ['/dashboard/appointments']
+  },
+  {
+    icon: Siren,
+    label: 'Emergency SOS',
+    href: '/dashboard/emergency-sos',
+    matchPaths: ['/dashboard/emergency-sos', '/dashboard/emergency-sos/[id]']
   },
 
   {
