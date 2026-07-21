@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import useAuthDataStore from '@/store/authStore'
+import useSosStore from '@/store/sosStore'
 import API from '@/api'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
@@ -99,6 +100,15 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
+
+  // Emergency-SOS count for the sidebar badge. Fetched once when the dashboard
+  // (and therefore the sidebar) mounts, then shared via the store.
+  const sosTotal = useSosStore((state) => state.total)
+  const fetchSosCount = useSosStore((state) => state.fetchSosCount)
+
+  useEffect(() => {
+    fetchSosCount()
+  }, [fetchSosCount])
 
   const handleLogout = () => {
     API.auth.Logout(router, clearAuthData);
@@ -189,14 +199,19 @@ export function Sidebar() {
             <li key={item.href}>
               <Link href={item.href}>
                 <span className={cn(
-                  " flex items-center gap-x-2 text-sm py-1.5 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
+                  " relative flex items-center gap-x-2 text-sm py-1.5 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
                   isActiveRoute(item) ? "bg-[#FFFFFF] text-[#323232] border border-[#E5E5E5]" : "",
                   isCollapsed ? "justify-center" : ""
                 )}>
                   <TooltipProvider className='relative'>
                     <Tooltip>
                       <TooltipTrigger>
-                        <item.icon className={cn("shrink-0", isCollapsed ? "mr-0 w-4" : "mr-0 w-4")} />
+                        <span className="relative inline-flex items-center justify-center">
+                          {item.label === 'Emergency SOS' && sosTotal > 0 && (
+                            <span className="absolute inline-flex h-[16px] w-full animate-ping rounded-full bg-[#FF8282] opacity-75"></span>
+                          )}
+                          <item.icon className={cn("relative shrink-0 w-4", item.label === 'Emergency SOS' ? "text-red-500" : "")} />
+                        </span>
                       </TooltipTrigger>
                       <TooltipContent className='bg-white text-[#41A3FF]  border absolute ml-8'>
                         <p>{item.label}</p>
@@ -205,6 +220,19 @@ export function Sidebar() {
                   </TooltipProvider>
 
                   {!isCollapsed && <span>{item.label}</span>}
+
+                  {/* Emergency SOS count badge (static — only the icon animates) */}
+                  {item.label === 'Emergency SOS' && sosTotal > 0 && (
+                    isCollapsed ? (
+                      <span className="absolute top-0.5 right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-semibold">
+                        {sosTotal > 99 ? '99+' : sosTotal}
+                      </span>
+                    ) : (
+                      <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[11px] font-semibold">
+                        {sosTotal > 99 ? '99+' : sosTotal}
+                      </span>
+                    )
+                  )}
                 </span>
               </Link>
             </li>

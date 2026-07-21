@@ -13,13 +13,6 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -30,39 +23,13 @@ import AllEmergencySos from "./components/all-emergency-sos";
 
 export default function EmergencySosPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
-  const [selectedType, setSelectedType] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Date filter state
   const [dateRange, setDateRange] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const statusOptions = [
-    { name: "All Status" },
-    { name: "Pending" },
-    { name: "Dispatched" },
-    { name: "En Route" },
-    { name: "Resolved" },
-    { name: "Cancelled" },
-  ];
-
-  const typeOptions = [
-    { name: "All Types" },
-    { name: "Cardiac" },
-    { name: "Accident" },
-    { name: "Breathing" },
-    { name: "Stroke" },
-    { name: "Pregnancy" },
-    { name: "Trauma" },
-    { name: "Other" },
-  ];
-
   const handleRefresh = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
-
-  const handleSosUpdate = () => {
     setRefreshKey((prev) => prev + 1);
   };
 
@@ -100,7 +67,7 @@ export default function EmergencySosPage() {
           </Link>
           <div className="w-[1.5px] h-[15px] bg-[#7F7F7F]"></div>
           <p className="text-[#4B4B4B] font-medium flex items-center gap-2">
-            <Siren className="w-4 h-4 text-red-500" />
+            <Siren className="w-4 h-4 text-red-500 animate-pulse" />
             Emergency SOS
           </p>
         </div>
@@ -108,38 +75,6 @@ export default function EmergencySosPage() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="w-full md:w-auto flex flex-wrap items-center gap-2">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full md:w-[150px]">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((status, index) => (
-                <SelectItem
-                  key={index}
-                  value={status.name.toLowerCase().replace(/\s+/g, "-")}
-                >
-                  {status.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-full md:w-[180px]">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              {typeOptions.map((type, index) => (
-                <SelectItem
-                  key={index}
-                  value={type.name.toLowerCase().replace(/\s+/g, "-")}
-                >
-                  {type.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           {/* Date Range Filter */}
           <div className="flex items-center gap-2">
             <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -213,10 +148,7 @@ export default function EmergencySosPage() {
         <AllEmergencySos
           key={refreshKey}
           searchQuery={searchQuery}
-          selectedStatus={selectedStatus}
-          selectedType={selectedType}
           dateRange={dateRange}
-          onSosUpdate={handleSosUpdate}
         />
       </div>
     </>

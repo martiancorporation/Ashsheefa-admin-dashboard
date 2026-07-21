@@ -1,17 +1,45 @@
 "use client";
 
-import { ChevronRight, Clock, Clock9, FileText, User } from "lucide-react";
+import { ChevronRight, Clock, Clock9, FileText, User, Siren } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { EnquiryAppointmentBarChart } from "./components/enquiry-appointment-chart";
 import { VisitorAreaChart } from "./components/visitor-area-chart";
 import { DepartmentDoctorPieChart } from "./components/department-doctor-pie-chart";
 import API from "@/api";
+import useSosStore, { SOS_ALERT_THRESHOLD } from "@/store/sosStore";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Page() {
+  const router = useRouter();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Emergency-SOS popup. The count is fetched by the sidebar on mount and
+  // shared via the store; we pop an alert once when it crosses the threshold.
+  const sosTotal = useSosStore((state) => state.total);
+  const sosFetched = useSosStore((state) => state.hasFetched);
+  const alertShown = useSosStore((state) => state.alertShown);
+  const setAlertShown = useSosStore((state) => state.setAlertShown);
+  const [sosDialogOpen, setSosDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (sosFetched && !alertShown && sosTotal >= SOS_ALERT_THRESHOLD) {
+      setSosDialogOpen(true);
+      setAlertShown(true);
+    }
+  }, [sosFetched, alertShown, sosTotal, setAlertShown]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -97,6 +125,35 @@ export default function Page() {
 
   return (
     <>
+      {/* Emergency SOS alert popup */}
+      <AlertDialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="relative mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FF8282] opacity-75"></span>
+              <Siren className="relative h-11 w-11 text-red-500" />
+            </div>
+            <AlertDialogTitle className="text-center text-red-600">
+              {sosTotal} Emergency SOS {sosTotal === 1 ? "alert" : "alerts"} pending
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {sosTotal === 1
+                ? "An emergency SOS has come in and needs your attention."
+                : `${sosTotal} emergency SOS alerts have come in and need attention.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="grid grid-cols-2 gap-x-3">
+            <AlertDialogCancel className="border">Dismiss</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => router.push("/dashboard/emergency-sos")}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              View SOS
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center  space-x-2 ">
           <Image
