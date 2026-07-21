@@ -163,3 +163,8 @@ export const dashboardDepartmentEndpoints = {
   DELETE_DEPARTMENT_API:
     BASE_URL + "/v1/dashboard/departments/delete-department",
 };
+
+// Emergency SOS APIs (Always Authenticated)
+export const EMERGENCY_SOS_API = {
+  GET_ALL_SOS: BASE_URL + "/v1/dashboard/sos",
+};

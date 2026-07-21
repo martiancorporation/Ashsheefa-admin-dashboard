@@ -7,6 +7,7 @@ import patientsEnquiry from "./patients-enquiry";
 import department from "./department";
 import patient from "./patient";
 import appointments from "./appointments";
+import emergencySos from "./emergency-sos";
 
 const API = {
   auth,
@@ -17,7 +18,8 @@ const API = {
   patientsEnquiry,
   department,
   patient,
-  appointments
+  appointments,
+  emergencySos,
 };
 
 export default API;
