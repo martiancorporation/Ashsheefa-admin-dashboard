@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip"
 import useAuthDataStore from '@/store/authStore'
 import useSosStore from '@/store/sosStore'
+import { initEmergencyAudioUnlock } from '@/lib/emergencyAlertSound'
 import API from '@/api'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
@@ -107,6 +108,9 @@ export function Sidebar() {
   const fetchSosCount = useSosStore((state) => state.fetchSosCount)
 
   useEffect(() => {
+    // Arm audio unlock early so the admin's first interaction anywhere enables
+    // sound for the whole session (browsers block audio until a user gesture).
+    initEmergencyAudioUnlock()
     fetchSosCount()
   }, [fetchSosCount])
 
