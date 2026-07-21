@@ -162,6 +162,12 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
+                                        <span className="text-sm text-gray-500">Transaction Id</span>
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {appointment?.orderId || "—"}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-500">Payment Mode</span>
                                         <span className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
                                             {MODE_LABEL[confirmedMode] || confirmedMode}
