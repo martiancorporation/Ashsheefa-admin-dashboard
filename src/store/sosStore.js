@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import API from "@/api";
+import { playEmergencyAlert } from "@/lib/emergencyAlertSound";
 
 // Show the "lots of SOS" popup once the count reaches this many. Bump as needed.
 export const SOS_ALERT_THRESHOLD = 1;
@@ -22,6 +23,11 @@ const useSosStore = create((set) => ({
       });
       const total = typeof res?.total === "number" ? res.total : 0;
       set({ total, loading: false, hasFetched: true });
+      // Every time we hit the SOS API and there are pending alerts, sound the
+      // audible emergency notification.
+      if (total >= SOS_ALERT_THRESHOLD) {
+        playEmergencyAlert();
+      }
       return total;
     } catch (e) {
       set({ loading: false, hasFetched: true });
