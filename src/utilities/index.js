@@ -33,11 +33,25 @@ export const deleteCookie = (name) => {
   }
 };
 
-export const getEncodedUserAgent = () => {
-  if (typeof window !== "undefined") {
-    return encodeURIComponent(window.navigator.userAgent).replace(/%/g, "_");
+/**
+ * Returns a stable UUID that uniquely identifies this browser installation.
+ * Generated once and persisted in localStorage so it survives page reloads
+ * and is shared across tabs of the same browser (same device = same ID).
+ *
+ * Replaces the old getEncodedUserAgent() which returned window.navigator.userAgent —
+ * a string that is identical across every tab and window of the same browser,
+ * causing all sessions to collapse onto the same token document in the backend.
+ */
+export const getOrCreateDeviceId = () => {
+  if (typeof window === "undefined") return "server-side";
+  const key = "ashsheefa_device_id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    // crypto.randomUUID() is supported in all modern browsers (Chrome 92+, Firefox 95+, Safari 15.4+)
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
   }
-  return "Server-Side"; // Fallback value
+  return id;
 };
 
 export const getPaginationPages = (currentPage, totalPages, maxVisible = 3) => {

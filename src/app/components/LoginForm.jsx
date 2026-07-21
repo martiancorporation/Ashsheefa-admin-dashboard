@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import useAuthDataStore from "@/store/authStore";
 import API from "@/api";
 import { useForm } from "react-hook-form";
-import { getEncodedUserAgent } from "@/utilities";
+import { getOrCreateDeviceId } from "@/utilities";
 
 export default function LoginForm() {
     const [buttonLoading, setButtonLoading] = useState(false);
@@ -45,7 +45,7 @@ export default function LoginForm() {
         setButtonLoading(true);
         const formData = {
             ...data,
-            device: getEncodedUserAgent(),
+        device: getOrCreateDeviceId(),
         };
         API.auth
             .Login(formData)
