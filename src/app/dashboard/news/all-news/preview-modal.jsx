@@ -9,7 +9,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Calendar, Newspaper, Image as ImageIcon } from "lucide-react";
+import { Eye, Calendar, Newspaper, Image as ImageIcon, ExternalLink } from "lucide-react";
 import Image from "next/image";
 
 export function NewsPreviewModal({ news }) {
@@ -61,6 +61,17 @@ export function NewsPreviewModal({ news }) {
                                 <Calendar className="w-4 h-4" />
                                 <span>{formatDate(news.publish_date)}</span>
                             </div>
+                            {news.url && news.url.trim() !== "" && (
+                                <a
+                                    href={news.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span>News Link</span>
+                                </a>
+                            )}
                         </div>
                     </div>
 

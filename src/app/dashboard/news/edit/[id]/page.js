@@ -24,6 +24,7 @@ export default function EditNews() {
     description: "",
     news_channel_name: "",
     publish_date: "",
+    url: "",
     image: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -50,6 +51,7 @@ export default function EditNews() {
           publish_date: news.publish_date
             ? new Date(news.publish_date).toISOString().split("T")[0]
             : "",
+          url: news.url || "",
           image: news.image || "",
         });
 
@@ -67,6 +69,7 @@ export default function EditNews() {
           publish_date: news.publish_date
             ? new Date(news.publish_date).toISOString().split("T")[0]
             : "",
+          url: news.url || "",
           image: news.image || "",
         });
 
@@ -178,6 +181,7 @@ export default function EditNews() {
         description: formData.description.trim(),
         news_channel_name: formData.news_channel_name.trim(),
         publish_date: formData.publish_date,
+        url: formData.url.trim(),
         image: formData.image, // This is now a base64 string
       };
 
@@ -314,6 +318,22 @@ export default function EditNews() {
                   onChange={handleInputChange}
                   className="w-full"
                   required
+                />
+              </div>
+
+              {/* News Link (optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-sm font-medium">
+                  News Link
+                </Label>
+                <Input
+                  id="url"
+                  name="url"
+                  type="url"
+                  value={formData.url}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/news-article (optional)"
+                  className="w-full"
                 />
               </div>
 
