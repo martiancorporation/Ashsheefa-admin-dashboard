@@ -82,4 +82,20 @@ export function playEmergencyAlert() {
   emitAlert();
 }
 
+/**
+ * Stop the emergency alert sound. Call this when the admin dismisses/acts on the
+ * SOS popup so the alarm doesn't keep ringing to the end of the clip. Also drops
+ * any alert queued behind the browser's autoplay unlock.
+ */
+export function stopEmergencyAlert() {
+  pendingAlert = false;
+  if (!audioEl) return;
+  try {
+    audioEl.pause();
+    audioEl.currentTime = 0;
+  } catch (_) {
+    /* ignore */
+  }
+}
+
 export default playEmergencyAlert;

@@ -10,6 +10,7 @@ import { VisitorAreaChart } from "./components/visitor-area-chart";
 import { DepartmentDoctorPieChart } from "./components/department-doctor-pie-chart";
 import API from "@/api";
 import useSosStore, { SOS_ALERT_THRESHOLD } from "@/store/sosStore";
+import { stopEmergencyAlert } from "@/lib/emergencyAlertSound";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,15 @@ export default function Page() {
       setAlertShown(true);
     }
   }, [sosFetched, alertShown, sosTotal, setAlertShown]);
+
+  // Closing the popup (Dismiss / View SOS / Esc) must silence the alarm.
+  const handleSosDialogOpenChange = (open) => {
+    setSosDialogOpen(open);
+    if (!open) stopEmergencyAlert();
+  };
+
+  // Leaving the dashboard shouldn't leave the alarm ringing either.
+  useEffect(() => stopEmergencyAlert, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -126,7 +136,7 @@ export default function Page() {
   return (
     <>
       {/* Emergency SOS alert popup */}
-      <AlertDialog open={sosDialogOpen} onOpenChange={setSosDialogOpen}>
+      <AlertDialog open={sosDialogOpen} onOpenChange={handleSosDialogOpenChange}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <div className="relative mx-auto mb-2 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
