@@ -43,6 +43,33 @@ const calcAge = (dob) => {
   return age >= 0 && age < 150 ? age : null;
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Normalise whatever the backend put in an address field into a displayable
+// location string. It can arrive as a flat string or as an object of address
+// parts, and sometimes carries junk (an email, a bare phone number) that is
+// not a location at all — those are dropped so the UI shows "N/A" instead.
+const normalizeAddress = (value) => {
+  if (!value) return null;
+
+  if (typeof value === "object") {
+    const parts = [
+      value.street,
+      value.city,
+      value.state,
+      value.pincode,
+      value.country,
+    ].filter(Boolean);
+    return parts.length > 0 ? parts.join(", ") : null;
+  }
+
+  const text = String(value).trim();
+  if (!text) return null;
+  if (EMAIL_RE.test(text)) return null; // an email is not a location
+  if (/^\+?[\d\s()-]{6,}$/.test(text)) return null; // nor is a bare phone number
+  return text;
+};
+
 // Map a backend SOS record onto the shape this UI renders.
 // Backend provides: patient_name, contact_number, address (raw, often null),
 // patient_details (full Patients doc) and triggered_by (app user — only
@@ -59,7 +86,9 @@ const mapSosRecord = (sos) => {
     uhid: p?.uhid || null,
     patient_status: p?.status || null,
     contact_number: sos.contact_number || p?.contact_number || null,
-    location_address: sos.address || p?.address || null,
+    // location_address: sos.address || p?.address || null,
+    location_address:
+      normalizeAddress(sos.address) || normalizeAddress(p?.address) || null,
     triggered_by_phone: u?.phone_number || null,
     triggered_by_name: u?.name || null,
   };
