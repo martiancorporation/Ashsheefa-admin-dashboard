@@ -13,6 +13,7 @@ import { Loader2, Save, ArrowLeft, Plus, X, Upload } from "lucide-react";
 import useAuthDataStore from "@/store/authStore";
 import API from "@/api";
 import { toast } from "sonner";
+import { detectPlatform, getSocialIcon } from "@/lib/socialMedia";
 
 export default function EditNews() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function EditNews() {
     description: "",
     news_channel_name: "",
     publish_date: "",
+    url: "",
+    social_links: [],
     image: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -50,6 +53,12 @@ export default function EditNews() {
           publish_date: news.publish_date
             ? new Date(news.publish_date).toISOString().split("T")[0]
             : "",
+          url: news.url || "",
+          social_links: Array.isArray(news.social_links)
+            ? news.social_links
+                .map((s) => (typeof s === "string" ? s : s?.url || ""))
+                .filter(Boolean)
+            : [],
           image: news.image || "",
         });
 
@@ -67,6 +76,12 @@ export default function EditNews() {
           publish_date: news.publish_date
             ? new Date(news.publish_date).toISOString().split("T")[0]
             : "",
+          url: news.url || "",
+          social_links: Array.isArray(news.social_links)
+            ? news.social_links
+                .map((s) => (typeof s === "string" ? s : s?.url || ""))
+                .filter(Boolean)
+            : [],
           image: news.image || "",
         });
 
@@ -94,6 +109,28 @@ export default function EditNews() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const addSocialLink = () => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: [...prev.social_links, ""],
+    }));
+  };
+
+  const removeSocialLink = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: prev.social_links.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSocialLinkChange = (index, value) => {
+    setFormData((prev) => {
+      const next = [...prev.social_links];
+      next[index] = value;
+      return { ...prev, social_links: next };
+    });
   };
 
   const handleImageUpload = (e) => {
@@ -178,6 +215,11 @@ export default function EditNews() {
         description: formData.description.trim(),
         news_channel_name: formData.news_channel_name.trim(),
         publish_date: formData.publish_date,
+        url: formData.url.trim(),
+        social_links: formData.social_links
+          .map((u) => (u || "").trim())
+          .filter(Boolean)
+          .map((u) => ({ platform: detectPlatform(u), url: u })),
         image: formData.image, // This is now a base64 string
       };
 
@@ -315,6 +357,79 @@ export default function EditNews() {
                   className="w-full"
                   required
                 />
+              </div>
+
+              {/* News Link (optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-sm font-medium">
+                  News Link
+                </Label>
+                <Input
+                  id="url"
+                  name="url"
+                  type="url"
+                  value={formData.url}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/news-article (optional)"
+                  className="w-full"
+                />
+              </div>
+
+              {/* Social Media Links (optional) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">
+                    Social Media Links
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addSocialLink}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </Button>
+                </div>
+                {formData.social_links.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    No social media links added. Click &quot;Add&quot; to
+                    include one — the icon is detected automatically from the
+                    link.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.social_links.map((link, index) => {
+                      const Icon = getSocialIcon(link);
+                      return (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-gray-50 text-gray-600">
+                            <Icon className="w-4 h-4" />
+                          </span>
+                          <Input
+                            type="url"
+                            value={link}
+                            onChange={(e) =>
+                              handleSocialLinkChange(index, e.target.value)
+                            }
+                            placeholder="https://facebook.com/your-page"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSocialLink(index)}
+                            className="shrink-0 text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Image Upload */}

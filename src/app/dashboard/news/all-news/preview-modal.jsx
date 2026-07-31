@@ -9,8 +9,9 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Calendar, Newspaper, Image as ImageIcon } from "lucide-react";
+import { Eye, Calendar, Newspaper, Image as ImageIcon, ExternalLink } from "lucide-react";
 import Image from "next/image";
+import { getSocialIcon } from "@/lib/socialMedia";
 
 export function NewsPreviewModal({ news }) {
     const [open, setOpen] = useState(false);
@@ -61,6 +62,17 @@ export function NewsPreviewModal({ news }) {
                                 <Calendar className="w-4 h-4" />
                                 <span>{formatDate(news.publish_date)}</span>
                             </div>
+                            {news.url && news.url.trim() !== "" && (
+                                <a
+                                    href={news.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    <span>News Link</span>
+                                </a>
+                            )}
                         </div>
                     </div>
 
@@ -109,6 +121,35 @@ export function NewsPreviewModal({ news }) {
                             </p>
                         </div>
                     </div>
+
+                    {/* Social Media Links (bottom-left) */}
+                    {Array.isArray(news.social_links) &&
+                        news.social_links.length > 0 && (
+                            <div className="border-t pt-4">
+                                <div className="flex items-center gap-3">
+                                    {news.social_links.map((s, i) => {
+                                        const url =
+                                            typeof s === "string" ? s : s?.url;
+                                        if (!url) return null;
+                                        const Icon = getSocialIcon(
+                                            (s && s.platform) || url
+                                        );
+                                        return (
+                                            <a
+                                                key={i}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={url}
+                                                className="flex h-10 w-10 items-center justify-center rounded-md border text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                 </div>
             </DialogContent>
         </Dialog>
