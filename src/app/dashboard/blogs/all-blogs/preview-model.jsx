@@ -11,6 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Eye, Calendar, User, ExternalLink } from "lucide-react"
+import { getSocialIcon } from "@/lib/socialMedia"
 
 export function BlogPreviewModal({ blog }) {
     const formatDate = (dateString) => {
@@ -86,6 +87,35 @@ export function BlogPreviewModal({ blog }) {
                         <div className="prose prose-lg max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600 prose-strong:text-gray-900 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-lg">
                             <div dangerouslySetInnerHTML={{ __html: blog?.main_content || '<p>No content available</p>' }} />
                         </div>
+
+                        {/* Social Media Links (bottom-left) */}
+                        {Array.isArray(blog?.social_links) &&
+                            blog.social_links.length > 0 && (
+                                <div className="border-t border-gray-100 pt-4">
+                                    <div className="flex items-center gap-3">
+                                        {blog.social_links.map((s, i) => {
+                                            const url =
+                                                typeof s === "string" ? s : s?.url;
+                                            if (!url) return null;
+                                            const Icon = getSocialIcon(
+                                                (s && s.platform) || url
+                                            );
+                                            return (
+                                                <a
+                                                    key={i}
+                                                    href={url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title={url}
+                                                    className="flex h-10 w-10 items-center justify-center rounded-md border text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                                                >
+                                                    <Icon className="w-5 h-5" />
+                                                </a>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
 
                         {/* Footer */}
                         <div className="border-t border-gray-100 pt-6">

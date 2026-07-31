@@ -2,9 +2,10 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ImagePlus, Eye, Loader2 } from "lucide-react";
+import { ImagePlus, Eye, Loader2, Plus, X } from "lucide-react";
 
 import API from "@/api";
+import { detectPlatform, getSocialIcon } from "@/lib/socialMedia";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ const CreateBlogPost = () => {
     meta_keywords: "",
     short_description: "",
     main_content: "",
+    social_links: [],
     image_file: null,
   });
 
@@ -63,9 +65,32 @@ const CreateBlogPost = () => {
       meta_keywords: "",
       short_description: "",
       main_content: "",
+      social_links: [],
       image_file: null,
     });
     setImagePreview(null);
+  };
+
+  const addSocialLink = () => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: [...prev.social_links, ""],
+    }));
+  };
+
+  const removeSocialLink = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: prev.social_links.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSocialLinkChange = (index, value) => {
+    setFormData((prev) => {
+      const next = [...prev.social_links];
+      next[index] = value;
+      return { ...prev, social_links: next };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -92,6 +117,13 @@ const CreateBlogPost = () => {
       if (key === "image_file" && formData[key]) {
         data.append("image_file", formData[key]);
         data.append("image", formData[key]); // Also try 'image' field name
+      } else if (key === "social_links") {
+        // Serialize social links as JSON with the platform auto-detected from each URL
+        const cleaned = formData.social_links
+          .map((u) => (u || "").trim())
+          .filter(Boolean)
+          .map((u) => ({ platform: detectPlatform(u), url: u }));
+        data.append("social_links", JSON.stringify(cleaned));
       } else {
         data.append(key, formData[key]);
       }
@@ -319,6 +351,60 @@ const CreateBlogPost = () => {
               />
             </div>
 
+            {/* Social Media Links */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-[#4A4A4B]">Social Media Links</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addSocialLink}
+                  className="flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add
+                </Button>
+              </div>
+              {formData.social_links.length === 0 ? (
+                <p className="text-xs text-gray-500">
+                  No social media links added. Click &quot;Add&quot; to include
+                  one — the icon is detected automatically from the link.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {formData.social_links.map((link, index) => {
+                    const Icon = getSocialIcon(link);
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border bg-gray-50 text-gray-600">
+                          <Icon className="w-4 h-4" />
+                        </span>
+                        <Input
+                          type="url"
+                          value={link}
+                          onChange={(e) =>
+                            handleSocialLinkChange(index, e.target.value)
+                          }
+                          placeholder="https://facebook.com/your-page"
+                          className="h-11 flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSocialLink(index)}
+                          className="shrink-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             {/* Main Content */}
             <div className="space-y-1">
               <Label htmlFor="main_content" className="text-[#4A4A4B]">
@@ -365,6 +451,7 @@ const CreateBlogPost = () => {
         shortDescription={formData.short_description}
         content={formData.main_content}
         imageUrl={imagePreview}
+        socialLinks={formData.social_links}
       />
     </>
   );

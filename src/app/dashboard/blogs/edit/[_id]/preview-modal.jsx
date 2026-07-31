@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { getSocialIcon } from "@/lib/socialMedia"
 
 
 export function BlogPreviewModal({
@@ -11,8 +12,12 @@ export function BlogPreviewModal({
     author,
     shortDescription,
     content,
-    imageUrl
+    imageUrl,
+    socialLinks = []
 }) {
+    const links = (Array.isArray(socialLinks) ? socialLinks : [])
+        .map((s) => (typeof s === "string" ? s : s?.url))
+        .filter((u) => u && u.trim() !== "");
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-4xl h-[90vh]">
@@ -41,6 +46,29 @@ export function BlogPreviewModal({
                             className="blog-content"
                             dangerouslySetInnerHTML={{ __html: content }}
                         />
+
+                        {/* Social Media Links (bottom-left) */}
+                        {links.length > 0 && (
+                            <div className="border-t pt-4">
+                                <div className="flex items-center gap-3">
+                                    {links.map((url, i) => {
+                                        const Icon = getSocialIcon(url);
+                                        return (
+                                            <a
+                                                key={i}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={url}
+                                                className="flex h-10 w-10 items-center justify-center rounded-md border text-gray-600 hover:text-blue-600 hover:border-blue-300 transition-colors"
+                                            >
+                                                <Icon className="w-5 h-5" />
+                                            </a>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </ScrollArea>
             </DialogContent>
