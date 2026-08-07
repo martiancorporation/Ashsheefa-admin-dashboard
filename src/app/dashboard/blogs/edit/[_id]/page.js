@@ -90,6 +90,20 @@ const EditBlogPost = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (2MB limit)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error("File size must be under 2 MB");
+        e.target.value = "";
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
+        toast.error("Please select a JPEG or PNG image");
+        e.target.value = "";
+        return;
+      }
+
       setFormData((prevState) => ({
         ...prevState,
         image_file: file,
@@ -264,7 +278,7 @@ const EditBlogPost = () => {
                       <div className="text-sm text-muted-foreground">
                         Drag and drop or click to upload
                         <br />
-                        Recommended size: 1200x630px
+                        Image must be under 2 MB &amp; JPEG, PNG only.
                       </div>
                     </>
                   )}
@@ -273,7 +287,7 @@ const EditBlogPost = () => {
                     type="file"
                     id="image_file"
                     name="image_file"
-                    accept="image/*"
+                    accept="image/jpeg, image/png, image/jpg"
                     onChange={handleImageChange}
                     className="absolute inset-0 opacity-0 cursor-pointer"
                   />
