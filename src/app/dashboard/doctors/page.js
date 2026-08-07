@@ -43,6 +43,7 @@ import API from "@/api";
 import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 import { useRouter } from "next/navigation";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export default function DoctorsPage() {
   const router = useRouter();
@@ -783,10 +784,10 @@ export default function DoctorsPage() {
                         <div className="flex justify-between items-end w-full">
                         <div>
                           <h3
-                            title={doctor.fullName}
+                            title={dedupeDoctorTitle(doctor.fullName)}
                             className="text-sm text-[#323232] truncate uppercase font-semibold"
                           >
-                            {doctor.fullName}
+                            {dedupeDoctorTitle(doctor.fullName)}
                           </h3>
                           <p className="text-xs text-[#7F7F7F]">
                             {doctor.qualification}, {doctor.regNo}
@@ -894,7 +895,9 @@ export default function DoctorsPage() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete{" "}
-              <span className="font-semibold">{doctorForAction?.fullName}</span>{" "}
+              <span className="font-semibold">
+                {dedupeDoctorTitle(doctorForAction?.fullName)}
+              </span>{" "}
               from the system.
             </AlertDialogDescription>
           </AlertDialogHeader>

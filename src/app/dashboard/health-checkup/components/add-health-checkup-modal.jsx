@@ -67,11 +67,27 @@ export function AddHealthCheckupModal({ open, onOpenChange, healthPackage, onSav
     const handleFileChange = (e) => {
         const file = e.target.files?.[0]
         if (file) {
+            // Validate file size (2MB limit)
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error("File size must be under 2 MB")
+                return
+            }
+
+            // Validate file type
+            if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
+                toast.error("Please select a JPEG or PNG image")
+                return
+            }
+
             const reader = new FileReader()
             reader.onload = (event) => {
                 if (event.target?.result) {
                     setPhotoUrl(event.target.result)
                 }
+            }
+            reader.onerror = () => {
+                console.error("Error reading file")
+                toast.error("Error reading file. Please try again.")
             }
             reader.readAsDataURL(file)
         }
@@ -300,10 +316,16 @@ export function AddHealthCheckupModal({ open, onOpenChange, healthPackage, onSav
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/*"
+                            accept="image/jpeg, image/png, image/jpg"
                             onChange={handleFileChange}
                             className="hidden"
                         />
+                        <p className="text-sm text-gray-500">
+                            Photo must be under 2 MB & JPEG, PNG only.
+                        </p>
+                        <p className="text-xs text-gray-400">
+                            Click "Upload Photo" to select an image file
+                        </p>
                         {photoUrl && (
                             <div className="mt-2">
                                 <Image

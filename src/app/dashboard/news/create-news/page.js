@@ -76,6 +76,9 @@ export default function CreateNews() {
 
     if (!validTypes.includes(file.type)) {
       toast.error("Please upload only image files (JPEG, PNG, GIF, WebP)");
+      // Clear the input so it doesn't keep showing the rejected file's name,
+      // and so re-picking the same file still fires onChange.
+      e.target.value = "";
       return;
     }
 
@@ -84,6 +87,7 @@ export default function CreateNews() {
 
     if (file.size > maxSize) {
       toast.error("Image file must be smaller than 2MB");
+      e.target.value = "";
       return;
     }
 

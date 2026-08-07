@@ -12,6 +12,25 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
+import { toast } from "sonner"
+
+// Logo and banner accept the same formats/limit — keep in step with the hint
+// rendered under each Upload button.
+const MAX_IMAGE_BYTES = 2 * 1024 * 1024
+const ALLOWED_IMAGE_RE = /^image\/(jpeg|jpg|png|webp|svg\+xml)$/
+
+// Returns false (and toasts why) when the file can't be used.
+const isValidImage = (file) => {
+    if (file.size > MAX_IMAGE_BYTES) {
+        toast.error("File size must be under 2 MB")
+        return false
+    }
+    if (!ALLOWED_IMAGE_RE.test(file.type)) {
+        toast.error("Please select a JPEG, PNG, WEBP or SVG image")
+        return false
+    }
+    return true
+}
 
 
 export function AddDepartmentModal({ department, onSave, open, onOpenChange }) {
@@ -70,11 +89,20 @@ export function AddDepartmentModal({ department, onSave, open, onOpenChange }) {
     const handleFileChange = (e) => {
         const file = e.target.files?.[0]
         if (file) {
+            if (!isValidImage(file)) {
+                // Clear it so picking the same file again still fires onChange.
+                e.target.value = ""
+                return
+            }
+
             const reader = new FileReader()
             reader.onload = (event) => {
                 if (event.target?.result) {
                     setPhotoUrl(event.target.result)
                 }
+            }
+            reader.onerror = () => {
+                toast.error("Error reading file. Please try again.")
             }
             reader.readAsDataURL(file)
         }
@@ -83,11 +111,19 @@ export function AddDepartmentModal({ department, onSave, open, onOpenChange }) {
     const handleBannerChange = (e) => {
         const file = e.target.files?.[0]
         if (file) {
+            if (!isValidImage(file)) {
+                e.target.value = ""
+                return
+            }
+
             const reader = new FileReader()
             reader.onload = (event) => {
                 if (event.target?.result) {
                     setBannerUrl(event.target.result)
                 }
+            }
+            reader.onerror = () => {
+                toast.error("Error reading file. Please try again.")
             }
             reader.readAsDataURL(file)
         }

@@ -22,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import API from "@/api";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const DAY_LIST = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -126,7 +127,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
       ? appointment.doctorId._id
       : appointment.doctorId;
     setSelectedDoctorId(docId || "");
-    setDoctorSearch(doc.fullName || "");
+    setDoctorSearch(dedupeDoctorTitle(doc.fullName));
     setSelectedDepartment(doc.department || "");
 
     // pre-fill date & slot
@@ -231,7 +232,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
       const q = doctorSearch.toLowerCase();
       list = list.filter(
         (d) =>
-          d.fullName?.toLowerCase().includes(q) ||
+          dedupeDoctorTitle(d.fullName).toLowerCase().includes(q) ||
           d.specialization?.toLowerCase().includes(q) ||
           d.department?.toLowerCase().includes(q)
       );
@@ -498,14 +499,14 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
                         className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 border-b border-gray-100 last:border-0"
                         onClick={() => {
                           setSelectedDoctorId(doc._id);
-                          setDoctorSearch(doc.fullName);
+                          setDoctorSearch(dedupeDoctorTitle(doc.fullName));
                           setDoctorDropdownOpen(false);
                           setSelectedDate(null);
                           setSelectedSlot("");
                           setField("speciality", doc.specialization || "");
                         }}
                       >
-                        <span className="font-medium">{doc.fullName}</span>
+                        <span className="font-medium">{dedupeDoctorTitle(doc.fullName)}</span>
                         {(doc.specialization || doc.department) && (
                           <span className="text-xs text-slate-500 ml-2">
                             {[doc.specialization, doc.department].filter(Boolean).join(" · ")}

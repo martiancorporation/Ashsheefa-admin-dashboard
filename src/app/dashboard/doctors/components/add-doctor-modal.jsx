@@ -23,6 +23,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export function AddDoctorModal({
   open,
@@ -144,13 +146,13 @@ export function AddDoctorModal({
     if (file) {
       // Validate file size (2MB limit)
       if (file.size > 2 * 1024 * 1024) {
-        alert("File size must be under 2 MB");
+        toast.error("File size must be under 2 MB");
         return;
       }
 
       // Validate file type
       if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
-        alert("Please select a JPEG or PNG image");
+        toast.error("Please select a JPEG or PNG image");
         return;
       }
 
@@ -163,7 +165,7 @@ export function AddDoctorModal({
       };
       reader.onerror = () => {
         console.error("Error reading file");
-        alert("Error reading file. Please try again.");
+        toast.error("Error reading file. Please try again.");
       };
       reader.readAsDataURL(file);
     }
@@ -291,7 +293,8 @@ export function AddDoctorModal({
       const formPayload = new FormData();
 
       // ✅ Append ONLY simple values
-      formPayload.append("fullName", formData.fullName);
+      // "Dr. Dr. Sen" → "Dr. Sen". A name typed without a title stays as-is.
+      formPayload.append("fullName", dedupeDoctorTitle(formData.fullName));
       formPayload.append("department", formData.department);
       formPayload.append("regNo", formData.regNo);
       formPayload.append("experience", formData.experience || "");

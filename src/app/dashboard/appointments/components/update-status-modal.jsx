@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { toast } from "sonner"
 import appointments from "@/api/appointments"
+import { dedupeDoctorTitle } from "@/lib/formatText"
 
 const PAYMENT_MODES = [
     { value: "cash", label: "Cash" },
@@ -104,7 +105,7 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
         appointment?.patientId?.patient_full_name ||
         appointment?.patient_full_name ||
         "—"
-    const doctorName = appointment?.doctorId?.fullName || "—"
+    const doctorName = dedupeDoctorTitle(appointment?.doctorId?.fullName) || "—"
 
     return (
         <Dialog open={open} onOpenChange={(val) => {
