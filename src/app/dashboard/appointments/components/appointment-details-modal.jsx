@@ -97,6 +97,7 @@ export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
                             <InfoRow label="Date of Birth" value={appointment.patientId?.date_of_birth ? formatDate(appointment.patientId.date_of_birth) : "Not specified"} />
                             <InfoRow label="Gender" value={appointment.patientId?.gender} />
                             <InfoRow label="Contact Number" value={appointment.patientId?.contact_number} icon={Phone} />
+                            <InfoRow label="Address" value={appointment.patientId?.address} icon={MapPin} fullRow />
                         </div>
                     </div>
 
