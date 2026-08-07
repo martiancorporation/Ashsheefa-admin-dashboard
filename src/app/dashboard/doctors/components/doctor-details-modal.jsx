@@ -5,6 +5,7 @@ import { X, Phone, Calendar, Globe, Clock, Mail, User, Award, MapPin, Hash } fro
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { dedupeDoctorTitle } from "@/lib/formatText"
 
 export function DoctorDetailsModal({ open, onOpenChange, doctor }) {
     return (
@@ -55,7 +56,7 @@ export function DoctorDetailsModal({ open, onOpenChange, doctor }) {
                             </Badge>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <h2 className="text-lg font-bold text-gray-900 truncate">{doctor.fullName}</h2>
+                            <h2 className="text-lg font-bold text-gray-900 truncate">{dedupeDoctorTitle(doctor.fullName)}</h2>
                             <p className="text-sm text-gray-600 mb-1">{doctor.qualification}</p>
                             <div className="flex flex-wrap gap-1 text-xs">
                                 <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">

@@ -5,6 +5,7 @@ import { User, Phone, Calendar, MapPin, Stethoscope, FileText, CreditCard, Clock
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { dedupeDoctorTitle } from "@/lib/formatText"
 
 export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
 
@@ -118,7 +119,7 @@ export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
                             </InfoRow>
 
                             <InfoRow label="Department" value={appointment.doctorId?.department} icon={MapPin} />
-                            <InfoRow label="Doctor" value={appointment.doctorId?.fullName} icon={Stethoscope} />
+                            <InfoRow label="Doctor" value={dedupeDoctorTitle(appointment.doctorId?.fullName)} icon={Stethoscope} />
                             <InfoRow label="Status" value={appointment.status} icon={Stethoscope} />
 
                             {/* Divider */}

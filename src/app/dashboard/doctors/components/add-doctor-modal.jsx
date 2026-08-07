@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export function AddDoctorModal({
   open,
@@ -291,7 +292,8 @@ export function AddDoctorModal({
       const formPayload = new FormData();
 
       // ✅ Append ONLY simple values
-      formPayload.append("fullName", formData.fullName);
+      // "Dr. Dr. Sen" → "Dr. Sen". A name typed without a title stays as-is.
+      formPayload.append("fullName", dedupeDoctorTitle(formData.fullName));
       formPayload.append("department", formData.department);
       formPayload.append("regNo", formData.regNo);
       formPayload.append("experience", formData.experience || "");

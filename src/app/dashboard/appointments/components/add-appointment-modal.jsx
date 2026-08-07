@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import API from "@/api";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 const DAY_LIST = [
     "sunday",
@@ -214,7 +215,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
             const q = doctorSearch.toLowerCase();
             list = list.filter(
                 (d) =>
-                    d.fullName?.toLowerCase().includes(q) ||
+                    dedupeDoctorTitle(d.fullName).toLowerCase().includes(q) ||
                     d.specialization?.toLowerCase().includes(q) ||
                     d.department?.toLowerCase().includes(q)
             );
@@ -708,13 +709,13 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                                                     ...prev,
                                                     doctorId: doc._id,
                                                 }));
-                                                setDoctorSearch(doc.fullName);
+                                                setDoctorSearch(dedupeDoctorTitle(doc.fullName));
                                                 setDoctorDropdownOpen(false);
                                                 setSelectedDate(null);
                                                 setSelectedSlot("");
                                             }}
                                         >
-                                            <span className="font-medium">{doc.fullName}</span>
+                                            <span className="font-medium">{dedupeDoctorTitle(doc.fullName)}</span>
                                             {(doc.specialization || doc.department) && (
                                                 <span className="text-xs text-slate-500 ml-2">
                                                     {[doc.specialization, doc.department]

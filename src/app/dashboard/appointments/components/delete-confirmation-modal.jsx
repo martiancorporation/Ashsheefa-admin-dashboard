@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import appointments from "@/api/appointments"
+import { dedupeDoctorTitle } from "@/lib/formatText"
 
 export function DeleteConfirmationModal({ appointment, onClose, onDeleteSuccess }) {
     const [loading, setLoading] = useState(false)
@@ -60,7 +61,7 @@ export function DeleteConfirmationModal({ appointment, onClose, onDeleteSuccess 
                     <h3 className="font-medium text-red-900 mb-2">Appointment Details</h3>
                     <div className="text-sm text-red-700 space-y-1">
                         <p><strong>Patient:</strong> {appointment.patientId?.patient_full_name || appointment.patient_full_name || "—"}</p>
-                        <p><strong>Doctor:</strong> {appointment.doctorId?.fullName || "—"}</p>
+                        <p><strong>Doctor:</strong> {dedupeDoctorTitle(appointment.doctorId?.fullName) || "—"}</p>
                         <p><strong>Contact:</strong> {appointment.patientId?.contact_number || appointment.contact_number || "—"}</p>
                         <p><strong>Status:</strong> {appointment.status || "—"}</p>
                     </div>

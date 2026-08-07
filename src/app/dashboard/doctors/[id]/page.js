@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import API from "@/api";
+import { withYears, withRupee, dedupeDoctorTitle } from "@/lib/formatText";
 
 export default function DoctorDetailsPage() {
   const { id } = useParams();
@@ -254,7 +255,7 @@ export default function DoctorDetailsPage() {
         // So when a new photo is selected we must send FormData with the actual file.
         updatePayload = new FormData();
         updatePayload.append("_id", id);
-        updatePayload.append("fullName", formData.fullName);
+        updatePayload.append("fullName", dedupeDoctorTitle(formData.fullName));
         updatePayload.append("department", formData.department);
         updatePayload.append("regNo", formData.regNo);
         updatePayload.append("experience", Number(formData.experience) || 0);
@@ -277,7 +278,7 @@ export default function DoctorDetailsPage() {
         // No new photo — send plain JSON as before
         updatePayload = {
           _id: id,
-          fullName: formData.fullName,
+          fullName: dedupeDoctorTitle(formData.fullName),
           department: formData.department,
           regNo: formData.regNo,
           experience: Number(formData.experience) || 0,
@@ -633,7 +634,9 @@ export default function DoctorDetailsPage() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-xl font-bold">{formData.fullName}</h2>
+                    <h2 className="text-xl font-bold uppercase">
+                      {dedupeDoctorTitle(formData.fullName)}
+                    </h2>
                     <p className="text-gray-500">
                       {formData.qualification}{" "}
                       {formData.regNo &&
@@ -679,7 +682,9 @@ export default function DoctorDetailsPage() {
                     />
                   ) : (
                     <div className="font-medium">
-                      {formData.experience ? `${formData.experience} years` : "Not specified"}
+                      {formData.experience
+                        ? withYears(formData.experience)
+                        : "Not specified"}
                     </div>
                   )}
                 </div>
@@ -779,7 +784,7 @@ export default function DoctorDetailsPage() {
                       placeholder="Fees"
                     />
                   ) : (
-                    <div className="font-medium">₹ {formData.fees || 0}</div>
+                    <div className="font-medium">{withRupee(formData.fees || 0)}</div>
                   )}
                 </div>
               </div>
@@ -991,7 +996,7 @@ export default function DoctorDetailsPage() {
             <p className="text-sm text-gray-500 text-center mb-6">
               Are you sure you want to delete{" "}
               <span className="font-medium text-gray-700">
-                {doctor?.fullName}
+                {dedupeDoctorTitle(doctor?.fullName)}
               </span>
               ? This action cannot be undone.
             </p>

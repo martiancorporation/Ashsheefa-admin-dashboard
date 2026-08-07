@@ -54,6 +54,7 @@ import {
   endOfDay,
 } from "date-fns";
 import TablePagination from "@/app/components/common/Pagination";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export default function AllAppointments({
   searchQuery = "",
@@ -444,7 +445,7 @@ export default function AllAppointments({
                   {appointment.doctorId?.department || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                  {appointment.doctorId?.fullName || "N/A"}
+                  {dedupeDoctorTitle(appointment.doctorId?.fullName) || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   <div className="text-sm">

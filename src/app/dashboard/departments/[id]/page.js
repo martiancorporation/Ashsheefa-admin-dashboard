@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Card } from "@/components/ui/card";
 import API from "@/api";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export default function DepartmentDetailsPage({ params }) {
   const [department, setDepartment] = useState(null);
@@ -319,8 +320,8 @@ export default function DepartmentDetailsPage({ params }) {
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold">
-                        {doctor.fullName || doctor.name}
+                      <h3 className="font-semibold uppercase">
+                        {dedupeDoctorTitle(doctor.fullName || doctor.name)}
                       </h3>
                       <p className="text-sm text-gray-500">
                         {doctor.specialty || doctor.specialization || ""}

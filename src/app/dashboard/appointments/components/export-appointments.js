@@ -3,6 +3,7 @@ import {
   toExcelDate,
   flattenAddress,
 } from "@/lib/exportToExcel";
+import { dedupeDoctorTitle } from "@/lib/formatText";
 
 // Every field the admin can see for an appointment — the union of the table
 // columns and the "View Details" modal. Where both show the same thing (name,
@@ -60,7 +61,11 @@ const APPOINTMENT_COLUMNS = [
     width: 22,
     value: (a) => a.doctorId?.department || "",
   },
-  { header: "Doctor", width: 24, value: (a) => a.doctorId?.fullName || "" },
+  {
+    header: "Doctor",
+    width: 24,
+    value: (a) => dedupeDoctorTitle(a.doctorId?.fullName),
+  },
   {
     header: "Appointment Date",
     width: 18,
