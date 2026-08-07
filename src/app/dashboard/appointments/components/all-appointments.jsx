@@ -63,6 +63,7 @@ export default function AllAppointments({
   onAppointmentUpdate,
   departments = [],
   departmentsLoading = false,
+  onVisibleAppointmentsChange,
 }) {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [appointmentsList, setAppointmentsList] = useState([]);
@@ -284,6 +285,22 @@ export default function AllAppointments({
       return dateB - dateA; // Descending
     }
   });
+
+  // Publish the currently visible (filtered + sorted, all pages) list upwards so
+  // the header's "Export to Excel" action exports exactly what the admin sees.
+  // Deps are the inputs that produce `sortedAppointments` — depending on the
+  // array itself would re-fire on every render.
+  useEffect(() => {
+    onVisibleAppointmentsChange?.(sortedAppointments);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    appointmentsList,
+    searchQuery,
+    selectedStatus,
+    selectedSpeciality,
+    dateRange,
+    sortOrder,
+  ]);
 
   const getStatusBadgeColor = (status) => {
     switch (status?.toLowerCase()) {

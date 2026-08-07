@@ -8,6 +8,9 @@ import {
   RefreshCw,
   Calendar as CalendarIcon,
   X,
+  MoreVertical,
+  FileSpreadsheet,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -25,9 +28,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import AllAppointments from "./components/all-appointments";
 import { AddAppointmentModal } from "./components/add-appointment-modal";
+import { exportAppointmentsToExcel } from "./components/export-appointments";
 import API from "@/api";
 import { useDepartments } from "@/hooks/useDepartment.hook";
 
@@ -43,6 +54,31 @@ export default function AppointmentsPage() {
   // Date filter state
   const [dateRange, setDateRange] = useState(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+
+  // Rows currently visible in the table (filtered + sorted, across all pages) —
+  // published by <AllAppointments> so the export matches what's on screen.
+  const [visibleAppointments, setVisibleAppointments] = useState([]);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportToExcel = async () => {
+    if (!visibleAppointments.length) {
+      toast.error("No appointments to export");
+      return;
+    }
+    try {
+      setExporting(true);
+      await exportAppointmentsToExcel(visibleAppointments);
+      toast.success(
+        `Exported ${visibleAppointments.length} appointment${
+          visibleAppointments.length === 1 ? "" : "s"
+        } to Excel`
+      );
+    } catch (error) {
+      toast.error("Failed to export appointments");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const {
     departments,
@@ -225,6 +261,37 @@ export default function AppointmentsPage() {
             <Plus className="h-4 w-4" />
             Add Appointment
           </Button>
+
+          {/* Overflow actions — keeps the header from getting any wider */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 cursor-pointer"
+                aria-label="More actions"
+              >
+                <MoreVertical className="h-4 w-4 text-gray-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 bg-white border border-gray-200 rounded-lg shadow-lg"
+            >
+              <DropdownMenuItem
+                onClick={handleExportToExcel}
+                disabled={exporting || visibleAppointments.length === 0}
+                className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 text-gray-500 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-green-600" />
+                )}
+                {exporting ? "Exporting..." : "Export to Excel"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -238,6 +305,7 @@ export default function AppointmentsPage() {
           onAppointmentUpdate={handleAppointmentUpdate}
           departments={departments}
           departmentsLoading={departmentsLoading}
+          onVisibleAppointmentsChange={setVisibleAppointments}
         />
       </div>
 
