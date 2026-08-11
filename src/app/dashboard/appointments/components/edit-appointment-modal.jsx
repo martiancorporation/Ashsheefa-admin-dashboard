@@ -23,6 +23,29 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import API from "@/api";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import { z } from "zod";
+
+const patientSchema = z.object({
+  patient_full_name: z
+    .string()
+    .transform((v) => v.replace(/[^a-zA-Z\s]/g, "").replace(/\s+/g, " ").trim())
+    .refine((v) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(v), {
+      message: "Please enter a valid full name",
+    }),
+  contact_number: z
+    .string()
+    .transform((v) => v.replace(/\D/g, "").slice(-10))
+    .refine((v) => /^\d{10}$/.test(v), {
+      message: "Enter a valid 10-digit number",
+    }),
+  email: z
+    .string()
+    .transform((v) => v.replace(/\s/g, "").toLowerCase())
+    .refine(
+      (v) => v === "" || /^[a-z][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}$/.test(v),
+      { message: "Please enter a valid email address" },
+    ),
+});
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const DAY_LIST = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -52,6 +75,7 @@ const PAYMENT_STATUSES = ["pending", "paid", "failed", "abandoned"];
 // ─── Component ─────────────────────────────────────────────────────────────────
 export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }) {
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   // ── Doctor picker ──────────────────────────────────────────────────────────
   const [allDoctors, setAllDoctors] = useState([]);
@@ -289,6 +313,23 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
     e.preventDefault();
     if (!appointment?._id) return;
 
+    // Validate patient fields with zod
+    const parsed = patientSchema.safeParse({
+      patient_full_name: form.patient_full_name,
+      contact_number: form.contact_number,
+      email: form.email,
+    });
+    if (!parsed.success) {
+      const fieldErrors = {};
+      parsed.error.issues.forEach((i) => {
+        if (!fieldErrors[i.path[0]]) fieldErrors[i.path[0]] = i.message;
+      });
+      setErrors(fieldErrors);
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setErrors({});
+
     // Build date string from selectedDate
     let appointmentDateStr;
     if (selectedDate) {
@@ -366,9 +407,22 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
               <Input
                 className="mt-1"
                 value={form.patient_full_name}
-                onChange={(e) => setField("patient_full_name", e.target.value)}
+                onChange={(e) =>
+                  setField(
+                    "patient_full_name",
+                    e.target.value
+                      .replace(/[^a-zA-Z\s]/g, "")
+                      .replace(/\s+/g, " ")
+                      .trimStart(),
+                  )
+                }
                 placeholder="Patient full name"
               />
+              {errors.patient_full_name && (
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.patient_full_name}
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -406,11 +460,18 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
                   <Input
                     className="rounded-l-none"
                     value={form.contact_number}
-                    onChange={(e) => setField("contact_number", e.target.value)}
+                    onChange={(e) =>
+                      setField("contact_number", e.target.value.replace(/\D/g, ""))
+                    }
                     maxLength={10}
                     placeholder="Mobile number"
                   />
                 </div>
+                {errors.contact_number && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {errors.contact_number}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Email</Label>
@@ -418,9 +479,12 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
                   className="mt-1"
                   type="email"
                   value={form.email}
-                  onChange={(e) => setField("email", e.target.value)}
+                  onChange={(e) => setField("email", e.target.value.toLowerCase())}
                   placeholder="Email address"
                 />
+                {errors.email && (
+                  <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+                )}
               </div>
             </div>
 

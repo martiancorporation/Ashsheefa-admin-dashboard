@@ -32,6 +32,35 @@ import { format, parse, isValid } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import internationalPatient from "@/api/internationalPatient";
 import doctor from "@/api/doctor";
+import { z } from "zod";
+
+const internationalPatientSchema = z.object({
+  patient_full_name: z
+    .string()
+    .transform((v) => v.replace(/[^a-zA-Z\s]/g, "").replace(/\s+/g, " ").trim())
+    .refine((v) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(v), {
+      message: "Please enter a valid full name",
+    }),
+  contact_number: z
+    .string()
+    .transform((v) => v.replace(/[^\d+]/g, ""))
+    .refine((v) => /^\+?\d{7,15}$/.test(v), {
+      message: "Enter a valid contact number (7-15 digits)",
+    }),
+  passport_number: z
+    .string()
+    .transform((v) => v.trim())
+    .refine((v) => v.length > 0, { message: "Passport number is required" }),
+  country: z.string().min(1, "Country is required"),
+  email: z
+    .string()
+    .transform((v) => v.replace(/\s/g, "").toLowerCase())
+    .refine(
+      (v) => /^[a-z][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}$/.test(v),
+      { message: "Please enter a valid email address" },
+    ),
+  consultant_doctor: z.string().min(1, "Consultant doctor is required"),
+});
 
 export function AddInternationalPatientModal({
   open,
@@ -46,6 +75,7 @@ export function AddInternationalPatientModal({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tempDate, setTempDate] = useState(undefined);
   const [cancellationReason, setCancellationReason] = useState("");
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     patient_full_name: "",
     age: "",
@@ -65,6 +95,7 @@ export function AddInternationalPatientModal({
   // Initialize form when modal opens or patient changes
   useEffect(() => {
     if (open) {
+      setErrors({});
       if (patient) {
         // Convert date to DD/MM/YYYY format for input
         const appointmentDate = patient.appointment_date
@@ -135,31 +166,26 @@ export function AddInternationalPatientModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation for required fields
-    if (!formData.patient_full_name.trim()) {
-      toast.error("Patient full name is required");
+    // Validate the required fields with zod
+    const parsed = internationalPatientSchema.safeParse({
+      patient_full_name: formData.patient_full_name,
+      contact_number: formData.contact_number,
+      passport_number: formData.passport_number,
+      country: formData.country,
+      email: formData.email,
+      consultant_doctor: formData.consultant_doctor,
+    });
+    if (!parsed.success) {
+      const fieldErrors = {};
+      parsed.error.issues.forEach((i) => {
+        if (!fieldErrors[i.path[0]]) fieldErrors[i.path[0]] = i.message;
+      });
+      setErrors(fieldErrors);
+      toast.error(parsed.error.issues[0].message);
       return;
     }
-    if (!formData.contact_number.trim()) {
-      toast.error("Contact number is required");
-      return;
-    }
-    if (!formData.passport_number.trim()) {
-      toast.error("Passport number is required");
-      return;
-    }
-    if (!formData.country.trim()) {
-      toast.error("Country is required");
-      return;
-    }
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-    if (!formData.consultant_doctor.trim()) {
-      toast.error("Consultant doctor is required");
-      return;
-    }
+    setErrors({});
+
     // Status is only required when editing an existing patient
     if (patient && !formData.status.trim()) {
       toast.error("Status is required");
@@ -327,12 +353,23 @@ export function AddInternationalPatientModal({
               id="patient_full_name"
               name="patient_full_name"
               value={formData.patient_full_name}
-              onChange={handleChange}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  patient_full_name: e.target.value
+                    .replace(/[^a-zA-Z\s]/g, "")
+                    .replace(/\s+/g, " ")
+                    .trimStart(),
+                }))
+              }
               placeholder="Enter patient's full name"
               required
               className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
               disabled={loading}
             />
+            {errors.patient_full_name && (
+              <p className="text-xs text-red-500">{errors.patient_full_name}</p>
+            )}
           </div>
 
           {/* Age and Gender */}
@@ -387,12 +424,20 @@ export function AddInternationalPatientModal({
                 id="contact_number"
                 name="contact_number"
                 value={formData.contact_number}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contact_number: e.target.value.replace(/[^\d+]/g, ""),
+                  }))
+                }
                 placeholder="Enter contact number"
                 required
                 className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                 disabled={loading}
               />
+              {errors.contact_number && (
+                <p className="text-xs text-red-500">{errors.contact_number}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="country" className="text-[#4A4A4B] text-sm">
@@ -413,6 +458,9 @@ export function AddInternationalPatientModal({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.country && (
+                <p className="text-xs text-red-500">{errors.country}</p>
+              )}
             </div>
           </div>
 
@@ -435,6 +483,9 @@ export function AddInternationalPatientModal({
                 className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                 disabled={loading}
               />
+              {errors.passport_number && (
+                <p className="text-xs text-red-500">{errors.passport_number}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="email" className="text-[#4A4A4B] text-sm">
@@ -445,12 +496,20 @@ export function AddInternationalPatientModal({
                 name="email"
                 type="email"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    email: e.target.value.toLowerCase(),
+                  }))
+                }
                 placeholder="Enter email"
                 required
                 className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                 disabled={loading}
               />
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email}</p>
+              )}
             </div>
           </div>
 
@@ -553,6 +612,9 @@ export function AddInternationalPatientModal({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.consultant_doctor && (
+                <p className="text-xs text-red-500">{errors.consultant_doctor}</p>
+              )}
             </div>
           </div>
 
