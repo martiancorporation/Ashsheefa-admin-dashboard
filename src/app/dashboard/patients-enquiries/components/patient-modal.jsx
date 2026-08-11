@@ -14,6 +14,22 @@ import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import API from "@/api";
 import { toast } from "sonner";
+import { z } from "zod";
+
+const enquirySchema = z.object({
+  name: z
+    .string()
+    .transform((v) => v.replace(/[^a-zA-Z\s]/g, "").replace(/\s+/g, " ").trim())
+    .refine((v) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(v), {
+      message: "Please enter a valid full name",
+    }),
+  phone_number: z
+    .string()
+    .transform((v) => v.replace(/\D/g, "").slice(0, 10))
+    .refine((v) => /^\d{10}$/.test(v), {
+      message: "Please enter a valid 10-digit phone number",
+    }),
+});
 
 export function PatientModal({
   isOpen,
@@ -24,58 +40,51 @@ export function PatientModal({
 }) {
   const [formData, setFormData] = useState({
     name: patientData?.name || "",
-    phone_number: patientData?.phone_number || "",
+    phone_number: (patientData?.phone_number || "")
+      .replace(/\D/g, "")
+      .slice(-10),
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
+  const [errors, setErrors] = useState({});
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleNameChange = (e) => {
+    const value = e.target.value
+      .replace(/[^a-zA-Z\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trimStart();
+    setFormData((prev) => ({ ...prev, name: value }));
+    if (errors.name) setErrors((prev) => ({ ...prev, name: "" }));
   };
 
   const handlePhoneChange = (e) => {
-    const digits = e.target.value.replace(/\D/g, "");
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
     setFormData((prev) => ({ ...prev, phone_number: digits }));
-    if (digits.length === 0) {
-      setPhoneError("Phone number is required");
-    } else if (digits.length < 10) {
-      setPhoneError("Phone number must be at least 10 digits");
-    } else if (digits.length > 15) {
-      setPhoneError("Phone number must not exceed 15 digits");
-    } else {
-      setPhoneError("");
-    }
+    if (errors.phone_number)
+      setErrors((prev) => ({ ...prev, phone_number: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate with zod
+    const parsed = enquirySchema.safeParse(formData);
+    if (!parsed.success) {
+      const fieldErrors = {};
+      parsed.error.issues.forEach((i) => {
+        if (!fieldErrors[i.path[0]]) fieldErrors[i.path[0]] = i.message;
+      });
+      setErrors(fieldErrors);
+      toast.error(parsed.error.issues[0].message);
+      return;
+    }
+    setErrors({});
+
     setIsSubmitting(true);
 
     try {
-      // Validate required fields
-      const requiredFields = ["name", "phone_number"];
-      const missingFields = requiredFields.filter((field) => !formData[field]);
-
-      if (missingFields.length > 0) {
-        toast.error(
-          `Please fill in all required fields: ${missingFields.join(", ")}`,
-        );
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (
-        formData.phone_number.length < 10 ||
-        formData.phone_number.length > 15
-      ) {
-        setPhoneError("Phone number must be between 10 and 15 digits");
-        setIsSubmitting(false);
-        return;
-      }
-
       const formattedData = {
         ...formData,
+        phone_number: `+91${formData.phone_number}`,
       };
 
       const response =
@@ -125,10 +134,15 @@ export function PatientModal({
               name="name"
               placeholder="Enter full name"
               value={formData.name}
-              onChange={handleChange}
+              onChange={handleNameChange}
               required
-              className={`bg-[#FBFBFB] border border-[#DDDDDD] rounded-[6px]`}
+              className={`bg-[#FBFBFB] border rounded-[6px] ${
+                errors.name
+                  ? "border-red-500 focus-visible:ring-red-400"
+                  : "border-[#DDDDDD]"
+              }`}
             />
+            {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -142,14 +156,16 @@ export function PatientModal({
               value={formData.phone_number}
               onChange={handlePhoneChange}
               required
-              maxLength={15}
+              maxLength={10}
               className={`bg-[#FBFBFB] border rounded-[6px] ${
-                phoneError
+                errors.phone_number
                   ? "border-red-500 focus-visible:ring-red-400"
                   : "border-[#DDDDDD]"
               }`}
             />
-            {phoneError && <p className="text-xs text-red-500">{phoneError}</p>}
+            {errors.phone_number && (
+              <p className="text-xs text-red-500">{errors.phone_number}</p>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

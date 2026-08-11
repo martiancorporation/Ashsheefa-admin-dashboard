@@ -429,11 +429,14 @@ export function AddInternationalPatientModal({
                 onChange={(e) =>
                   setFormData((prev) => ({
                     ...prev,
-                    contact_number: e.target.value.replace(/[^\d+]/g, ""),
+                    contact_number: e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 15),
                   }))
                 }
                 placeholder="Enter contact number"
                 required
+                maxLength={15}
                 className="bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none"
                 disabled={loading}
               />
