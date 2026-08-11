@@ -17,19 +17,10 @@ import { AddHealthCheckupModal } from "./components/add-health-checkup-modal";
 
 export default function HealthCheckupPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [categories, setCategories] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
-
-  const categories = [
-    { name: "All Categories" },
-    { name: "General Health" },
-    { name: "Heart" },
-    { name: "Women" },
-    { name: "Senior Citizen" },
-    { name: "Special" },
-    { name: "Recommended" },
-  ];
 
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -58,12 +49,10 @@ export default function HealthCheckupPage() {
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((category, index) => (
-                <SelectItem
-                  key={index}
-                  value={category.name.toLowerCase().replace(" ", "-")}
-                >
-                  {category.name}
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -106,6 +95,7 @@ export default function HealthCheckupPage() {
           searchQuery={searchQuery}
           selectedCategory={selectedCategory}
           onPackageUpdate={handlePackageUpdate}
+          onCategoriesChange={setCategories}
         />
       </div>
 
