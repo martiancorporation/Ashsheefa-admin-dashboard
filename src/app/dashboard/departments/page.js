@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   Plus,
   Search,
-  ListFilter,
+  RefreshCw,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -258,7 +258,7 @@ export default function DepartmentsPage() {
               fetchDepartments(1);
             }}
           >
-            <ListFilter className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
           <Button

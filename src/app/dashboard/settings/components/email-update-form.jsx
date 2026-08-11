@@ -8,10 +8,23 @@ import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import useAuthDataStore from "@/store/authStore"
 import auth from "@/api/auth"
+import { z } from "zod"
+
+// Email is lowercased and format-checked.
+const emailSchema = z.object({
+    new_email: z
+        .string()
+        .transform((v) => v.replace(/\s/g, "").toLowerCase())
+        .refine(
+            (v) => /^[a-z][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}$/.test(v),
+            { message: "Please enter a valid email address" },
+        ),
+})
 
 export function EmailUpdateForm() {
     const [loading, setLoading] = useState(false)
     const [step, setStep] = useState(1) // 1: Enter new email, 2: Enter OTPs
+    const [errors, setErrors] = useState({})
     const authData = useAuthDataStore((state) => state.authData)
     const setAuthData = useAuthDataStore((state) => state.setAuthData)
 
@@ -23,24 +36,28 @@ export function EmailUpdateForm() {
 
     const handleChange = (e) => {
         const { name, value } = e.target
-        setFormData((prev) => ({ ...prev, [name]: value }))
+        let v = value
+        if (name === "new_email") {
+            v = value.replace(/\s/g, "").toLowerCase()
+        } else if (name === "oldEmailOtp" || name === "newEmailOtp") {
+            v = value.replace(/\D/g, "").slice(0, 6)
+        }
+        setFormData((prev) => ({ ...prev, [name]: v }))
+        if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }))
     }
 
     const handleInitiateEmailChange = async (e) => {
         e.preventDefault()
 
-        // Validation
-        if (!formData.new_email.trim()) {
-            toast.error("New email is required")
+        // Validate the email with zod
+        const parsed = emailSchema.safeParse({ new_email: formData.new_email })
+        if (!parsed.success) {
+            const msg = parsed.error.issues[0].message
+            setErrors({ new_email: msg })
+            toast.error(msg)
             return
         }
-
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(formData.new_email)) {
-            toast.error("Please enter a valid email address")
-            return
-        }
+        setErrors({})
 
         setLoading(true)
         try {
@@ -139,6 +156,9 @@ export function EmailUpdateForm() {
                                 className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
                                 disabled={loading}
                             />
+                            {errors.new_email && (
+                                <p className="text-xs text-red-500">{errors.new_email}</p>
+                            )}
                         </div>
                     </div>
 

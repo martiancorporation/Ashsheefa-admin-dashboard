@@ -427,7 +427,7 @@ export default function CreateNews() {
                     variant="outline"
                     className="flex items-center gap-2"
                   >
-                    <ArrowLeft className="w-4 h-4" />
+                    <X className="w-4 h-4" />
                     Cancel
                   </Button>
                 </Link>
