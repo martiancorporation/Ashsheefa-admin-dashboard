@@ -62,6 +62,22 @@ const internationalPatientSchema = z.object({
   consultant_doctor: z.string().min(1, "Consultant doctor is required"),
 });
 
+const EMPTY_FORM = {
+  patient_full_name: "",
+  age: "",
+  contact_number: "",
+  gender: "",
+  country: "",
+  speciality: "",
+  medical_issue_details: "",
+  refer_doctor: "",
+  consultant_doctor: "",
+  appointment_date: "",
+  passport_number: "",
+  email: "",
+  status: "",
+};
+
 export function AddInternationalPatientModal({
   open,
   onOpenChange,
@@ -76,21 +92,14 @@ export function AddInternationalPatientModal({
   const [tempDate, setTempDate] = useState(undefined);
   const [cancellationReason, setCancellationReason] = useState("");
   const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState({
-    patient_full_name: "",
-    age: "",
-    contact_number: "",
-    gender: "",
-    country: "",
-    speciality: "",
-    medical_issue_details: "",
-    refer_doctor: "",
-    consultant_doctor: "",
-    appointment_date: "",
-    passport_number: "",
-    email: "",
-    status: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+
+  const resetForm = () => {
+    setFormData(EMPTY_FORM);
+    setCancellationReason("");
+    setErrors({});
+    setTempDate(undefined);
+  };
 
   // Initialize form when modal opens or patient changes
   useEffect(() => {
@@ -121,21 +130,7 @@ export function AddInternationalPatientModal({
         setCancellationReason("");
       } else {
         // Reset form for new patient
-        setFormData({
-          patient_full_name: "",
-          age: "",
-          contact_number: "",
-          gender: "",
-          country: "",
-          speciality: "",
-          medical_issue_details: "",
-          refer_doctor: "",
-          consultant_doctor: "",
-          appointment_date: "",
-          passport_number: "",
-          email: "",
-          status: "",
-        });
+        setFormData(EMPTY_FORM);
         setCancellationReason("");
       }
     }
@@ -232,6 +227,7 @@ export function AddInternationalPatientModal({
       };
 
       let response;
+      let saved = false;
       if (patient) {
         // Update existing patient
         response = await internationalPatient.updateInternationalPatient(
@@ -242,6 +238,7 @@ export function AddInternationalPatientModal({
           toast.error(response.error);
         } else if (response) {
           toast.success("International patient updated successfully");
+          saved = true;
         } else {
           toast.error("Failed to update international patient");
         }
@@ -251,6 +248,7 @@ export function AddInternationalPatientModal({
           await internationalPatient.addInternationalPatient(submitData);
         if (response.data) {
           toast.success("International patient added successfully");
+          saved = true;
         } else {
           toast.error(
             response.error ||
@@ -259,8 +257,12 @@ export function AddInternationalPatientModal({
         }
       }
 
-      if (response) {
-        // onOpenChange(false);
+      // onOpenChange(false);
+      // Only clear + close on a real success — on failure the modal stays open
+      // with what was typed, so nothing has to be re-entered.
+      if (saved) {
+        resetForm();
+        onOpenChange(false);
         if (onSave) {
           onSave();
         }
