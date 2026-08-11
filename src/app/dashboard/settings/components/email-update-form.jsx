@@ -25,6 +25,7 @@ export function EmailUpdateForm() {
     const [loading, setLoading] = useState(false)
     const [step, setStep] = useState(1) // 1: Enter new email, 2: Enter OTPs
     const [errors, setErrors] = useState({})
+    const [isEditing, setIsEditing] = useState(false)
     const authData = useAuthDataStore((state) => state.authData)
     const setAuthData = useAuthDataStore((state) => state.setAuthData)
 
@@ -33,6 +34,18 @@ export function EmailUpdateForm() {
         oldEmailOtp: "",
         newEmailOtp: "",
     })
+
+    // Cancel editing: restore current email, clear OTPs, return to step 1 & lock.
+    const handleCancel = () => {
+        setFormData({
+            new_email: authData?.email || "",
+            oldEmailOtp: "",
+            newEmailOtp: "",
+        })
+        setErrors({})
+        setStep(1)
+        setIsEditing(false)
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -124,6 +137,7 @@ export function EmailUpdateForm() {
                     oldEmailOtp: "",
                     newEmailOtp: "",
                 })
+                setIsEditing(false)
             } else {
                 toast.error("Failed to update email")
             }
@@ -153,8 +167,8 @@ export function EmailUpdateForm() {
                                 onChange={handleChange}
                                 placeholder={authData?.email || "Enter new email"}
                                 required
-                                className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                                disabled={loading}
+                                className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:cursor-not-allowed`}
+                                disabled={loading || !isEditing}
                             />
                             {errors.new_email && (
                                 <p className="text-xs text-red-500">{errors.new_email}</p>
@@ -162,29 +176,54 @@ export function EmailUpdateForm() {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 mt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className={`border-none bg-transparent shadow-none`}
-                            disabled={loading}
+                    <div className="relative h-10 mt-4">
+                        {/* View mode: Edit button */}
+                        <div
+                            className={`absolute right-0 top-0 transition-all duration-500 ease-in-out ${isEditing
+                                ? "opacity-0 translate-x-3 pointer-events-none"
+                                : "opacity-100 translate-x-0"
+                                }`}
                         >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
-                            disabled={loading}
+                            <Button
+                                type="button"
+                                onClick={() => setIsEditing(true)}
+                                className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                            >
+                                Edit
+                            </Button>
+                        </div>
+
+                        {/* Edit mode: Cancel + Send OTP */}
+                        <div
+                            className={`absolute right-0 top-0 flex gap-4 transition-all duration-500 ease-in-out ${isEditing
+                                ? "opacity-100 translate-x-0"
+                                : "opacity-0 translate-x-3 pointer-events-none"
+                                }`}
                         >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                    Sending...
-                                </>
-                            ) : (
-                                "Send OTP"
-                            )}
-                        </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleCancel}
+                                className={`border-none bg-transparent shadow-none`}
+                                disabled={loading}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Sending...
+                                    </>
+                                ) : (
+                                    "Send OTP"
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 </form>
             ) : (
@@ -225,6 +264,7 @@ export function EmailUpdateForm() {
                         <Button
                             type="button"
                             variant="outline"
+                            onClick={handleCancel}
                             className={`border-none bg-transparent shadow-none`}
                             disabled={loading}
                         >

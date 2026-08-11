@@ -36,25 +36,33 @@ const toLocal10 = (v) => (v || "").replace(/\D/g, "").slice(-10)
 export function EditDetailsForm() {
     const [loading, setLoading] = useState(false)
     const [errors, setErrors] = useState({})
+    const [isEditing, setIsEditing] = useState(false)
     const authData = useAuthDataStore((state) => state.authData)
     const setAuthData = useAuthDataStore((state) => state.setAuthData)
 
-    const [formData, setFormData] = useState({
-        first_name: "Farukuddin",
-        last_name: "Purkaite",
-        phone_number: "2355658454",
+    // Build the form state from the currently-saved auth data.
+    const buildFromAuth = () => ({
+        first_name: authData?.first_name || "Farukuddin",
+        last_name: authData?.last_name || "Purkaite",
+        phone_number: toLocal10(authData?.phone_number) || "2355658454",
     })
 
-    // Initialize form with current user data
+    const [formData, setFormData] = useState(buildFromAuth())
+
+    // Initialize form with current user data (only while not actively editing,
+    // so an external auth refresh doesn't wipe in-progress edits).
     useEffect(() => {
-        if (authData) {
-            setFormData({
-                first_name: authData.first_name || "Farukuddin",
-                last_name: authData.last_name || "Purkaite",
-                phone_number: toLocal10(authData.phone_number) || "2355658454",
-            })
+        if (authData && !isEditing) {
+            setFormData(buildFromAuth())
         }
     }, [authData])
+
+    // Cancel editing: discard changes, restore saved data, disable fields.
+    const handleCancel = () => {
+        setFormData(buildFromAuth())
+        setErrors({})
+        setIsEditing(false)
+    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -113,6 +121,7 @@ export function EditDetailsForm() {
                     last_name: response.user.last_name,
                     phone_number: toLocal10(response.user.phone_number),
                 })
+                setIsEditing(false)
             } else if (response && response.message) {
                 // If response has message but no user data, it might still be successful
                 toast.success(response.message)
@@ -143,8 +152,8 @@ export function EditDetailsForm() {
                         onChange={handleChange}
                         placeholder="Enter name"
                         required
-                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                        disabled={loading}
+                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:opacity-100 disabled:cursor-not-allowed`}
+                        disabled={loading || !isEditing}
                     />
                     {errors.first_name && (
                         <p className="text-xs text-red-500">{errors.first_name}</p>
@@ -160,8 +169,8 @@ export function EditDetailsForm() {
                         onChange={handleChange}
                         placeholder="Enter name"
                         required
-                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                        disabled={loading}
+                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:opacity-100 disabled:cursor-not-allowed`}
+                        disabled={loading || !isEditing}
                     />
                     {errors.last_name && (
                         <p className="text-xs text-red-500">{errors.last_name}</p>
@@ -178,37 +187,62 @@ export function EditDetailsForm() {
                     onChange={handleChange}
                     placeholder="Enter number"
                     maxLength={10}
-                    className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                    disabled={loading}
+                    className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:opacity-100 disabled:cursor-not-allowed`}
+                    disabled={loading || !isEditing}
                 />
                 {errors.phone_number && (
                     <p className="text-xs text-red-500">{errors.phone_number}</p>
                 )}
             </div>
 
-            <div className="flex justify-end gap-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className={`border-none bg-transparent shadow-none`}
-                    disabled={loading}
+            <div className="relative h-10">
+                {/* View mode: Edit button */}
+                <div
+                    className={`absolute right-0 top-0 transition-all duration-500 ease-in-out ${isEditing
+                        ? "opacity-0 translate-x-3 pointer-events-none"
+                        : "opacity-100 translate-x-0"
+                        }`}
                 >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
-                    disabled={loading}
+                    <Button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                    >
+                        Edit
+                    </Button>
+                </div>
+
+                {/* Edit mode: Cancel + Save */}
+                <div
+                    className={`absolute right-0 top-0 flex gap-4 transition-all duration-500 ease-in-out ${isEditing
+                        ? "opacity-100 translate-x-0"
+                        : "opacity-0 translate-x-3 pointer-events-none"
+                        }`}
                 >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Saving...
-                        </>
-                    ) : (
-                        "Save Details"
-                    )}
-                </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel}
+                        className={`border-none bg-transparent shadow-none`}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            "Save Details"
+                        )}
+                    </Button>
+                </div>
             </div>
         </form>
     )
