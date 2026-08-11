@@ -24,6 +24,34 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import API from "@/api";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import { z } from "zod";
+
+const newPatientSchema = z.object({
+    patient_full_name: z
+        .string()
+        .transform((v) =>
+            v.replace(/[^a-zA-Z\s]/g, "").replace(/\s+/g, " ").trim(),
+        )
+        .refine((v) => /^[A-Za-z]+(?: [A-Za-z]+)*$/.test(v), {
+            message: "Please enter a valid full name",
+        }),
+    contact_number: z
+        .string()
+        .transform((v) => v.replace(/\D/g, "").slice(-10))
+        .refine((v) => /^\d{10}$/.test(v), {
+            message: "Enter a valid 10-digit number",
+        }),
+    gender: z.string().min(1, "Select gender"),
+    email: z
+        .string()
+        .transform((v) => v.replace(/\s/g, "").toLowerCase())
+        .refine(
+            (v) =>
+                v === "" ||
+                /^[a-z][a-z0-9._%+-]*@[a-z0-9.-]+\.[a-z]{2,}$/.test(v),
+            { message: "Please enter a valid email address" },
+        ),
+});
 
 const DAY_LIST = [
     "sunday",
@@ -89,6 +117,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
     const [patientSearch, setPatientSearch] = useState("");
     const [filteredPatients, setFilteredPatients] = useState([]);
     const [dateOfBirth, setDateOfBirth] = useState("");
+    const [errors, setErrors] = useState({});
     const [doctorSearch, setDoctorSearch] = useState("");
     const [doctorDropdownOpen, setDoctorDropdownOpen] = useState(false);
     const doctorWrapperRef = useRef(null);
@@ -334,8 +363,26 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
         if (!selectedSlot) return toast.error("Select slot");
         if (useExistingPatient && !formData.patientId)
             return toast.error("Select patient");
-        if (!useExistingPatient && (!formData.patient_full_name || !formData.contact_number))
-            return toast.error("Patient name & contact required");
+
+        // Validate the new-patient fields with zod
+        if (!useExistingPatient) {
+            const parsed = newPatientSchema.safeParse({
+                patient_full_name: formData.patient_full_name,
+                contact_number: formData.contact_number,
+                gender: formData.gender,
+                email: formData.email,
+            });
+            if (!parsed.success) {
+                const fieldErrors = {};
+                parsed.error.issues.forEach((i) => {
+                    if (!fieldErrors[i.path[0]]) fieldErrors[i.path[0]] = i.message;
+                });
+                setErrors(fieldErrors);
+                toast.error(parsed.error.issues[0].message);
+                return;
+            }
+            setErrors({});
+        }
 
         const d = new Date(selectedDate);
         const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -410,6 +457,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
         setSelectedSlot("");
         setBookedSlots(new Set());
         setDateOfBirth("");
+        setErrors({});
     };
 
     // -----------------------------------------------------------------------
@@ -523,11 +571,19 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                                     onChange={(e) =>
                                         setFormData((prev) => ({
                                             ...prev,
-                                            patient_full_name: e.target.value,
+                                            patient_full_name: e.target.value
+                                                .replace(/[^a-zA-Z\s]/g, "")
+                                                .replace(/\s+/g, " ")
+                                                .trimStart(),
                                         }))
                                     }
                                     className="w-full"
                                 />
+                                {errors.patient_full_name && (
+                                    <p className="text-xs text-red-500 mt-1">
+                                        {errors.patient_full_name}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -564,6 +620,11 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                                             <SelectItem value="Other">Other</SelectItem>
                                         </SelectContent>
                                     </Select>
+                                    {errors.gender && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                            {errors.gender}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -582,13 +643,21 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                                             onChange={(e) =>
                                                 setFormData((prev) => ({
                                                     ...prev,
-                                                    contact_number: e.target.value,
+                                                    contact_number: e.target.value.replace(
+                                                        /\D/g,
+                                                        "",
+                                                    ),
                                                 }))
                                             }
                                             className="rounded-l-none"
                                             maxLength={10}
                                         />
                                     </div>
+                                    {errors.contact_number && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                            {errors.contact_number}
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div>
@@ -600,11 +669,16 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
                                         onChange={(e) =>
                                             setFormData((prev) => ({
                                                 ...prev,
-                                                email: e.target.value,
+                                                email: e.target.value.toLowerCase(),
                                             }))
                                         }
                                         className="w-full"
                                     />
+                                    {errors.email && (
+                                        <p className="text-xs text-red-500 mt-1">
+                                            {errors.email}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 

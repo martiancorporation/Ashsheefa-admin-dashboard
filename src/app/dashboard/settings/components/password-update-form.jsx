@@ -8,19 +8,24 @@ import { Loader2 } from "lucide-react"
 import useAuthDataStore from "@/store/authStore"
 import auth from "@/api/auth"
 
+const EMPTY = { old_password: "", new_password: "", confirm_password: "" }
+
 export function PasswordUpdateForm() {
     const [loading, setLoading] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
     const authData = useAuthDataStore((state) => state.authData)
 
-    const [formData, setFormData] = useState({
-        old_password: "",
-        new_password: "",
-        confirm_password: "",
-    })
+    const [formData, setFormData] = useState(EMPTY)
 
     const handleChange = (e) => {
         const { name, value } = e.target
         setFormData((prev) => ({ ...prev, [name]: value }))
+    }
+
+    // Cancel editing: clear the fields and lock them again.
+    const handleCancel = () => {
+        setFormData(EMPTY)
+        setIsEditing(false)
     }
 
     const handleSubmit = async (e) => {
@@ -62,11 +67,8 @@ export function PasswordUpdateForm() {
             if (response) {
                 toast.success("Password updated successfully")
                 // Reset form
-                setFormData({
-                    old_password: "",
-                    new_password: "",
-                    confirm_password: "",
-                })
+                setFormData(EMPTY)
+                setIsEditing(false)
             } else {
                 toast.error("Failed to update password")
             }
@@ -92,10 +94,10 @@ export function PasswordUpdateForm() {
                         type="password"
                         value={formData.old_password}
                         onChange={handleChange}
-                        placeholder="Enter name"
+                        placeholder="Enter Old Password"
                         required
-                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                        disabled={loading}
+                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:cursor-not-allowed`}
+                        disabled={loading || !isEditing}
                     />
                 </div>
 
@@ -107,10 +109,10 @@ export function PasswordUpdateForm() {
                         type="password"
                         value={formData.new_password}
                         onChange={handleChange}
-                        placeholder="Enter name"
+                        placeholder="Enter New Password"
                         required
-                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                        disabled={loading}
+                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:cursor-not-allowed`}
+                        disabled={loading || !isEditing}
                     />
                 </div>
 
@@ -122,37 +124,62 @@ export function PasswordUpdateForm() {
                         type="password"
                         value={formData.confirm_password}
                         onChange={handleChange}
-                        placeholder="Enter name"
+                        placeholder="Confirm New Password"
                         required
-                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none`}
-                        disabled={loading}
+                        className={`bg-[#FBFBFB] rounded-[6px] border-[#DDDDDD] shadow-none disabled:cursor-not-allowed`}
+                        disabled={loading || !isEditing}
                     />
                 </div>
             </div>
 
-            <div className="flex justify-end gap-4">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className={`border-none bg-transparent shadow-none`}
-                    disabled={loading}
+            <div className="relative h-10">
+                {/* View mode: Edit button */}
+                <div
+                    className={`absolute right-0 top-0 transition-all duration-500 ease-in-out ${isEditing
+                        ? "opacity-0 translate-x-3 pointer-events-none"
+                        : "opacity-100 translate-x-0"
+                        }`}
                 >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
-                    disabled={loading}
+                    <Button
+                        type="button"
+                        onClick={() => setIsEditing(true)}
+                        className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                    >
+                        Edit
+                    </Button>
+                </div>
+
+                {/* Edit mode: Cancel + Save */}
+                <div
+                    className={`absolute right-0 top-0 flex gap-4 transition-all duration-500 ease-in-out ${isEditing
+                        ? "opacity-100 translate-x-0"
+                        : "opacity-0 translate-x-3 pointer-events-none"
+                        }`}
                 >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Updating...
-                        </>
-                    ) : (
-                        "Save Details"
-                    )}
-                </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCancel}
+                        className={`border-none bg-transparent shadow-none`}
+                        disabled={loading}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        className="bg-[#005CD4] text-sm hover:bg-blue-700 rounded-[6px] font-normal border-transparent px-8"
+                        disabled={loading}
+                    >
+                        {loading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Updating...
+                            </>
+                        ) : (
+                            "Save Details"
+                        )}
+                    </Button>
+                </div>
             </div>
         </form>
     )

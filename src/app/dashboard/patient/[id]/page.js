@@ -117,11 +117,17 @@ export default function PatientDetailsPage() {
       ];
       if (!allowedTypes.includes(file.type)) {
         toast.error("Please select a valid file type (jpg, png, pdf)");
+        // Clear it so the field doesn't keep showing the rejected file, and so
+        // re-picking the same file still fires onChange.
+        e.target.value = "";
+        setSelectedFile(null);
         return;
       }
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size should be less than 5MB");
+      // Check file size (4MB limit — must match the hints shown in the UI)
+      if (file.size > 4 * 1024 * 1024) {
+        toast.error("File size must be under 4 MB");
+        e.target.value = "";
+        setSelectedFile(null);
         return;
       }
 
@@ -1154,7 +1160,7 @@ export default function PatientDetailsPage() {
                 required
               />
               <p className="text-xs text-gray-500">
-                Accepted formats: JPG, PNG, PDF (Max 5MB)
+                Accepted formats: JPG, PNG, PDF (Max 4 MB)
               </p>
             </div>
 

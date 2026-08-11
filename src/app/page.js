@@ -1,9 +1,13 @@
 "use client";
 import Image from "next/image";
+import { useState } from "react";
 import LoginForm from "./components/LoginForm";
-import Link from "next/link";
+import LegalPolicyModal from "./components/LegalPolicyModal";
 
 export default function Home() {
+  // null = closed, "terms" or "privacy" = which policy modal is open
+  const [policyModal, setPolicyModal] = useState(null);
+
   return (
     <>
       {
@@ -47,14 +51,32 @@ export default function Home() {
 
               <div className="w-full absolute bottom-3  flex  gap-y-1 justify-between items-center ">
                 <div className="flex text-[#005CD4] text-sm font-medium gap-x-2 ">
-                  <Link href={"/terms-conditions"}>Terms & Conditions</Link>
+                  <button
+                    type="button"
+                    onClick={() => setPolicyModal("terms")}
+                    className="hover:underline cursor-pointer"
+                  >
+                    Terms & Conditions
+                  </button>
                   <div className="w-[1px] h-[18px] bg-black"></div>
-                  <Link href={"/privacy-policy"}>Privacy Policy</Link>
+                  <button
+                    type="button"
+                    onClick={() => setPolicyModal("privacy")}
+                    className="hover:underline cursor-pointer"
+                  >
+                    Privacy Policy
+                  </button>
                 </div>
                 <div className="text-sm font-medium">Version 1.0.0</div>
               </div>
             </div>
           </div>
+
+          <LegalPolicyModal
+            open={policyModal !== null}
+            onOpenChange={(isOpen) => !isOpen && setPolicyModal(null)}
+            type={policyModal}
+          />
         </main>
       }
     </>

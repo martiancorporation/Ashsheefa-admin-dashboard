@@ -16,6 +16,7 @@ export default function AllHealthPackage({
     searchQuery = "",
     selectedCategory = "",
     onPackageUpdate,
+    onCategoriesChange,
 }) {
     const [selectedPackage, setSelectedPackage] = useState(null)
     const [packages, setPackages] = useState([])
@@ -39,13 +40,24 @@ export default function AllHealthPackage({
                 page: 1,
                 limit: 50,
                 search: searchQuery,
-                category: selectedCategory,
             }
 
             const response = await healthCheckup.getAllHealthCheckups(params)
 
             if (response && response.data && response.data.health_checkups) {
-                setPackages(response.data.health_checkups)
+                const list = response.data.health_checkups
+                setPackages(list)
+                // Surface the distinct categories (checkup_title) to the parent dropdown
+                if (onCategoriesChange) {
+                    const cats = [
+                        ...new Set(
+                            list
+                                .map((pkg) => (pkg.checkup_title || "").trim())
+                                .filter(Boolean)
+                        ),
+                    ].sort((a, b) => a.localeCompare(b))
+                    onCategoriesChange(cats)
+                }
                 setPagination(response.data.pagination || {
                     current_page: 1,
                     total_pages: 1,
@@ -70,10 +82,11 @@ export default function AllHealthPackage({
         }
     }
 
-    // Fetch data on component mount and when filters change
+    // Fetch data on component mount and when the search changes.
+    // Category filtering is done client-side so the dropdown list stays intact.
     useEffect(() => {
         fetchHealthCheckups()
-    }, [searchQuery, selectedCategory])
+    }, [searchQuery])
 
     // Handle package refresh after add/edit/delete
     const handlePackageUpdate = () => {
@@ -112,9 +125,10 @@ export default function AllHealthPackage({
             pkg.checkup_title?.toLowerCase().includes(searchQuery.toLowerCase())
             : true
 
-        const matchesCategory = selectedCategory
-            ? pkg.category?.toLowerCase() === selectedCategory.toLowerCase()
-            : true
+        const matchesCategory =
+            !selectedCategory || selectedCategory === "all"
+                ? true
+                : (pkg.checkup_title || "").trim() === selectedCategory
 
         return matchesSearch && matchesCategory
     })
@@ -136,7 +150,7 @@ export default function AllHealthPackage({
                 </div>
                 {!loading && (
                     <p className="text-gray-400">
-                        {searchQuery || selectedCategory
+                        {searchQuery || (selectedCategory && selectedCategory !== "all")
                             ? "Try adjusting your search criteria"
                             : "No health checkups available yet"}
                     </p>
