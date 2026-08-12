@@ -18,6 +18,13 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 export const description = "An area chart with gradient fill"
 
@@ -47,9 +54,38 @@ const chartConfig = {
 export function VisitorAreaChart({ allDashboardData }) {
     const [isLoading, setIsLoading] = React.useState(true)
 
+    // Retrieve yearly and monthly values from prop
+    const yearly = allDashboardData?.yearly || {}
+    const availableYears = React.useMemo(() => {
+        const years = []
+        for (let y = 2025; y <= 2045; y++) {
+            years.push(y.toString())
+        }
+        return years.reverse()
+    }, [])
+
+    const [selectedYear, setSelectedYear] = React.useState("")
+
+    // Initialize selected year when availableYears are populated
+    React.useEffect(() => {
+        if (availableYears.length > 0 && !selectedYear) {
+            const currentYearStr = new Date().getFullYear().toString()
+            if (availableYears.includes(currentYearStr)) {
+                setSelectedYear(currentYearStr)
+            } else {
+                setSelectedYear(availableYears[0])
+            }
+        }
+    }, [availableYears, selectedYear])
+
     // Transform API data to match the expected format
     const chartData = React.useMemo(() => {
-        if (!allDashboardData?.chartData?.length) {
+        let rawData = []
+        if (selectedYear && yearly[selectedYear]?.monthly) {
+            rawData = yearly[selectedYear].monthly
+        } else if (allDashboardData?.chartData?.length) {
+            rawData = allDashboardData.chartData
+        } else {
             return defaultChartData
         }
 
@@ -61,33 +97,49 @@ export function VisitorAreaChart({ allDashboardData }) {
         }
 
         // Start with default data (all months with 0 visitors)
-        const fullYearData = [...defaultChartData]
+        const fullYearData = defaultChartData.map(m => ({ ...m }))
 
         // Update with actual data from API
-        allDashboardData.chartData.forEach(item => {
+        rawData.forEach(item => {
             const fullMonthName = monthMap[item.month] || item.month
             const monthIndex = fullYearData.findIndex(month => month.month === fullMonthName)
             if (monthIndex !== -1) {
-                fullYearData[monthIndex].visitors = item.visitors
+                fullYearData[monthIndex].visitors = item.visitors || item.count || 0
             }
         })
 
         return fullYearData
-    }, [allDashboardData?.chartData])
+    }, [allDashboardData?.chartData, yearly, selectedYear])
 
     React.useEffect(() => {
-        if (allDashboardData?.chartData) {
+        if (allDashboardData) {
             setIsLoading(false)
         }
-    }, [allDashboardData?.chartData])
+    }, [allDashboardData])
 
     return (
         <Card className="shadow-none py-4">
-            <CardHeader>
-                <CardTitle>Visitor Overview</CardTitle>
-                <CardDescription>
-                    Showing total visitors for the last 12 months
-                </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div>
+                    <CardTitle>Visitor Overview</CardTitle>
+                    <CardDescription>
+                        Showing total visitors for the last 12 months
+                    </CardDescription>
+                </div>
+                {availableYears.length > 0 && (
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[100px] h-9">
+                            <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px] overflow-y-auto">
+                            {availableYears.map(year => (
+                                <SelectItem key={year} value={year}>
+                                    {year}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                )}
             </CardHeader>
             <CardContent>
                 {isLoading ? (
