@@ -8,12 +8,11 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { AddHealthCheckupModal } from "./add-health-checkup-modal"
-import { toast } from "sonner"
-import healthCheckup from "@/api/healthCheckup"
+import { DeleteConfirmationModal } from "./delete-confirmation-modal"
 
 export function HealthCheckupDetailsModal({ healthPackage, onClose, onSave }) {
     const [open, setOpen] = useState(true)
-    const [loading, setLoading] = useState(false)
+    const [showDelete, setShowDelete] = useState(false)
 
     const handleClose = () => {
         setOpen(false)
@@ -22,30 +21,8 @@ export function HealthCheckupDetailsModal({ healthPackage, onClose, onSave }) {
         }
     }
 
-    const handleDelete = async () => {
-        if (window.confirm("Are you sure you want to delete this health checkup?")) {
-            setLoading(true)
-            try {
-                const response = await healthCheckup.deleteHealthCheckup(healthPackage._id)
-                if (response) {
-                    toast.success("Health checkup deleted successfully")
-                    handleClose()
-                    if (onSave) {
-                        onSave()
-                    }
-                } else {
-                    toast.error("Failed to delete health checkup")
-                }
-            } catch (error) {
-                console.error("Error deleting health checkup:", error)
-                toast.error("An error occurred while deleting the health checkup")
-            } finally {
-                setLoading(false)
-            }
-        }
-    }
-
     return (
+        <>
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-scroll overscroll-y-contain eme-scroll">
                 <DialogHeader>
@@ -160,11 +137,10 @@ export function HealthCheckupDetailsModal({ healthPackage, onClose, onSave }) {
                         <Button
                             variant="outline"
                             className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                            onClick={handleDelete}
-                            disabled={loading}
+                            onClick={() => setShowDelete(true)}
                         >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            {loading ? "Deleting..." : "Delete checkup"}
+                            Delete checkup
                         </Button>
 
                         <AddHealthCheckupModal healthPackage={healthPackage} onSave={onSave}>
@@ -177,5 +153,17 @@ export function HealthCheckupDetailsModal({ healthPackage, onClose, onSave }) {
                 </div>
             </DialogContent>
         </Dialog>
+
+        {/* Delete confirmation modal (same as the list view) */}
+        <DeleteConfirmationModal
+            healthPackage={showDelete ? healthPackage : null}
+            onClose={() => setShowDelete(false)}
+            onDeleteSuccess={() => {
+                setShowDelete(false)
+                handleClose()
+                onSave?.()
+            }}
+        />
+        </>
     )
 }
