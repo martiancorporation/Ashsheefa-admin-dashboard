@@ -102,17 +102,17 @@ export function Sidebar() {
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
 
-  // Emergency-SOS count for the sidebar badge. Fetched once when the dashboard
-  // (and therefore the sidebar) mounts, then shared via the store.
   const sosTotal = useSosStore((state) => state.total)
   const fetchSosCount = useSosStore((state) => state.fetchSosCount)
+  const resetSosAlert = useSosStore((state) => state.resetAlert)
 
   useEffect(() => {
-    // Arm audio unlock early so the admin's first interaction anywhere enables
-    // sound for the whole session (browsers block audio until a user gesture).
     initEmergencyAudioUnlock()
+    // Fresh dashboard session (this runs on each login, since logout unmounts
+    // the dashboard): clear any stale `dismissed` flag so the popup shows again.
+    resetSosAlert()
     fetchSosCount()
-  }, [fetchSosCount])
+  }, [fetchSosCount, resetSosAlert])
 
   const handleLogout = () => {
     API.auth.Logout(router, clearAuthData);
@@ -158,7 +158,7 @@ export function Sidebar() {
 
   return (
     <div className={cn(
-      " h-screen flex flex-col transition-all duration-500 relative",
+      " h-screen flex flex-col transition-all duration-500 relative shrink-0",
       isCollapsed ? "w-20" : "w-64"
     )}>
       <div className={isCollapsed ? ' flex  flex-col  justify-center items-center' : "flex  flex-col gap-y-0 justify-center items-center "}>

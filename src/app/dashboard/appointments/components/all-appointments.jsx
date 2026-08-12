@@ -31,6 +31,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -132,6 +139,24 @@ export default function AllAppointments({
     } else {
       setCurrentPage(1);
       fetchAppointments();
+    }
+  };
+
+  const handleStatusChange = async (appointmentId, field, value) => {
+    try {
+      const response = await appointments.updateAppointment(appointmentId, {
+        [field]: value,
+      });
+
+      if (response && (response.success || response.message || response.appointment)) {
+        toast.success(`Appointment ${field === "status" ? "status" : "payment status"} updated successfully`);
+        handleAppointmentUpdate();
+      } else {
+        toast.error(response?.message || "Failed to update appointment");
+      }
+    } catch (error) {
+      console.error("Error updating appointment status:", error);
+      toast.error("An error occurred while updating status");
     }
   };
 
@@ -373,13 +398,14 @@ export default function AllAppointments({
   }
   return (
     <div className="w-full">
-      <Table className="border-collapse border border-gray-200">
-        <TableHeader>
+      <div className="w-full overflow-x-auto border border-gray-200 rounded-lg">
+        <Table className="border-collapse border-0 w-full">
+          <TableHeader>
           <TableRow className="bg-gray-50 border border-gray-200">
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
               No.
             </TableHead>
-            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 max-w-[150px]">
               Name
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -391,7 +417,7 @@ export default function AllAppointments({
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
               Department
             </TableHead>
-            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 max-w-[150px]">
               Doctor
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -432,7 +458,7 @@ export default function AllAppointments({
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   {index + 1}
                 </TableCell>
-                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
                   {appointment.patientId?.patient_full_name || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
@@ -444,7 +470,7 @@ export default function AllAppointments({
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   {appointment.doctorId?.department || "N/A"}
                 </TableCell>
-                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
                   {dedupeDoctorTitle(appointment.doctorId?.fullName) || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
@@ -466,22 +492,40 @@ export default function AllAppointments({
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Badge
-                      className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(appointment.status)}`}
+                    <Select
+                      value={appointment.status || "Pending"}
+                      onValueChange={(val) => handleStatusChange(appointment._id, "status", val)}
                     >
-                      {appointment.status || "N/A"}
-                    </Badge>
+                      <SelectTrigger
+                        className={`text-xs !px-2 !py-1 !h-auto rounded-full border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&_svg]:hidden ${getStatusBadgeColor(appointment.status)} cursor-pointer font-medium justify-center hover:brightness-95 transition-all`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Confirmed">Confirmed</SelectItem>
+                        <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <Badge
-                      className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(
-                        appointment.paymentStatus,
-                      )}`}
+                    <Select
+                      value={appointment.paymentStatus || "pending"}
+                      onValueChange={(val) => handleStatusChange(appointment._id, "paymentStatus", val)}
                     >
-                      {appointment.paymentStatus || "N/A"}
-                    </Badge>
+                      <SelectTrigger
+                        className={`text-xs !px-2 !py-1 !h-auto rounded-full border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&_svg]:hidden ${getStatusBadgeColor(appointment.paymentStatus)} cursor-pointer font-medium justify-center hover:brightness-95 transition-all`}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </TableCell>
                 <TableCell className="py-3">
@@ -575,6 +619,7 @@ export default function AllAppointments({
           })}
         </TableBody>
       </Table>
+      </div>
 
       <TablePagination
         currentPage={currentPage}

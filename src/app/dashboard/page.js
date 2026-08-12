@@ -154,6 +154,7 @@ export default function Page() {
           <VisitorAreaChart
             allDashboardData={{
               chartData: dashboardData?.charts?.visitorAreaChart?.monthly || [],
+              yearly: dashboardData?.charts?.visitorAreaChart?.yearly || {},
             }}
           />
         </div>
@@ -162,6 +163,7 @@ export default function Page() {
         <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-2">
           <EnquiryAppointmentBarChart
             data={dashboardData?.charts?.enquiryAppointmentBarChart || []}
+            dailyData={dashboardData?.charts?.enquiryAppointmentDailyChart || []}
           />
           <DepartmentDoctorPieChart
             data={dashboardData?.charts?.departmentDoctorPieChart || []}

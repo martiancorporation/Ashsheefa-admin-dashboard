@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, Trash2, Calendar, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,10 +17,23 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Card } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import API from "@/api";
 import { dedupeDoctorTitle } from "@/lib/formatText";
 
 export default function DepartmentDetailsPage({ params }) {
+  const router = useRouter();
   const [department, setDepartment] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,12 +68,19 @@ export default function DepartmentDetailsPage({ params }) {
 
   const handleDeleteDepartment = async () => {
     try {
-      await API.department.deleteDepartment(
+      const response = await API.department.deleteDepartment(
         department?._id || department?.id || params.id
       );
-      // TODO: redirect after delete if needed
+      if (response && (response.success || response.message === "Department deleted successfully." || response.message)) {
+        // Backend returns: message: "Department deleted successfully."
+        toast.success("Department deleted successfully");
+        router.push("/dashboard/departments");
+      } else {
+        toast.error(response?.message || "Failed to delete department");
+      }
     } catch (e) {
       console.error("Delete failed", e);
+      toast.error("Failed to delete department");
     }
   };
 
@@ -93,14 +114,34 @@ export default function DepartmentDetailsPage({ params }) {
         </div>
 
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-            onClick={handleDeleteDepartment}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete Department
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Department
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Department</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this department? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700"
+                  onClick={handleDeleteDepartment}
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <AddDepartmentModal
             department={department}

@@ -403,7 +403,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
             <p className="text-sm font-semibold text-slate-700">Patient Details</p>
 
             <div>
-              <Label className="text-sm font-medium">Full Name</Label>
+              <Label className="text-sm font-medium">Full Name<span className="text-red-500">*</span></Label>
               <Input
                 className="mt-1"
                 value={form.patient_full_name}
@@ -454,7 +454,7 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium">Contact Number</Label>
+                <Label className="text-sm font-medium">Contact Number<span className="text-red-500">*</span></Label>
                 <div className="flex mt-1">
                   <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md">+91</span>
                   <Input

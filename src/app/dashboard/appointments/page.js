@@ -148,7 +148,7 @@ export default function AppointmentsPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div className="w-full md:w-auto flex flex-wrap items-center gap-2">
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-            <SelectTrigger className="w-full md:w-[150px]">
+            <SelectTrigger className="w-full md:w-[130px]">
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -168,7 +168,7 @@ export default function AppointmentsPage() {
             onValueChange={setSelectedSpeciality}
             disabled={departmentsLoading}
           >
-            <SelectTrigger className="w-full md:w-[180px]">
+            <SelectTrigger className="w-full md:w-[150px]">
               <SelectValue
                 placeholder={
                   departmentsLoading ? "Loading..." : "All Specialities"
@@ -193,12 +193,12 @@ export default function AppointmentsPage() {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-full md:w-[200px] justify-start text-left font-normal ${
+                  className={`w-full md:w-[140px] justify-start text-left font-normal ${
                     !dateRange && "text-muted-foreground"
                   }`}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {getDateRangeLabel()}
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="truncate">{getDateRangeLabel()}</span>
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -241,7 +241,7 @@ export default function AppointmentsPage() {
               placeholder="Search appointments..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[280px]"
+              className="pl-10 pr-4 py-2 rounded-md border border-gray-300 w-full md:w-[200px]"
             />
           </div>
 

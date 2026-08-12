@@ -15,8 +15,11 @@ export default function AuthWrapper({ children }) {
         if (pathname.startsWith('/dashboard')) {
             // Check if user is not authenticated
             if (!authData || !authData.access_token) {
-                // Show toast message
-                toast.error("Please login to access this page");
+                setTimeout(() => {
+                    toast.warning("Please login to access this page", {
+                        id: "please-login",
+                    });
+                }, 1400);
 
                 // Redirect to login page
                 router.push('/');

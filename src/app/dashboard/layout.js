@@ -8,8 +8,8 @@ export default function DashboardLayout({ children }) {
           letting the admin dismiss it (and silence the alarm) from anywhere. */}
       <EmergencySosAlert />
       <Sidebar />
-      <main className="w-full h-screen flex flex-col bg-[#F7F7F7] py-3 pr-3 ">
-        <div className="w-full h-full  flex bg-[#FFFFFF] border border-[#DCDCDC] rounded-[10px] flex-col gap-y-3 py-4 px-4 sm:px-5 ">
+      <main className="flex-1 min-w-0 h-screen flex flex-col bg-[#F7F7F7] py-3 pr-3">
+        <div className="w-full h-full flex bg-[#FFFFFF] border border-[#DCDCDC] rounded-[10px] flex-col gap-y-3 py-4 px-4 sm:px-5 min-w-0">
           {children}
         </div>
       </main>

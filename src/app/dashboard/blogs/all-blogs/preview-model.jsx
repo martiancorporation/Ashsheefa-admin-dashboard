@@ -121,10 +121,15 @@ export function BlogPreviewModal({ blog }) {
                         <div className="border-t border-gray-100 pt-6">
                             <div className="flex items-center justify-between text-sm text-gray-500">
                                 <span>Blog ID: {blog?._id}</span>
-                                <div className="flex items-center gap-2">
+                                <a
+                                    href={`https://ashsheefahospital.com/blogs/${blog?.url || ""}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 hover:underline transition-all"
+                                >
                                     <ExternalLink className="w-4 h-4" />
                                     <span>Preview Mode</span>
-                                </div>
+                                </a>
                             </div>
                         </div>
                     </div>

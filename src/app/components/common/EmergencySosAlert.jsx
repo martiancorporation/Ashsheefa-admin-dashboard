@@ -2,7 +2,7 @@
 
 import { Siren } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useSosStore, { SOS_ALERT_THRESHOLD } from "@/store/sosStore";
 import { stopEmergencyAlert } from "@/lib/emergencyAlertSound";
 import {
@@ -16,31 +16,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Emergency-SOS popup. Rendered from the dashboard layout so it shows on EVERY
-// page/drawer, not just the dashboard. The SOS count is fetched by the sidebar
-// on mount and shared via the store; we pop the alert once when it crosses the
-// threshold. Because it lives in the layout, an admin who lands on (or reloads
-// into) any page can dismiss the popup and silence the alarm.
+
 export default function EmergencySosAlert() {
   const router = useRouter();
 
   const sosTotal = useSosStore((state) => state.total);
   const sosFetched = useSosStore((state) => state.hasFetched);
-  const alertShown = useSosStore((state) => state.alertShown);
-  const setAlertShown = useSosStore((state) => state.setAlertShown);
-  const [sosDialogOpen, setSosDialogOpen] = useState(false);
+  const dismissed = useSosStore((state) => state.dismissed);
+  const setDismissed = useSosStore((state) => state.setDismissed);
 
-  useEffect(() => {
-    if (sosFetched && !alertShown && sosTotal >= SOS_ALERT_THRESHOLD) {
-      setSosDialogOpen(true);
-      setAlertShown(true);
-    }
-  }, [sosFetched, alertShown, sosTotal, setAlertShown]);
+  const sosDialogOpen =
+    sosFetched && !dismissed && sosTotal >= SOS_ALERT_THRESHOLD;
 
-  // Closing the popup (Dismiss / View SOS / Esc) must silence the alarm.
+  // Closing the popup (Dismiss / View SOS / Esc) latches dismissed and silences
+  // the alarm so it doesn't keep ringing.
   const handleSosDialogOpenChange = (open) => {
-    setSosDialogOpen(open);
-    if (!open) stopEmergencyAlert();
+    if (!open) {
+      setDismissed(true);
+      stopEmergencyAlert();
+    }
   };
 
   // Leaving the dashboard area shouldn't leave the alarm ringing either.

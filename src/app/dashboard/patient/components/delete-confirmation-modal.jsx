@@ -61,7 +61,7 @@ export function DeleteConfirmationModal({ patient: patientData, onClose, onDelet
                     <div className="text-sm text-red-700 space-y-1">
                         <p><strong>UHID:</strong> {patientData.uhid}</p>
                         <p><strong>Name:</strong> {patientData.patient_full_name}</p>
-                        <p><strong>Department:</strong> {patientData.speciality}</p>
+                        <p><strong>Gender:</strong> {patientData.gender || "N/A"}</p>
                         <p><strong>Contact:</strong> {patientData.contact_number}</p>
                         <p><strong>Status:</strong> {patientData.status}</p>
                     </div>

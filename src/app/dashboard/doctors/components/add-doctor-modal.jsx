@@ -476,7 +476,7 @@ export function AddDoctorModal({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="fees">Fees</Label>
+              <Label htmlFor="fees">Fees*</Label>
               <Input
                 id="fees"
                 name="fees"

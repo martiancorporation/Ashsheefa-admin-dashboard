@@ -30,8 +30,8 @@ export function DeleteNews({ newsId, newsTitle, onDelete }) {
             });
 
 
-            if (response?.success) {
-                toast.success("News deleted successfully");
+            if (response && (response.success || response.message)) {
+                toast.success(response.message || "News deleted successfully");
                 onDelete();
             } else {
                 toast.error(response?.message || "Failed to delete news");
