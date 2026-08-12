@@ -11,7 +11,7 @@ const useSosStore = create((set) => ({
   total: 0,
   loading: false,
   hasFetched: false,
-  alertShown: false, // popup shown once per dashboard session
+  dismissed: false, // true once the admin closes the popup this session
 
   fetchSosCount: async () => {
     set({ loading: true });
@@ -35,7 +35,13 @@ const useSosStore = create((set) => ({
     }
   },
 
-  setAlertShown: (v) => set({ alertShown: v }),
+  setDismissed: (v) => set({ dismissed: v }),
+
+  // Reset alert state for a fresh dashboard session. Called when the dashboard
+  // mounts (i.e. on each login) so that after logout → login the popup shows
+  // again — the store is an in-memory singleton and otherwise keeps the old
+  // `dismissed` flag across a client-side re-login (no full page reload).
+  resetAlert: () => set({ dismissed: false, hasFetched: false, total: 0 }),
 }));
 
 export default useSosStore;
