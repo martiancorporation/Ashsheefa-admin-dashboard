@@ -744,7 +744,7 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
 
                     {/* ---- Doctor Search (combobox) ---- */}
                     <div className="relative" ref={doctorWrapperRef}>
-                        <Label className="text-sm font-medium mb-1">Select Doctor</Label>
+                        <Label className="text-sm font-medium mb-1">Select Doctor<span className="text-red-500">*</span></Label>
                         <Input
                             placeholder={
                                 selectedDepartment
