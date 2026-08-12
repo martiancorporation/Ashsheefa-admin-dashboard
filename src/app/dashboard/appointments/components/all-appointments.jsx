@@ -398,13 +398,14 @@ export default function AllAppointments({
   }
   return (
     <div className="w-full">
-      <Table className="border-collapse border border-gray-200">
-        <TableHeader>
+      <div className="w-full overflow-x-auto border border-gray-200 rounded-lg">
+        <Table className="border-collapse border-0 w-full">
+          <TableHeader>
           <TableRow className="bg-gray-50 border border-gray-200">
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
               No.
             </TableHead>
-            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 max-w-[150px]">
               Name
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -416,7 +417,7 @@ export default function AllAppointments({
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
               Department
             </TableHead>
-            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
+            <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3 max-w-[150px]">
               Doctor
             </TableHead>
             <TableHead className="text-[#7F7F7F] font-normal border-r border-gray-200 py-3">
@@ -457,7 +458,7 @@ export default function AllAppointments({
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   {index + 1}
                 </TableCell>
-                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
                   {appointment.patientId?.patient_full_name || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
@@ -469,7 +470,7 @@ export default function AllAppointments({
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   {appointment.doctorId?.department || "N/A"}
                 </TableCell>
-                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
+                <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
                   {dedupeDoctorTitle(appointment.doctorId?.fullName) || "N/A"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
@@ -618,6 +619,7 @@ export default function AllAppointments({
           })}
         </TableBody>
       </Table>
+      </div>
 
       <TablePagination
         currentPage={currentPage}

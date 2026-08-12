@@ -158,7 +158,7 @@ export function Sidebar() {
 
   return (
     <div className={cn(
-      " h-screen flex flex-col transition-all duration-500 relative",
+      " h-screen flex flex-col transition-all duration-500 relative shrink-0",
       isCollapsed ? "w-20" : "w-64"
     )}>
       <div className={isCollapsed ? ' flex  flex-col  justify-center items-center' : "flex  flex-col gap-y-0 justify-center items-center "}>
