@@ -9,6 +9,9 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
+  Check,
+  CheckCircle2,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +33,8 @@ import { toast } from "sonner";
 import TablePagination from "@/app/components/common/Pagination";
 import { EmergencySosDetailsModal } from "./emergency-sos-details-modal";
 import API from "@/api";
+import { cn } from "@/lib/utils";
+import useSosStore from "@/store/sosStore";
 
 // Derive age (years) from a date_of_birth string.
 const calcAge = (dob) => {
@@ -45,10 +50,6 @@ const calcAge = (dob) => {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Normalise whatever the backend put in an address field into a displayable
-// location string. It can arrive as a flat string or as an object of address
-// parts, and sometimes carries junk (an email, a bare phone number) that is
-// not a location at all — those are dropped so the UI shows "N/A" instead.
 const normalizeAddress = (value) => {
   if (!value) return null;
 
@@ -70,10 +71,6 @@ const normalizeAddress = (value) => {
   return text;
 };
 
-// Map a backend SOS record onto the shape this UI renders.
-// Backend provides: patient_name, contact_number, address (raw, often null),
-// patient_details (full Patients doc) and triggered_by (app user — only
-// _id + phone_number are guaranteed), plus createdAt.
 const mapSosRecord = (sos) => {
   const p = sos.patient_details || null;
   const u = sos.triggered_by || null;
@@ -91,6 +88,7 @@ const mapSosRecord = (sos) => {
       normalizeAddress(sos.address) || normalizeAddress(p?.address) || null,
     triggered_by_phone: u?.phone_number || null,
     triggered_by_name: u?.name || null,
+    status: sos.status || "pending",
   };
 };
 
@@ -107,8 +105,54 @@ export default function AllEmergencySos({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
 
-  // Fetch SOS records from the backend. Filtering/sorting/pagination stay
-  // client-side, so we pull all records (SOS volume is low).
+  const [resolvingId, setResolvingId] = useState(null);
+
+  const handleResolve = async (id) => {
+    try {
+      setResolvingId(id);
+      const res = await API.emergencySos.resolveEmergencySos(id);
+      if (res && res.status === "success") {
+        toast.success("SOS alert resolved successfully");
+        setSosList((prev) =>
+          prev.map((sos) =>
+            sos._id === id ? { ...sos, status: "resolved" } : sos
+          )
+        );
+        // Refresh the sidebar badge count immediately
+        useSosStore.getState().fetchSosCount();
+      } else {
+        toast.error(res?.message || "Failed to resolve SOS alert");
+      }
+    } catch (error) {
+      toast.error("Failed to resolve SOS alert");
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  const handleUndo = async (id) => {
+    try {
+      setResolvingId(id);
+      const res = await API.emergencySos.unresolveEmergencySos(id);
+      if (res && res.status === "success") {
+        toast.success("SOS alert reverted to pending");
+        setSosList((prev) =>
+          prev.map((sos) =>
+            sos._id === id ? { ...sos, status: "pending" } : sos
+          )
+        );
+        // Refresh the sidebar badge count immediately
+        useSosStore.getState().fetchSosCount();
+      } else {
+        toast.error(res?.message || "Failed to revert SOS status");
+      }
+    } catch (error) {
+      toast.error("Failed to revert SOS status");
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
   const fetchSos = async () => {
     try {
       setLoading(true);
@@ -264,12 +308,23 @@ export default function AllEmergencySos({
           {paginatedSos.map((sos, index) => (
             <TableRow
               key={sos._id}
-              className="hover:bg-red-50 border-b border-gray-100 transition-all duration-200 hover:border-red-200 group"
+              className={cn(
+                "border-b border-gray-100 transition-all duration-200 group",
+                sos.status === "resolved"
+                  ? "bg-emerald-50/40 hover:bg-emerald-100/40 border-emerald-100/80"
+                  : "hover:bg-red-50 hover:border-red-200"
+              )}
             >
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 {(currentPage - 1) * itemsPerPage + index + 1}
               </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 <div className="text-sm">
                   <div className="font-medium text-gray-800">
                     {sos.patient_full_name || "N/A"}
@@ -281,10 +336,16 @@ export default function AllEmergencySos({
                   </div>
                 </div>
               </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 {sos.contact_number || "N/A"}
               </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200 max-w-[220px]">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200 max-w-[220px]",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 <div className="flex items-start gap-1.5 text-sm text-gray-700">
                   <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0 mt-0.5" />
                   <span className="line-clamp-2">
@@ -292,17 +353,23 @@ export default function AllEmergencySos({
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 <div className="flex items-center gap-1.5 text-sm text-gray-700">
                   <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                   {sos.triggered_by_phone || "N/A"}
                 </div>
               </TableCell>
-              <TableCell className="border-r border-gray-200 py-3 group-hover:border-red-300 transition-colors duration-200">
+              <TableCell className={cn(
+                "border-r border-gray-200 py-3 transition-colors duration-200",
+                sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
+              )}>
                 {formatDateTime(sos.createdAt)}
               </TableCell>
               <TableCell className="py-3">
-                <div className="flex justify-center">
+                <div className="flex justify-center items-center gap-2">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -312,6 +379,43 @@ export default function AllEmergencySos({
                     <Eye className="h-4 w-4 text-gray-500" />
                     View
                   </Button>
+                  {sos.status === "resolved" ? (
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1 text-emerald-600 font-medium text-xs bg-emerald-100/60 px-2.5 py-1 rounded-full border border-emerald-200/50 select-none">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>Resolved</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-gray-100 cursor-pointer rounded-full"
+                        onClick={() => handleUndo(sos._id)}
+                        disabled={resolvingId === sos._id}
+                        title="Undo / Revert to Pending"
+                      >
+                        {resolvingId === sos._id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 cursor-pointer"
+                      onClick={() => handleResolve(sos._id)}
+                      disabled={resolvingId === sos._id}
+                    >
+                      {resolvingId === sos._id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5" />
+                      )}
+                      Resolve
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
