@@ -28,7 +28,7 @@ export default function DepartmentsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(15);
 
   const filteredDepartments = departments.filter((dept) => {
     const displayName = (dept.department_name || dept.name || "").toLowerCase();
@@ -228,8 +228,8 @@ export default function DepartmentsPage() {
   };
 
   return (
-    <>
-      <div className="w-full flex items-center justify-between mb-6">
+    <div className="flex flex-col flex-1 min-h-0 w-full">
+      <div className="w-full flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center space-x-2">
           <Link href="/dashboard" className="flex items-center text-gray-600">
             <ArrowLeft className="w-4 h-4" />
@@ -239,7 +239,7 @@ export default function DepartmentsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 shrink-0">
         <div className="relative w-full md:w-auto md:min-w-[320px]">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -276,19 +276,19 @@ export default function DepartmentsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center flex-1">
           <div className="text-gray-500">Loading departments...</div>
         </div>
       ) : filteredDepartments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+        <div className="flex flex-col items-center justify-center flex-1 text-gray-500">
           <div className="text-lg font-medium mb-2">No departments found</div>
           <div className="text-sm">
             Create your first department to get started
           </div>
         </div>
       ) : (
-        <>
-          <div className="w-full  overflow-y-scroll overscroll-y-contain eme-scroll grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
+        <div className="flex-1 flex flex-col justify-between min-h-0">
+          <div className="w-full overflow-y-auto overscroll-y-contain eme-scroll grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
             {filteredDepartments.map((dept) => (
               <DepartmentCard
                 key={dept._id || dept.id}
@@ -302,7 +302,7 @@ export default function DepartmentsPage() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-2 px-4 py-3 bg-[#ffffff] border border-[#D9D9D9] rounded-lg">
+            <div className="flex items-center justify-between mt-auto px-4 py-2 bg-[#ffffff] border border-[#D9D9D9] rounded-lg shrink-0">
               <div className="flex items-center text-sm text-gray-700">
                 <span>
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
@@ -368,7 +368,7 @@ export default function DepartmentsPage() {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* Modal - only render when needed */}
@@ -384,6 +384,6 @@ export default function DepartmentsPage() {
           }}
         />
       )}
-    </>
+    </div>
   );
 }

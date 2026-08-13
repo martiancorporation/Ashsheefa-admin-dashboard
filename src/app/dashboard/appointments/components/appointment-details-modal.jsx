@@ -129,14 +129,14 @@ export function AppointmentDetailsModal({ appointment, onClose, onSave }) {
                             <InfoRow label="Amount">
                                 <span className="text-sm text-gray-800 font-medium flex items-center gap-1">
                                     <IndianRupee className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                                    {appointment.amount ?? appointment.doctorId?.fees ?? "N/A"}
+                                    {appointment.amount ?? appointment.doctorId?.fees ?? "Not Specified"}
                                 </span>
                             </InfoRow>
 
                             {/* Payment Status */}
                             <InfoRow label="Payment Status">
                                 <Badge className={`w-fit text-xs px-2.5 py-0.5 rounded-full border font-medium ${getStatusBadgeColor(appointment.paymentStatus)}`}>
-                                    {appointment.paymentStatus || "N/A"}
+                                    {appointment.paymentStatus || "Not Specified"}
                                 </Badge>
                             </InfoRow>
 
