@@ -314,27 +314,27 @@ export default function AllPatients({
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                 <div className="flex items-center gap-2">
                   {/* <Hash className="h-3 w-3 text-gray-500" /> */}
-                  {patient.uhid || "N/A"}
+                  {patient.uhid || "Not Specified"}
                 </div>
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.patient_full_name || "N/A"}
+                {patient.patient_full_name || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
                 {formatDate(patient.date_of_birth)}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.gender || "N/A"}
+                {patient.gender || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.contact_number || "N/A"}
+                {patient.contact_number || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-2 group-hover:border-blue-300 transition-colors duration-200 text-center">
                 <div className="flex items-center justify-center gap-2">
                   <Badge
                     className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(patient.status)}`}
                   >
-                    {patient.status || "N/A"}
+                    {patient.status || "Not Specified"}
                   </Badge>
                 </div>
               </TableCell>

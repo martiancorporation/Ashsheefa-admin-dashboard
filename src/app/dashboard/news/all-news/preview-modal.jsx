@@ -17,7 +17,7 @@ export function NewsPreviewModal({ news }) {
     const [open, setOpen] = useState(false);
 
     const formatDate = (dateString) => {
-        if (!dateString) return "N/A";
+        if (!dateString) return "Not Specified";
         const date = new Date(dateString);
         return date.toLocaleDateString("en-US", {
             day: "2-digit",

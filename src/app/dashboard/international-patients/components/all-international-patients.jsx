@@ -337,25 +337,25 @@ export default function AllInternationalPatients({
                 {patient.no}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.patient_full_name || "N/A"}
+                {patient.patient_full_name || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.age || "N/A"}
+                {patient.age || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.gender || "N/A"}
+                {patient.gender || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.country || "N/A"}
+                {patient.country || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.passport_number || "N/A"}
+                {patient.passport_number || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.speciality || "N/A"}
+                {patient.speciality || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                {patient.refer_doctor || "N/A"}
+                {patient.refer_doctor || "Not Specified"}
               </TableCell>
               <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                 {formatDate(patient.appointment_date)}
@@ -365,7 +365,7 @@ export default function AllInternationalPatients({
                   <Badge
                     className={`text-xs px-2 py-1 rounded-full ${getStatusBadgeColor(patient.status)}`}
                   >
-                    {patient.status || "N/A"}
+                    {patient.status || "Not Specified"}
                   </Badge>
                 </div>
               </TableCell>

@@ -371,7 +371,7 @@ export default function PatientEnquiryPage() {
                               year: "numeric",
                             },
                           )
-                        : "N/A"}
+                        : "Not Specified"}
                   </TableCell>
                   <TableCell className="text-center border-r border-gray-300">
                     <Button

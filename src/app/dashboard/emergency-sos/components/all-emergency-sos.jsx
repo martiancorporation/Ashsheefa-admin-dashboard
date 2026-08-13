@@ -77,7 +77,7 @@ const mapSosRecord = (sos) => {
   return {
     _id: sos._id,
     createdAt: sos.createdAt,
-    patient_full_name: sos.patient_name || p?.patient_full_name || "N/A",
+    patient_full_name: sos.patient_name || p?.patient_full_name || "Not Specified",
     gender: p?.gender || null,
     age: calcAge(p?.date_of_birth),
     uhid: p?.uhid || null,
@@ -327,10 +327,10 @@ export default function AllEmergencySos({
               )}>
                 <div className="text-sm">
                   <div className="font-medium text-gray-800">
-                    {sos.patient_full_name || "N/A"}
+                    {sos.patient_full_name || "Not Specified"}
                   </div>
                   <div className="text-xs text-gray-500 mt-0.5">
-                    {sos.gender || "N/A"}
+                    {sos.gender || "Not Specified"}
                     {sos.age ? `, ${sos.age} yrs` : ""}
                     {sos.uhid ? ` · ${sos.uhid}` : ""}
                   </div>
@@ -340,7 +340,7 @@ export default function AllEmergencySos({
                 "border-r border-gray-200 py-3 transition-colors duration-200",
                 sos.status === "resolved" ? "group-hover:border-emerald-200" : "group-hover:border-red-300"
               )}>
-                {sos.contact_number || "N/A"}
+                {sos.contact_number || "Not Specified"}
               </TableCell>
               <TableCell className={cn(
                 "border-r border-gray-200 py-3 transition-colors duration-200 max-w-[220px]",
@@ -349,7 +349,7 @@ export default function AllEmergencySos({
                 <div className="flex items-start gap-1.5 text-sm text-gray-700">
                   <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0 mt-0.5" />
                   <span className="line-clamp-2">
-                    {sos.location_address || "N/A"}
+                    {sos.location_address || "Not Specified"}
                   </span>
                 </div>
               </TableCell>
@@ -359,7 +359,7 @@ export default function AllEmergencySos({
               )}>
                 <div className="flex items-center gap-1.5 text-sm text-gray-700">
                   <Phone className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                  {sos.triggered_by_phone || "N/A"}
+                  {sos.triggered_by_phone || "Not Specified"}
                 </div>
               </TableCell>
               <TableCell className={cn(

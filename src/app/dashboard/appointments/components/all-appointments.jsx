@@ -459,19 +459,19 @@ export default function AllAppointments({
                   {index + 1}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
-                  {appointment.patientId?.patient_full_name || "N/A"}
+                  {appointment.patientId?.patient_full_name || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                  {appointment.patientId?.gender || "N/A"}
+                  {appointment.patientId?.gender || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                  {appointment.patientId?.contact_number || "N/A"}
+                  {appointment.patientId?.contact_number || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
-                  {appointment.doctorId?.department || "N/A"}
+                  {appointment.doctorId?.department || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 break-words whitespace-normal max-w-[150px]">
-                  {dedupeDoctorTitle(appointment.doctorId?.fullName) || "N/A"}
+                  {dedupeDoctorTitle(appointment.doctorId?.fullName) || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200">
                   <div className="text-sm">
@@ -488,7 +488,7 @@ export default function AllAppointments({
                   </div>
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
-                  {appointment.amount || appointment.doctorId?.fees || "N/A"}
+                  {appointment.amount || appointment.doctorId?.fees || "Not Specified"}
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
                   <div className="flex items-center justify-center gap-2">
