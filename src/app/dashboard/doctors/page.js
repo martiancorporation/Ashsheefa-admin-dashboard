@@ -781,19 +781,22 @@ export default function DoctorsPage() {
                             />
                           )}
                         </div>
-                        <div className="flex justify-between items-end w-full">
-                        <div>
+                        <div className="flex justify-between items-end w-full gap-3">
+                        <div className="min-w-0 flex-1">
                           <h3
                             title={dedupeDoctorTitle(doctor.fullName)}
                             className="text-sm text-[#323232] truncate uppercase font-semibold"
                           >
                             {dedupeDoctorTitle(doctor.fullName)}
                           </h3>
-                          <p className="text-xs text-[#7F7F7F]">
+                          <p 
+                            className="text-xs text-[#7F7F7F] truncate"
+                            title={`${doctor.qualification}, ${doctor.regNo}`}
+                          >
                             {doctor.qualification}, {doctor.regNo}
                           </p>
                         </div>
-                        <div className="flex text-xs underline text-[#4B4B4B] group hover:text-blue-700 items-end">
+                        <div className="flex text-xs underline text-[#4B4B4B] group hover:text-blue-700 items-end whitespace-nowrap shrink-0">
                           View details 
                          <ChevronRight className="h-4 w-4" />
                         </div>
