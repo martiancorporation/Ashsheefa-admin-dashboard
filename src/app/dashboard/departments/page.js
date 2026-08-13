@@ -302,7 +302,7 @@ export default function DepartmentsPage() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-auto px-4 py-3 bg-[#ffffff] border border-[#D9D9D9] rounded-lg shrink-0">
+            <div className="flex items-center justify-between mt-auto px-4 py-2 bg-[#ffffff] border border-[#D9D9D9] rounded-lg shrink-0">
               <div className="flex items-center text-sm text-gray-700">
                 <span>
                   Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}

@@ -679,7 +679,7 @@ export default function DoctorsPage() {
         })()}
       </div>
 
-      <div className="h-[calc(100%-50px)] overflow-y-scroll overscroll-y-contain eme-scroll pt-2">
+      <div className="h-[calc(100%-140px)] overflow-y-scroll overscroll-y-contain eme-scroll pt-2 pb-2">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="flex flex-col items-center gap-4">
@@ -810,13 +810,13 @@ export default function DoctorsPage() {
 
       {/* Load More Button */}
       {hasMore && (
-        <div className="flex flex-col items-center space-y-1">
+        <div className="flex flex-col items-center space-y-0.5 py-0.5">
           {totalDoctors != null ? (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               Showing {allDoctors.length} of {totalDoctors} doctors
             </div>
           ) : (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               Showing {allDoctors.length} doctors
             </div>
           )}
@@ -824,16 +824,17 @@ export default function DoctorsPage() {
             onClick={handleLoadMore}
             disabled={loadingMore}
             variant="outline"
-            className="flex items-center gap-2 px-6 py-2"
+            size="sm"
+            className="flex items-center gap-1 px-3 h-7 text-xs cursor-pointer"
           >
             {loadingMore ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin" />
                 Loading...
               </>
             ) : (
               <>
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3" />
                 Load More Doctors
               </>
             )}
@@ -843,13 +844,13 @@ export default function DoctorsPage() {
 
       {/* Show total count when all doctors are loaded */}
       {!hasMore && allDoctors.length > 0 && (
-        <div className="flex justify-center ">
+        <div className="flex justify-center py-0.5">
           {totalDoctors != null ? (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               Showing all {totalDoctors} doctors
             </div>
           ) : (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-gray-600">
               Showing all {allDoctors.length} doctors
             </div>
           )}

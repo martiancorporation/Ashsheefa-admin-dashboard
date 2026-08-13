@@ -13,7 +13,7 @@ const TablePagination = ({ currentPage, totalPages, setCurrentPage }) => {
   const pages = getPaginationPages(currentPage, totalPages);
 
   return (
-    <div className="mt-auto flex justify-end sticky bottom-0 bg-white py-4">
+    <div className="mt-auto flex justify-end sticky bottom-0 bg-white py-2">
       <Pagination>
         <PaginationContent>
           <PaginationItem>
