@@ -102,6 +102,8 @@ export function Sidebar() {
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
 
+  // NEW SOS FLOW (unread) commented out for now — using pending `total` instead.
+  // const sosUnread = useSosStore((state) => state.unread)
   const sosTotal = useSosStore((state) => state.total)
   const fetchSosCount = useSosStore((state) => state.fetchSosCount)
   const resetSosAlert = useSosStore((state) => state.resetAlert)
@@ -211,7 +213,7 @@ export function Sidebar() {
                     <Tooltip>
                       <TooltipTrigger>
                         <span className="relative inline-flex items-center justify-center">
-                          {item.label === 'Emergency SOS' && sosTotal > 0 && (
+                          {item.label === 'Emergency SOS' && (
                             <span className="absolute inline-flex h-[16px] w-full animate-ping rounded-full bg-[#FF8282] opacity-75"></span>
                           )}
                           <item.icon className={cn("relative shrink-0 w-4", item.label === 'Emergency SOS' ? "text-red-500" : "")} />

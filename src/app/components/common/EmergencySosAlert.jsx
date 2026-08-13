@@ -20,6 +20,8 @@ import {
 export default function EmergencySosAlert() {
   const router = useRouter();
 
+  // NEW SOS FLOW (unread) commented out for now — using pending `total` instead.
+  // const sosUnread = useSosStore((state) => state.unread);
   const sosTotal = useSosStore((state) => state.total);
   const sosFetched = useSosStore((state) => state.hasFetched);
   const dismissed = useSosStore((state) => state.dismissed);
