@@ -119,7 +119,7 @@ export default function AllEmergencySos({
           )
         );
         // Refresh the sidebar badge count immediately
-        useSosStore.getState().fetchSosCount();
+        useSosStore.getState().fetchSosCount(true);
       } else {
         toast.error(res?.message || "Failed to resolve SOS alert");
       }
@@ -142,7 +142,7 @@ export default function AllEmergencySos({
           )
         );
         // Refresh the sidebar badge count immediately
-        useSosStore.getState().fetchSosCount();
+        useSosStore.getState().fetchSosCount(true);
       } else {
         toast.error(res?.message || "Failed to revert SOS status");
       }

@@ -13,7 +13,9 @@ const useSosStore = create((set) => ({
   hasFetched: false,
   dismissed: false, // true once the admin closes the popup this session
 
-  fetchSosCount: async () => {
+  // Pass silent: true to refresh the count WITHOUT sounding the alarm (used by
+  // resolve/undo, which are normal actions and must stay quiet).
+  fetchSosCount: async (silent = false) => {
     set({ loading: true });
     try {
       // limit: 1 — we only need the `total` field, not the records.
@@ -23,7 +25,7 @@ const useSosStore = create((set) => ({
       });
       const total = typeof res?.total === "number" ? res.total : 0;
       set({ total, loading: false, hasFetched: true });
-      if (total >= SOS_ALERT_THRESHOLD) {
+      if (!silent && total >= SOS_ALERT_THRESHOLD) {
         playEmergencyAlert();
       }
       return total;
