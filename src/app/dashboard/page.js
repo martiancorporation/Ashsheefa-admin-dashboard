@@ -8,10 +8,41 @@ import { EnquiryAppointmentBarChart } from "./components/enquiry-appointment-cha
 import { VisitorAreaChart } from "./components/visitor-area-chart";
 import { DepartmentDoctorPieChart } from "./components/department-doctor-pie-chart";
 import API from "@/api";
+// ── TEST-ONLY "Trigger Test SOS" imports — DISABLED ──────────────────────────
+// import { Siren } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { toast } from "sonner";
+// import useSosStore from "@/store/sosStore";
 
 export default function Page() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // ── TEST-ONLY: raise a synthetic SOS to exercise the badge/popup/alarm
+  // without the mobile app. DISABLED — re-enable with the imports above, the
+  // button in the header, the API method in src/api/emergency-sos.js, the
+  // `markUnseenForTest` action in the SOS store, and the backend
+  // POST /v1/dashboard/sos/test route + controller.
+  //
+  // const [triggering, setTriggering] = useState(false);
+  //
+  // const handleTriggerTestSos = async () => {
+  //   try {
+  //     setTriggering(true);
+  //     const res = await API.emergencySos.triggerTestEmergencySos();
+  //     if (res && res.status === "success") {
+  //       toast.success("Test SOS triggered");
+  //       useSosStore.getState().markUnseenForTest();
+  //       await useSosStore.getState().fetchSosCount();
+  //     } else {
+  //       toast.error(res?.message || res?.error || "Failed to trigger test SOS");
+  //     }
+  //   } catch (e) {
+  //     toast.error("Failed to trigger test SOS");
+  //   } finally {
+  //     setTriggering(false);
+  //   }
+  // };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -109,6 +140,18 @@ export default function Page() {
           <div className="w-[1.2px] h-[15px] bg-[#7F7F7F]"></div>
           <p className="text-[#4B4B4B] font-medium ">Dashboard</p>
         </div>
+
+        {/* ── TEST-ONLY "Trigger Test SOS" button — DISABLED ──────────────────
+        <Button
+          onClick={handleTriggerTestSos}
+          disabled={triggering}
+          variant="outline"
+          className="flex items-center gap-2 whitespace-nowrap border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+        >
+          <Siren className="h-4 w-4" />
+          {triggering ? "Triggering..." : "Trigger Test SOS"}
+        </Button>
+        */}
       </div>
 
       {/* Statistics Cards */}

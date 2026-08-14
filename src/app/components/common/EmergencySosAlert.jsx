@@ -3,7 +3,7 @@
 import { Siren } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import useSosStore, { SOS_ALERT_THRESHOLD } from "@/store/sosStore";
+import useSosStore from "@/store/sosStore";
 import { stopEmergencyAlert } from "@/lib/emergencyAlertSound";
 import {
   AlertDialog,
@@ -20,15 +20,20 @@ import {
 export default function EmergencySosAlert() {
   const router = useRouter();
 
-  // NEW SOS FLOW (unread) commented out for now — using pending `total` instead.
-  // const sosUnread = useSosStore((state) => state.unread);
-  const sosTotal = useSosStore((state) => state.total);
+  // NEW SOS FLOW (unread) — ACTIVE.
+  // ── OLD FLOW (pending `total` popup) — COMMENTED OUT ──
+  // Also re-enable the SOS_ALERT_THRESHOLD import at the top of this file.
+  // const sosTotal = useSosStore((state) => state.total);
+  // const sosDialogOpen = sosFetched && !dismissed && sosTotal >= SOS_ALERT_THRESHOLD;
+  const sosUnread = useSosStore((state) => state.unread);
   const sosFetched = useSosStore((state) => state.hasFetched);
   const dismissed = useSosStore((state) => state.dismissed);
   const setDismissed = useSosStore((state) => state.setDismissed);
 
-  const sosDialogOpen =
-    sosFetched && !dismissed && sosTotal >= SOS_ALERT_THRESHOLD;
+  // Show only while there are unread (new, not-yet-opened) SOS. Opening the SOS
+  // page marks them read → unread drops to 0 → this closes and won't reappear
+  // until a new SOS arrives.
+  const sosDialogOpen = sosFetched && !dismissed && sosUnread > 0;
 
   // Closing the popup (Dismiss / View SOS / Esc) latches dismissed and silences
   // the alarm so it doesn't keep ringing.
@@ -51,12 +56,12 @@ export default function EmergencySosAlert() {
             <Siren className="relative h-11 w-11 text-red-500" />
           </div>
           <AlertDialogTitle className="text-center text-red-600">
-            {sosTotal} Emergency SOS {sosTotal === 1 ? "alert" : "alerts"} pending
+            {sosUnread} new Emergency SOS {sosUnread === 1 ? "alert" : "alerts"}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            {sosTotal === 1
-              ? "An emergency SOS has come in and needs your attention."
-              : `${sosTotal} emergency SOS alerts have come in and need attention.`}
+            {sosUnread === 1
+              ? "A new emergency SOS has come in and needs your attention."
+              : `${sosUnread} new emergency SOS alerts have come in and need attention.`}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="grid grid-cols-2 gap-x-3">

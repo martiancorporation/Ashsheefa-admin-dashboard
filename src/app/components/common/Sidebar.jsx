@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import useAuthDataStore from '@/store/authStore'
-import useSosStore from '@/store/sosStore'
+import useSosStore, { SOS_POLL_INTERVAL_MS } from '@/store/sosStore'
 import { initEmergencyAudioUnlock } from '@/lib/emergencyAlertSound'
 import API from '@/api'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
@@ -102,9 +102,10 @@ export function Sidebar() {
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
 
-  // NEW SOS FLOW (unread) commented out for now — using pending `total` instead.
-  // const sosUnread = useSosStore((state) => state.unread)
-  const sosTotal = useSosStore((state) => state.total)
+  // NEW SOS FLOW (unread) — ACTIVE.
+  // ── OLD FLOW (pending `total` badge) — COMMENTED OUT ──
+  // const sosTotal = useSosStore((state) => state.total)
+  const sosUnread = useSosStore((state) => state.unread)
   const fetchSosCount = useSosStore((state) => state.fetchSosCount)
   const resetSosAlert = useSosStore((state) => state.resetAlert)
 
@@ -115,6 +116,34 @@ export function Sidebar() {
     resetSosAlert()
     fetchSosCount()
   }, [fetchSosCount, resetSosAlert])
+
+  // ── SOS POLLING (auto-refresh) ─────────────────────────────────────────────
+  // The sidebar is mounted on every dashboard page, so one poller here keeps the
+  // unread badge / popup / alarm live everywhere — an SOS that arrives while the
+  // admin sits idle is never missed. `fetchSosCount()` only sounds the alarm when
+  // the unread count RISES, so routine polls stay silent.
+  //
+  // ⚠️ Remove this whole block (and SOS_POLL_INTERVAL_MS in the store) if upper
+  // management / the client don't want background polling.
+  useEffect(() => {
+    const id = setInterval(() => {
+      // Skip while the tab is hidden — no point polling (or alarming) in the
+      // background; the visibility listener below catches up on return.
+      if (typeof document !== "undefined" && document.hidden) return
+      fetchSosCount()
+    }, SOS_POLL_INTERVAL_MS)
+
+    // Coming back to the tab should re-check immediately, not wait a full cycle.
+    const onVisible = () => {
+      if (!document.hidden) fetchSosCount()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [fetchSosCount])
 
   const handleLogout = () => {
     API.auth.Logout(router, clearAuthData);
@@ -228,14 +257,14 @@ export function Sidebar() {
                   {!isCollapsed && <span>{item.label}</span>}
 
                   {/* Emergency SOS count badge (static — only the icon animates) */}
-                  {item.label === 'Emergency SOS' && sosTotal > 0 && (
+                  {item.label === 'Emergency SOS' && sosUnread > 0 && (
                     isCollapsed ? (
                       <span className="absolute top-0.5 right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-semibold">
-                        {sosTotal > 99 ? '99+' : sosTotal}
+                        {sosUnread > 99 ? '99+' : sosUnread}
                       </span>
                     ) : (
                       <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[11px] font-semibold">
-                        {sosTotal > 99 ? '99+' : sosTotal}
+                        {sosUnread > 99 ? '99+' : sosUnread}
                       </span>
                     )
                   )}

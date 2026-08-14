@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Search,
@@ -20,24 +20,48 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import AllEmergencySos from "./components/all-emergency-sos";
-// NEW SOS FLOW (unread + resolved/unresolved chips) commented out for now.
-// import useSosStore from "@/store/sosStore";
+// NEW SOS FLOW (unread + resolved/unresolved chips) — ACTIVE.
+import useSosStore from "@/store/sosStore";
 
 export default function EmergencySosPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // NEW SOS FLOW — commented out for now, re-enable later:
-  // const unresolvedCount = useSosStore((state) => state.unresolved);
-  // const resolvedCount = useSosStore((state) => state.resolved);
+  const unresolvedCount = useSosStore((state) => state.unresolved);
+  const resolvedCount = useSosStore((state) => state.resolved);
+
+  // Opening this page = reading all current SOS: clear the unread badge/popup,
+  // then refresh the counts shown in the header chips. Mount-only, so a manual
+  // refresh (or a test trigger) doesn't silently re-mark new SOS as read.
   //
-  // // Opening this page = reading all current SOS: clear the unread badge/popup,
-  // // then refresh the total shown in the header.
-  // useEffect(() => {
-  //   const store = useSosStore.getState();
-  //   store.markAllSeen();
-  //   store.fetchSosCount();
-  // }, [refreshKey]);
+  // ── OLD FLOW: this effect and the Unresolved/Resolved chips below did not
+  // exist (no unread tracking). To restore it, delete this effect, the two
+  // count selectors above, and the chips block in the toolbar. ──
+  useEffect(() => {
+    const store = useSosStore.getState();
+    store.markAllSeen();
+    store.fetchSosCount(true);
+  }, []);
+
+  // ── SOS POLLING (auto-refresh) ───────────────────────────────────────────
+  // The sidebar polls the counts in the background. When a NEW SOS lands while
+  // the admin is sitting on this page, reload the table so the row appears
+  // without a manual refresh. Keyed on the unresolved count RISING, so the
+  // table doesn't flicker on every poll — only when there's actually new data.
+  //
+  // ⚠️ Remove this block (and the poller in Sidebar.jsx + SOS_POLL_INTERVAL_MS
+  // in the store) if background polling isn't wanted.
+  const prevUnresolvedRef = useRef(null);
+  useEffect(() => {
+    if (prevUnresolvedRef.current === null) {
+      prevUnresolvedRef.current = unresolvedCount; // first read — nothing to compare
+      return;
+    }
+    if (unresolvedCount > prevUnresolvedRef.current) {
+      setRefreshKey((prev) => prev + 1); // new SOS arrived → reload the table
+    }
+    prevUnresolvedRef.current = unresolvedCount;
+  }, [unresolvedCount]);
 
   // Date filter state
   const [dateRange, setDateRange] = useState(null);
@@ -46,6 +70,7 @@ export default function EmergencySosPage() {
   const handleRefresh = () => {
     setRefreshKey((prev) => prev + 1);
   };
+
 
   const handleDateSelect = (range) => {
     setDateRange(range);
@@ -135,7 +160,7 @@ export default function EmergencySosPage() {
             )}
           </div>
 
-          {/* NEW SOS FLOW — Unresolved/Resolved count chips, commented out for now:
+          {/* SOS status counts */}
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-red-600">
               <span className="h-2 w-2 rounded-full bg-red-500"></span>
@@ -146,7 +171,6 @@ export default function EmergencySosPage() {
               Resolved: {resolvedCount}
             </span>
           </div>
-          */}
         </div>
 
         <div className="flex gap-3 w-full md:w-auto">
