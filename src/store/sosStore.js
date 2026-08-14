@@ -17,6 +17,18 @@ import { playEmergencyAlert } from "@/lib/emergencyAlertSound";
 // NOT affect unread (it's purely time-based), so the count stays stable across
 // resolve/undo.
 
+// ── AUTO-REFRESH (SOS POLLING) ───────────────────────────────────────────────
+// How often the dashboard re-checks for new SOS in the background, so an alert
+// that arrives while the admin is idle is never missed (without it, counts only
+// update on navigation/login). The alarm still only sounds when the unread
+// count RISES, so a quiet poll makes no noise.
+//
+// ⚠️ If upper management / the client don't want background polling, delete this
+// constant and the two "SOS POLLING" blocks in:
+//   - src/app/components/common/Sidebar.jsx            (the poller)
+//   - src/app/dashboard/emergency-sos/page.js          (table auto-reload)
+export const SOS_POLL_INTERVAL_MS = 30000; // 30s
+
 const LAST_SEEN_KEY = "sos_last_seen_at";
 
 const getLastSeen = () => {

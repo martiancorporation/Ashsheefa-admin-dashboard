@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Search,
@@ -42,6 +42,26 @@ export default function EmergencySosPage() {
     store.markAllSeen();
     store.fetchSosCount(true);
   }, []);
+
+  // ── SOS POLLING (auto-refresh) ───────────────────────────────────────────
+  // The sidebar polls the counts in the background. When a NEW SOS lands while
+  // the admin is sitting on this page, reload the table so the row appears
+  // without a manual refresh. Keyed on the unresolved count RISING, so the
+  // table doesn't flicker on every poll — only when there's actually new data.
+  //
+  // ⚠️ Remove this block (and the poller in Sidebar.jsx + SOS_POLL_INTERVAL_MS
+  // in the store) if background polling isn't wanted.
+  const prevUnresolvedRef = useRef(null);
+  useEffect(() => {
+    if (prevUnresolvedRef.current === null) {
+      prevUnresolvedRef.current = unresolvedCount; // first read — nothing to compare
+      return;
+    }
+    if (unresolvedCount > prevUnresolvedRef.current) {
+      setRefreshKey((prev) => prev + 1); // new SOS arrived → reload the table
+    }
+    prevUnresolvedRef.current = unresolvedCount;
+  }, [unresolvedCount]);
 
   // Date filter state
   const [dateRange, setDateRange] = useState(null);

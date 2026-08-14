@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import useAuthDataStore from '@/store/authStore'
-import useSosStore from '@/store/sosStore'
+import useSosStore, { SOS_POLL_INTERVAL_MS } from '@/store/sosStore'
 import { initEmergencyAudioUnlock } from '@/lib/emergencyAlertSound'
 import API from '@/api'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
@@ -116,6 +116,34 @@ export function Sidebar() {
     resetSosAlert()
     fetchSosCount()
   }, [fetchSosCount, resetSosAlert])
+
+  // ── SOS POLLING (auto-refresh) ─────────────────────────────────────────────
+  // The sidebar is mounted on every dashboard page, so one poller here keeps the
+  // unread badge / popup / alarm live everywhere — an SOS that arrives while the
+  // admin sits idle is never missed. `fetchSosCount()` only sounds the alarm when
+  // the unread count RISES, so routine polls stay silent.
+  //
+  // ⚠️ Remove this whole block (and SOS_POLL_INTERVAL_MS in the store) if upper
+  // management / the client don't want background polling.
+  useEffect(() => {
+    const id = setInterval(() => {
+      // Skip while the tab is hidden — no point polling (or alarming) in the
+      // background; the visibility listener below catches up on return.
+      if (typeof document !== "undefined" && document.hidden) return
+      fetchSosCount()
+    }, SOS_POLL_INTERVAL_MS)
+
+    // Coming back to the tab should re-check immediately, not wait a full cycle.
+    const onVisible = () => {
+      if (!document.hidden) fetchSosCount()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+
+    return () => {
+      clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [fetchSosCount])
 
   const handleLogout = () => {
     API.auth.Logout(router, clearAuthData);
