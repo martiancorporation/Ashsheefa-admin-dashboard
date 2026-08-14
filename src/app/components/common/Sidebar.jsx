@@ -102,9 +102,10 @@ export function Sidebar() {
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
 
-  // NEW SOS FLOW (unread) commented out for now — using pending `total` instead.
-  // const sosUnread = useSosStore((state) => state.unread)
-  const sosTotal = useSosStore((state) => state.total)
+  // NEW SOS FLOW (unread) — ACTIVE.
+  // ── OLD FLOW (pending `total` badge) — COMMENTED OUT ──
+  // const sosTotal = useSosStore((state) => state.total)
+  const sosUnread = useSosStore((state) => state.unread)
   const fetchSosCount = useSosStore((state) => state.fetchSosCount)
   const resetSosAlert = useSosStore((state) => state.resetAlert)
 
@@ -228,14 +229,14 @@ export function Sidebar() {
                   {!isCollapsed && <span>{item.label}</span>}
 
                   {/* Emergency SOS count badge (static — only the icon animates) */}
-                  {item.label === 'Emergency SOS' && sosTotal > 0 && (
+                  {item.label === 'Emergency SOS' && sosUnread > 0 && (
                     isCollapsed ? (
                       <span className="absolute top-0.5 right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-semibold">
-                        {sosTotal > 99 ? '99+' : sosTotal}
+                        {sosUnread > 99 ? '99+' : sosUnread}
                       </span>
                     ) : (
                       <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-red-500 text-white text-[11px] font-semibold">
-                        {sosTotal > 99 ? '99+' : sosTotal}
+                        {sosUnread > 99 ? '99+' : sosUnread}
                       </span>
                     )
                   )}

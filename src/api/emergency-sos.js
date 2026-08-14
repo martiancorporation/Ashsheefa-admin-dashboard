@@ -37,10 +37,26 @@ const unresolveEmergencySos = async (id) => {
   return handleResponse(response);
 };
 
+// ── TEST-ONLY: raises a synthetic SOS so the alert flow can be tested without
+// the mobile app (the real trigger needs an app-user JWT). DISABLED — re-enable
+// together with the "Trigger Test SOS" button on the dashboard and the backend
+// POST /v1/dashboard/sos/test route.
+//
+// const triggerTestEmergencySos = async (data) => {
+//   let response = null;
+//   try {
+//     response = await apiConnector("POST", `${RESOLVE_SOS}/test`, data || {});
+//   } catch (error) {
+//     response = error;
+//   }
+//   return handleResponse(response);
+// };
+
 const emergencySos = {
   getAllEmergencySos,
   resolveEmergencySos,
   unresolveEmergencySos,
+  // triggerTestEmergencySos, // TEST-ONLY — disabled
 };
 
 export default emergencySos;
