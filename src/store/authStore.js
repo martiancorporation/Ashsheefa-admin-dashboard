@@ -5,9 +5,9 @@ const setCookie = (name, value, days = 7) => {
   if (typeof window !== "undefined") {
     const expires = new Date();
     expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${JSON.stringify(
-      value
-    )};expires=${expires.toUTCString()};path=/`;
+    document.cookie = `${name}=${encodeURIComponent(
+      JSON.stringify(value)
+    )};expires=${expires.toUTCString()};path=/;secure;samesite=lax`;
   }
 };
 

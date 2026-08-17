@@ -1,34 +1,34 @@
 import { NextResponse } from "next/server";
 
+function isAuthenticated(request) {
+  const authCookie = request.cookies.get("authentications");
+  if (!authCookie || !authCookie.value) return false;
+
+  try {
+    const authData = JSON.parse(authCookie.value);
+    return Boolean(authData && authData.access_token);
+  } catch (error) {
+    return false;
+  }
+}
+
 export function middleware(request) {
   // Get the pathname of the request
   const pathname = request.nextUrl.pathname;
+  const authed = isAuthenticated(request);
 
   // Check if the route is a dashboard route
-  if (pathname.startsWith("/dashboard")) {
-    // Get authentication data from cookies
-    const authCookie = request.cookies.get("authentications");
+  if (pathname.startsWith("/dashboard") && !authed) {
+    const loginUrl = new URL("/", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
 
-    // If no authentication data exists, redirect to login
-    if (!authCookie || !authCookie.value) {
-      const loginUrl = new URL("/", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    try {
-      // Try to parse the authentication data
-      const authData = JSON.parse(authCookie.value);
-
-      // Check if authData exists and has required fields
-      if (!authData || !authData.access_token) {
-        const loginUrl = new URL("/", request.url);
-        return NextResponse.redirect(loginUrl);
-      }
-    } catch (error) {
-      // If parsing fails, redirect to login
-      const loginUrl = new URL("/", request.url);
-      return NextResponse.redirect(loginUrl);
-    }
+  // Already logged in and hitting the login page: send to the dashboard.
+  // This is decided server-side (cookie is the source of truth) so the
+  // client never has to race its own redirect against this one.
+  if (pathname === "/" && authed) {
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
