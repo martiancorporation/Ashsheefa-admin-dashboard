@@ -27,7 +27,7 @@ import { playEmergencyAlert } from "@/lib/emergencyAlertSound";
 // constant and the two "SOS POLLING" blocks in:
 //   - src/app/components/common/Sidebar.jsx            (the poller)
 //   - src/app/dashboard/emergency-sos/page.js          (table auto-reload)
-export const SOS_POLL_INTERVAL_MS = 30000; // 30s
+export const SOS_POLL_INTERVAL_MS = 2000; // 2s
 
 const LAST_SEEN_KEY = "sos_last_seen_at";
 
