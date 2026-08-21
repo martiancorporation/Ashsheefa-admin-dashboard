@@ -773,8 +773,8 @@ export default function PatientDetailsPage() {
                   <TooltipProvider key={doc._id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer">
-                          <CardContent className="p-0">
+                        <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer h-full flex flex-col">
+                          <CardContent className="p-0 flex-1 flex flex-col">
                             <div className="mb-4">
                               {isPdfFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
                                 <div className="w-full h-[150px] bg-white rounded-md flex items-center justify-center border border-gray-200">
@@ -833,17 +833,17 @@ export default function PatientDetailsPage() {
                               <p className="text-[13px] text-[#7F7F7F]">By . {doc.uploaded_by || doc.hospital || "Ashsheefa Hospital"}</p>
                               <p className="text-sm text-[#7F7F7F]">Lab Report</p>
                             </div>
-                            <div className="flex items-center justify-center gap-2">
+                            <div className="flex items-center justify-center gap-2 px-3 pb-1 mt-auto pt-2">
                               <Button
                                 variant="outline" size="sm"
-                                className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B]"
+                                className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B] text-xs"
                                 onClick={() => handleViewDocument(doc)}
                               >
                                 <Eye className="h-4 w-4" /> View Details
                               </Button>
                               <Button
                                 variant="outline" size="sm"
-                                className="flex-1 border-none bg-transparent shadow-none text-[#FF0037]"
+                                className="flex-1 border-none bg-transparent shadow-none text-[#FF0037] text-xs"
                                 onClick={() => handleDeleteDocument(doc)}
                               >
                                 <Trash2 className="h-4 w-4" /> Delete Document
@@ -900,8 +900,8 @@ export default function PatientDetailsPage() {
                       <TooltipProvider key={doc._id}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer">
-                              <CardContent className="p-0">
+                            <Card className="border border-[#EEEEEE] p-2.5 shadow-none rounded-[10px] bg-[#F6F6F6] hover:shadow-md transition-shadow duration-200 cursor-pointer h-full flex flex-col">
+                              <CardContent className="p-0 flex-1 flex flex-col">
                                 <div className="mb-4">
                                   {isPdfFile(doc.file_name, doc.file_url || doc.fileUrl) ? (
                                     <div className="w-full h-[130px] bg-white rounded-md flex items-center justify-center border border-gray-200">
@@ -960,17 +960,17 @@ export default function PatientDetailsPage() {
                                   <p className="text-[13px] text-[#7F7F7F]">By . {doc.uploaded_by || doc.hospital || "Ashsheefa Hospital"}</p>
                                   <p className="text-sm text-[#7F7F7F]">Prescription</p>
                                 </div>
-                                <div className="flex items-center justify-center gap-2">
+                                <div className="flex items-center justify-center gap-2 mt-auto">
                                   <Button
                                     variant="outline" size="sm"
-                                    className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B]"
+                                    className="flex-1 border-none bg-transparent shadow-none text-[#4B4B4B] text-xs"
                                     onClick={() => handleViewDocument(doc)}
                                   >
                                     <Eye className="h-4 w-4" /> View Details
                                   </Button>
                                   <Button
                                     variant="outline" size="sm"
-                                    className="flex-1 border-none bg-transparent shadow-none text-[#FF0037]"
+                                    className="flex-1 border-none bg-transparent shadow-none text-[#FF0037] text-xs"
                                     onClick={() => handleDeleteDocument(doc)}
                                   >
                                     <Trash2 className="h-4 w-4" /> Delete Document
