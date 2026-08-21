@@ -1,0 +1,1030 @@
+import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  PencilLine,
+  Trash2,
+  Calendar,
+  Stethoscope,
+  Clock,
+  Globe,
+  ChevronRight,
+  Check,
+  X,
+  Save,
+  DollarSign,
+} from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import API from "@/api";
+import { withYears, withRupee, dedupeDoctorTitle } from "@/lib/formatText";
+
+export default function DoctorDetailsPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  const [doctor, setDoctor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showAvailability, setShowAvailability] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [departments, setDepartments] = useState([]);
+  const [departmentsLoading, setDepartmentsLoading] = useState(false);
+
+  // Form state
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [selectedLanguages, setSelectedLanguages] = useState([]);
+  const [schedule, setSchedule] = useState({
+    monday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    tuesday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    wednesday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    thursday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    friday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+  });
+  const [formData, setFormData] = useState({
+    fullName: "",
+    department: "",
+    regNo: "",
+    experience: "",
+    contactNumber: "",
+    qualification: "",
+    bio: "",
+    email: "",
+    specialization: "",
+    fees: "",
+    isActive: true,
+  });
+
+  const timeOptions = [
+    "08:00",
+    "08:30",
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "11:00",
+    "11:30",
+    "12:00",
+    "12:30",
+    "13:00",
+    "13:30",
+    "14:00",
+    "14:30",
+    "15:00",
+    "15:30",
+    "16:00",
+    "16:30",
+    "17:00",
+    "17:30",
+    "18:00",
+    "18:30",
+    "19:00",
+    "19:30",
+    "20:00",
+  ];
+
+  const toggleAvailability = () => {
+    setShowAvailability(!showAvailability);
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    // Reset form data to original doctor data
+    if (doctor) {
+      setFormData({
+        fullName: doctor.fullName || "",
+        department: doctor.department || "",
+        regNo: doctor.regNo || "",
+        experience: doctor.experience || "",
+        contactNumber: doctor.contactNumber || "",
+        qualification: doctor.qualification || "",
+        bio: doctor.bio || "",
+        email: doctor.email || "",
+        specialization: doctor.specialization || "",
+        isActive: doctor.isActive ?? true,
+        fees: doctor.fees || "",
+      });
+      setPhotoUrl(doctor.profilePic || "");
+      setPhotoFile(null);
+      setSelectedLanguages(doctor.languages || []);
+
+      // Reset schedule
+      const newSchedule = {};
+      [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ].forEach((day) => {
+        const dayData = doctor.availability?.find(
+          (a) => a.day.toLowerCase() === day,
+        );
+        newSchedule[day] = {
+          enabled: dayData?.isAvailable || false,
+          startTime: dayData?.startTime || "09:00",
+          endTime: dayData?.endTime || "17:00",
+        };
+      });
+      setSchedule(newSchedule);
+    }
+    setIsEditMode(false);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectChange = (name, value) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleLanguage = (language) => {
+    setSelectedLanguages((prev) =>
+      prev.includes(language)
+        ? prev.filter((l) => l !== language)
+        : [...prev, language],
+    );
+  };
+
+  const handlePhotoUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Invalid file type. Only JPEG, PNG, and JPG are allowed.");
+      return;
+    }
+
+    // Validate file size (2MB)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File size must be under 2 MB.");
+      return;
+    }
+
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoUrl(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeletePhoto = () => {
+    setPhotoFile(null);
+    setPhotoUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleToggleDay = (day) => {
+    setSchedule((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        enabled: !prev[day].enabled,
+      },
+    }));
+  };
+
+  const handleTimeChange = (day, type, value) => {
+    setSchedule((prev) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [type]: value,
+      },
+    }));
+  };
+
+  const handleSaveDoctor = async () => {
+    setIsSaving(true);
+    try {
+      const authDataString = localStorage.getItem("authentications");
+      const authData = JSON.parse(authDataString);
+
+      // Build availability array
+      const availability = Object.entries(schedule).map(([day, data]) => ({
+        day: day.charAt(0).toUpperCase() + day.slice(1),
+        isAvailable: data.enabled,
+        startTime: data.enabled ? data.startTime : null,
+        endTime: data.enabled ? data.endTime : null,
+      }));
+
+      let updatePayload;
+
+      if (photoFile) {
+        // Backend reads images from req.files (multipart/form-data), NOT from JSON body.
+        // So when a new photo is selected we must send FormData with the actual file.
+        updatePayload = new FormData();
+        updatePayload.append("_id", id);
+        updatePayload.append("fullName", dedupeDoctorTitle(formData.fullName));
+        updatePayload.append("department", formData.department);
+        updatePayload.append("regNo", formData.regNo);
+        updatePayload.append("experience", Number(formData.experience) || 0);
+        updatePayload.append("contactNumber", formData.contactNumber);
+        updatePayload.append("qualification", formData.qualification);
+        updatePayload.append("bio", formData.bio);
+        updatePayload.append("email", formData.email);
+        updatePayload.append("specialization", formData.specialization);
+        updatePayload.append("isActive", formData.isActive);
+        updatePayload.append(
+          "fees",
+          formData.fees ? parseInt(formData.fees) : 0,
+        );
+        // Arrays must be stringified for FormData
+        updatePayload.append("languages", JSON.stringify(selectedLanguages));
+        updatePayload.append("availability", JSON.stringify(availability));
+        // Attach the actual file — backend reads req.files?.profilePic
+        updatePayload.append("profilePic", photoFile);
+      } else {
+        // No new photo — send plain JSON as before
+        updatePayload = {
+          _id: id,
+          fullName: dedupeDoctorTitle(formData.fullName),
+          department: formData.department,
+          regNo: formData.regNo,
+          experience: Number(formData.experience) || 0,
+          contactNumber: formData.contactNumber,
+          qualification: formData.qualification,
+          bio: formData.bio,
+          email: formData.email,
+          specialization: formData.specialization,
+          isActive: formData.isActive,
+          languages: selectedLanguages,
+          availability: availability,
+          fees: formData.fees ? parseInt(formData.fees) : 0,
+        };
+      }
+      const response = await API.doctor.updateDoctor(updatePayload);
+
+      if (!response || response.error) {
+        throw new Error("No response from server");
+      }
+
+      setIsEditMode(false);
+      toast.success("Doctor updated successfully!");
+
+      // Refresh the page data
+      await fetchDoctor();
+    } catch (error) {
+      console.error("Error updating doctor:", error);
+      toast.error(
+        error.message || "Failed to update doctor. Please try again.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      setDepartmentsLoading(true);
+      const response = await API.department.getAllDepartments(1, 100); // Get all departments
+
+      if (response && response.departments) {
+        const departmentNames = response.departments
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      } else if (response && response.data) {
+        const departmentNames = response.data
+          .map((dept) => dept.name || dept.department_name || dept.label)
+          .filter(Boolean);
+        setDepartments(departmentNames);
+      }
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      // Fallback to static list if API fails
+      setDepartments([
+        "General Medicine",
+        "General Surgery",
+        "Cardiology",
+        "Neurology",
+        "Neurosurgery",
+        "Orthopedics",
+        "Pediatrics",
+        "Obstetrics & Gynecology",
+        "Dermatology",
+        "Psychiatry",
+        "Ophthalmology",
+        "ENT",
+        "Oncology",
+        "Urology",
+        "Nephrology",
+        "Pulmonology",
+        "Gastroenterology",
+        "Endocrinology",
+        "Radiology",
+        "Anesthesiology",
+        "Pathology",
+        "Hematology",
+        "Rheumatology",
+        "Plastic Surgery",
+        "Cardiothoracic Surgery",
+        "Forensic Medicine",
+        "Family Medicine",
+        "Sports Medicine",
+      ]);
+    } finally {
+      setDepartmentsLoading(false);
+    }
+  };
+
+  const fetchDoctor = async () => {
+    const authDataString = localStorage.getItem("authentications");
+    try {
+      const data = await API.doctor.getDoctorById(id);
+      setDoctor(data);
+
+      // Initialize form data
+      setFormData({
+        fullName: data.fullName || "",
+        department: data.department || "",
+        regNo: data.regNo || "",
+        experience: data.experience || "",
+        contactNumber: data.contactNumber || "",
+        qualification: data.qualification || "",
+        bio: data.bio || "",
+        email: data.email || "",
+        specialization: data.specialization || "",
+        isActive: data.isActive ?? true,
+        fees: data.fees || "",
+      });
+      setPhotoUrl(data.profilePic || "");
+      setSelectedLanguages(data.languages || []);
+
+      // Initialize schedule from availability
+      const newSchedule = {};
+      [
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+      ].forEach((day) => {
+        const dayData = data.availability?.find(
+          (a) => a.day.toLowerCase() === day,
+        );
+        newSchedule[day] = {
+          enabled: dayData?.isAvailable || false,
+          startTime: dayData?.startTime || "09:00",
+          endTime: dayData?.endTime || "17:00",
+        };
+      });
+      setSchedule(newSchedule);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch doctor details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDoctor = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await API.doctor.deleteDoctor(id);
+      if (!response || response.error) {
+        throw new Error(response?.message || "Failed to delete doctor");
+      }
+      toast.success("Doctor deleted successfully!");
+      navigate(-1);
+    } catch (error) {
+      console.error("Error deleting doctor:", error);
+      toast.error(
+        error.message || "Failed to delete doctor. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
+
+  useEffect(() => {
+    if (id) {
+      fetchDoctor();
+      fetchDepartments();
+    }
+  }, [id]);
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!doctor) return <div className="p-6">Doctor not found</div>;
+
+  return (
+    <div className="p-6 space-y-6 h-full overflow-auto">
+      {/* Breadcrumb */}
+      <div className="flex w-full items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-1 hover:text-black"
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <span>|</span>
+          <span className="text-black font-medium">Doctor Details</span>
+        </div>
+        <div className="flex gap-3">
+          {!isEditMode ? (
+            <>
+              <button
+                onClick={handleEditClick}
+                className="px-4 py-2 border rounded-md text-blue-600 border-blue-600 hover:bg-blue-50 flex items-center font-medium"
+              >
+                <PencilLine className="mr-2" size={14} />
+                Edit Doctor
+              </button>
+
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="px-4 py-2 border rounded-md text-red-600 border-red-600 hover:bg-red-50 flex items-center font-medium"
+              >
+                <Trash2 className="mr-2" size={14} />
+                Delete Doctor
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                className="px-4 py-2 border rounded-md text-gray-600 border-gray-600 hover:bg-gray-50 flex items-center font-medium disabled:opacity-50"
+              >
+                <X className="mr-2" size={14} />
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDoctor}
+                disabled={isSaving}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center font-medium disabled:opacity-50"
+              >
+                {isSaving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2" size={14} />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        {/* Left Column - Doctor Details */}
+        <div className="space-y-6">
+          {/* Top Card */}
+          <div className="bg-white rounded-xl shadow-sm border p-6">
+            <div className="flex gap-4">
+              <div className="relative w-20 h-20 flex-shrink-0">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept="image/jpeg, image/png, image/jpg"
+                  className="hidden"
+                />
+
+                {/* Avatar circle */}
+                <div
+                  onClick={isEditMode ? handlePhotoUpload : undefined}
+                  className={`w-20 h-20 rounded-full overflow-hidden border-2 ${
+                    photoFile ? "border-blue-400" : "border-none"
+                  } ${isEditMode ? "cursor-pointer group" : ""}`}
+                >
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={formData.fullName}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#C3DDFF] flex items-center justify-center">
+                      <img
+                        src="/assets/images/doctor/avatar.svg"
+                        alt={formData.fullName}
+                        className="w-15 h-15"
+                      />
+                    </div>
+                  )}
+
+                  {/* Hover overlay */}
+                  {isEditMode && (
+                    <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                      <PencilLine
+                        size={16}
+                        className="text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* "New" badge when a file is staged */}
+                {photoFile && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full leading-none font-medium whitespace-nowrap">
+                    New
+                  </span>
+                )}
+
+                {/* Red X — discard staged file, revert to saved photo */}
+                {isEditMode && photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPhotoFile(null);
+                      setPhotoUrl(doctor?.profilePic || "");
+                      if (fileInputRef.current) fileInputRef.current.value = "";
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Discard new photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+
+                {/* Gray X — remove saved photo entirely (no new file staged) */}
+                {isEditMode && photoUrl && !photoFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeletePhoto();
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-400 hover:bg-gray-500 text-white flex items-center justify-center shadow-md transition-colors"
+                    title="Remove photo"
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+
+              <div className="flex-1">
+                {isEditMode ? (
+                  <>
+                    <Input
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className="text-xl font-bold mb-2"
+                      placeholder="Full Name"
+                    />
+                    <Input
+                      name="qualification"
+                      value={formData.qualification}
+                      onChange={handleChange}
+                      className="text-gray-500 mb-2"
+                      placeholder="Qualification"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        name="regNo"
+                        value={formData.regNo}
+                        onChange={handleChange}
+                        className="flex-1"
+                        placeholder="Registration Number"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-bold uppercase">
+                      {dedupeDoctorTitle(formData.fullName)}
+                    </h2>
+                    <p className="text-gray-500">
+                      {formData.qualification}{" "}
+                      {formData.regNo &&
+                        (formData.regNo.toLowerCase().startsWith("reg no")
+                          ? `${formData.regNo}`
+                          : ` Reg No. ${formData.regNo}`)}
+                    </p>
+                  </>
+                )}
+
+                <div className="flex items-center gap-2 mt-2 text-sm">
+                  <Phone size={14} />
+                  {isEditMode ? (
+                    <Input
+                      name="contactNumber"
+                      value={formData.contactNumber}
+                      onChange={handleChange}
+                      className="flex-1"
+                      placeholder="Contact Number"
+                    />
+                  ) : (
+                    <span>+91 {formData.contactNumber || "9836001515"}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <Calendar size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Experience</div>
+                  {isEditMode ? (
+                    <Input
+                      name="experience"
+                      type="number"
+                      value={formData.experience}
+                      onChange={handleChange}
+                      className="font-medium h-8"
+                      placeholder="Years"
+                    />
+                  ) : (
+                    <div className="font-medium">
+                      {formData.experience
+                        ? withYears(formData.experience)
+                        : "Not specified"}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <Stethoscope size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Department</div>
+                  {isEditMode ? (
+                    <Select
+                      value={formData.department}
+                      onValueChange={(value) =>
+                        handleSelectChange("department", value)
+                      }
+                      disabled={departmentsLoading}
+                    >
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept} value={dept}>
+                            {dept}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="font-medium">{formData.department}</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <Globe size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Languages</div>
+                  {isEditMode ? (
+                    <Select onValueChange={(value) => toggleLanguage(value)}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue
+                          placeholder={
+                            selectedLanguages.length > 0
+                              ? `${selectedLanguages.length} selected`
+                              : "Add language"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["English", "Hindi", "Bengali", "Urdu"].map((lang) => (
+                          <SelectItem
+                            key={lang}
+                            value={lang}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              {selectedLanguages.includes(lang) && (
+                                <Check className="h-4 w-4 text-blue-600" />
+                              )}
+                              <span
+                                className={
+                                  selectedLanguages.includes(lang)
+                                    ? "font-medium"
+                                    : ""
+                                }
+                              >
+                                {lang}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="font-medium">
+                      {selectedLanguages.join(", ") || "Not specified"}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-9 w-9 flex items-center justify-center border border-[#EEEEEE] rounded-md">
+                  <DollarSign size={18} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="text-xs text-gray-500">Fees</div>
+                  {isEditMode ? (
+                    <Input
+                      name="fees"
+                      type="number"
+                      value={formData.fees}
+                      onChange={handleChange}
+                      className="font-medium h-8"
+                      placeholder="Fees"
+                    />
+                  ) : (
+                    <div className="font-medium">{withRupee(formData.fees || 0)}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {isEditMode && selectedLanguages.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-4">
+                {selectedLanguages.map((language) => (
+                  <Badge
+                    key={language}
+                    variant="secondary"
+                    className="flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-gray-300"
+                    onClick={() => toggleLanguage(language)}
+                  >
+                    {language}
+                    <X className="h-3 w-3 ml-1" />
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            {isEditMode && (
+              <div className="flex items-center justify-between mt-4 p-3 bg-gray-50 rounded-md">
+                <Label htmlFor="isActive" className="text-base">
+                  Active Status
+                </Label>
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, isActive: checked }))
+                  }
+                  className="data-[state=checked]:bg-blue-600"
+                />
+              </div>
+            )}
+
+            {isEditMode && (
+              <div className="mt-4">
+                <Label className="text-sm text-gray-500">Email</Label>
+                <Input
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="mt-1"
+                  placeholder="Email Address"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* About Section */}
+          {(formData.bio || isEditMode) && (
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-semibold mb-2">About Doctor</h3>
+              {isEditMode ? (
+                <textarea
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleChange}
+                  placeholder="Enter doctor's bio"
+                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              ) : (
+                <p className="text-gray-600 text-sm leading-relaxed">
+                  {formData.bio}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Areas of Expertise */}
+          {(formData.specialization || isEditMode) && (
+            <div className="bg-white rounded-xl shadow-sm border p-6">
+              <h3 className="font-semibold mb-3">Areas Of Expertise</h3>
+              {isEditMode ? (
+                <Input
+                  name="specialization"
+                  value={formData.specialization}
+                  onChange={handleChange}
+                  placeholder="Enter specializations (comma separated)"
+                  className="text-sm"
+                />
+              ) : (
+                <ul className="list-disc pl-6 text-sm text-gray-600 space-y-2 capitalize">
+                  {formData.specialization.split(",").map((item, index) => (
+                    <li key={index}>{item.trim()}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Manage Availability */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border overflow-y-scroll relative no-scrollbar  ">
+            <div
+              className="bg-blue-50 p-4 flex items-center justify-between cursor-pointer hover:bg-blue-100 transition-colors sticky top-0 z-10"
+              onClick={toggleAvailability}
+            >
+              <div className="flex items-center">
+                <Check className="h-5 w-5 text-blue-600 mr-2" />
+                <span className="text-blue-600 font-medium">
+                  Manage Availability
+                </span>
+              </div>
+              <ChevronRight
+                className={`h-5 w-5 text-blue-600 transition-transform ${
+                  showAvailability ? "rotate-90" : ""
+                }`}
+              />
+            </div>
+
+            {showAvailability && (
+              <div className="p-6 space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Weekly Schedule
+                </h3>
+                {Object.entries(schedule).map(([day, dayData]) => (
+                  <div key={day} className="border-b pb-4 last:border-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <Label className="text-base capitalize font-medium">
+                        {day}
+                      </Label>
+                      <Switch
+                        checked={dayData.enabled}
+                        disabled={!isEditMode}
+                        onCheckedChange={() => handleToggleDay(day)}
+                        className="data-[state=checked]:bg-blue-600"
+                      />
+                    </div>
+
+                    {dayData.enabled ? (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={dayData.startTime || "09:00"}
+                          onValueChange={(value) =>
+                            handleTimeChange(day, "startTime", value)
+                          }
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((time) => (
+                              <SelectItem key={`start-${time}`} value={time}>
+                                {time}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <span className="text-gray-500">to</span>
+
+                        <Select
+                          value={dayData.endTime || "17:00"}
+                          onValueChange={(value) =>
+                            handleTimeChange(day, "endTime", value)
+                          }
+                          disabled={!isEditMode}
+                        >
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timeOptions.map((time) => (
+                              <SelectItem key={`end-${time}`} value={time}>
+                                {time}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">
+                        Not working on this day
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs"
+          onClick={() => !isDeleting && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mx-auto mb-4">
+              <Trash2 className="text-red-600" size={22} />
+            </div>
+
+            {/* Text */}
+            <h2 className="text-lg font-semibold text-gray-900 text-center mb-1">
+              Delete Doctor
+            </h2>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-gray-700">
+                {dedupeDoctorTitle(doctor?.fullName)}
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteDoctor}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Yes, Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
