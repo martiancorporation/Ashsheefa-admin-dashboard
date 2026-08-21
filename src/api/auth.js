@@ -66,9 +66,9 @@ const auth = {
     return handleResponse(response);
   },
 
-  Logout: async (router, clearAuthData) => {
+  Logout: async (navigate, clearAuthData) => {
     clearAuthData();
-    router.push("/");
+    navigate("/");
     toast.success("Logged Out");
   },
 

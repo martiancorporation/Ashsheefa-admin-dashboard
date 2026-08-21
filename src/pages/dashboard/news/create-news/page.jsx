@@ -1,0 +1,449 @@
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, Save, ArrowLeft, Upload, X, Eye, Plus } from "lucide-react";
+import useAuthDataStore from "@/store/authStore";
+import API from "@/api";
+import { toast } from "sonner";
+import { detectPlatform, getSocialIcon } from "@/lib/socialMedia";
+
+export default function CreateNews() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    news_channel_name: "",
+    publish_date: "",
+    url: "",
+    social_links: [],
+    image: "",
+  });
+  const [imagePreview, setImagePreview] = useState(null);
+  const authData = useAuthDataStore((state) => state.authData);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const addSocialLink = () => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: [...prev.social_links, ""],
+    }));
+  };
+
+  const removeSocialLink = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: prev.social_links.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSocialLinkChange = (index, value) => {
+    setFormData((prev) => {
+      const next = [...prev.social_links];
+      next[index] = value;
+      return { ...prev, social_links: next };
+    });
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload only image files (JPEG, PNG, GIF, WebP)");
+      // Clear the input so it doesn't keep showing the rejected file's name,
+      // and so re-picking the same file still fires onChange.
+      e.target.value = "";
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    const maxSize = 2 * 1024 * 1024; // 2MB
+
+    if (file.size > maxSize) {
+      toast.error("Image file must be smaller than 2MB");
+      e.target.value = "";
+      return;
+    }
+
+    // Convert file to base64 data URL (like doctor upload)
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFormData((prev) => ({
+          ...prev,
+          image: event.target.result,
+        }));
+        setImagePreview(event.target.result);
+      }
+    };
+    reader.onerror = () => {
+      console.error("Error reading file");
+      toast.error("Error reading file. Please try again.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      image: "",
+    }));
+    setImagePreview(null);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!formData.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    if (!formData.description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!formData.news_channel_name.trim()) {
+      toast.error("News channel name is required");
+      return;
+    }
+    if (!formData.publish_date) {
+      toast.error("Publish date is required");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Prepare data object (not FormData) - like doctor upload
+      const newsData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        news_channel_name: formData.news_channel_name.trim(),
+        publish_date: formData.publish_date,
+        url: formData.url.trim(),
+        social_links: formData.social_links
+          .map((u) => (u || "").trim())
+          .filter(Boolean)
+          .map((u) => ({ platform: detectPlatform(u), url: u })),
+        image: formData.image, // This is now a base64 string
+      };
+
+      const response = await API.news.addNews(newsData);
+
+      if (response && (response.success || response._id)) {
+        toast.success("News created successfully");
+        navigate("/dashboard/news/all-news");
+      } else if (response && response.data && response.data.success) {
+        toast.success("News created successfully");
+        navigate("/dashboard/news/all-news");
+      } else {
+        console.error("API returned error:", response);
+        const errorMessage =
+          response?.message ||
+          response?.data?.message ||
+          "Failed to create news";
+        toast.error(errorMessage);
+      }
+    } catch (error) {
+      console.error("Error creating news:", error);
+      toast.error("An error occurred while creating the news");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full h-full flex flex-col">
+      {/* Header Section */}
+      <div className="w-full flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-2">
+          <Link
+            to="/dashboard/news"
+            className="p-2 hover:bg-gray-50 rounded-md transition-colors duration-200 cursor-pointer"
+          >
+            <img
+              src={"/assets/images/dashboard/leftArrow.svg"}
+              alt="leftArrow"
+              className="w-4 h-4 hover:scale-110 transition-transform duration-200"
+            />
+          </Link>
+          <div className="w-[1.5px] h-[15px] bg-[#7F7F7F]"></div>
+          <p className="text-[#4B4B4B] font-medium">Create News</p>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="w-full flex-1 overflow-y-auto">
+        <Card className="w-full mx-auto">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold text-gray-900">
+              Add New News Article
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
+              <div className="space-y-2">
+                <Label htmlFor="title" className="text-sm font-medium">
+                  Title *
+                </Label>
+                <Input
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  placeholder="Enter news title"
+                  className="w-full"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">
+                  Description *
+                </Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Enter news description"
+                  className="w-full min-h-[120px]"
+                  required
+                />
+              </div>
+
+              {/* News Channel Name */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="news_channel_name"
+                  className="text-sm font-medium"
+                >
+                  News Channel Name *
+                </Label>
+                <Input
+                  id="news_channel_name"
+                  name="news_channel_name"
+                  value={formData.news_channel_name}
+                  onChange={handleInputChange}
+                  placeholder="Enter news channel name"
+                  className="w-full"
+                  required
+                />
+              </div>
+
+              {/* Publish Date */}
+              <div className="space-y-2">
+                <Label htmlFor="publish_date" className="text-sm font-medium">
+                  Publish Date *
+                </Label>
+                <Input
+                  id="publish_date"
+                  name="publish_date"
+                  type="date"
+                  value={formData.publish_date}
+                  onChange={handleInputChange}
+                  className="w-full"
+                  required
+                />
+              </div>
+
+              {/* News Link (optional) */}
+              <div className="space-y-2">
+                <Label htmlFor="url" className="text-sm font-medium">
+                  News Link
+                </Label>
+                <Input
+                  id="url"
+                  name="url"
+                  type="url"
+                  value={formData.url}
+                  onChange={handleInputChange}
+                  placeholder="https://example.com/news-article (optional)"
+                  className="w-full"
+                />
+              </div>
+
+              {/* Social Media Links (optional) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">
+                    Social Media Links
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addSocialLink}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add
+                  </Button>
+                </div>
+                {formData.social_links.length === 0 ? (
+                  <p className="text-xs text-gray-500">
+                    No social media links added. Click &quot;Add&quot; to
+                    include one — the icon is detected automatically from the
+                    link.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {formData.social_links.map((link, index) => {
+                      const Icon = getSocialIcon(link);
+                      return (
+                        <div key={index} className="flex items-center gap-2">
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-gray-50 text-gray-600">
+                            <Icon className="w-4 h-4" />
+                          </span>
+                          <Input
+                            type="url"
+                            value={link}
+                            onChange={(e) =>
+                              handleSocialLinkChange(index, e.target.value)
+                            }
+                            placeholder="https://facebook.com/your-page"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSocialLink(index)}
+                            className="shrink-0 text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Image Upload */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">News Image</Label>
+                <div className="space-y-3">
+                  {/* File upload input */}
+                  <div className="flex gap-2">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="flex-1"
+                      id="image-upload"
+                    />
+                    <Label
+                      htmlFor="image-upload"
+                      className="flex items-center gap-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload
+                    </Label>
+                  </div>
+
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-600">
+                        Image Preview:
+                      </Label>
+                      <div className="relative group border border-gray-200 rounded-lg overflow-hidden max-w-md">
+                        <img
+                          src={imagePreview}
+                          alt="News preview"
+                          className="w-full h-48 object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+                          <Button
+                            type="button"
+                            onClick={removeImage}
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 text-white hover:text-red-300 transition-opacity duration-200"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="p-2 bg-gray-50">
+                          <p className="text-xs text-gray-600">
+                            Image uploaded successfully
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Base64 encoded image
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload guidelines */}
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>• Supported formats: JPEG, PNG, GIF, WebP</p>
+                    <p>• Maximum file size: 2MB</p>
+                    <p>• Only one image per news article</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 pt-6">
+                <Link to="/dashboard/news/all-news">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </Button>
+                </Link>
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Create News
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

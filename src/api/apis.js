@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5556";
+const BASE_URL = import.meta.env.VITE_PUBLIC_API_URL || "http://localhost:5556";
 
 //**************** * AUTH ENDPOINTS ***************
 export const authEndpoints = {

@@ -25,8 +25,8 @@ import { playEmergencyAlert } from "@/lib/emergencyAlertSound";
 //
 // ⚠️ If upper management / the client don't want background polling, delete this
 // constant and the two "SOS POLLING" blocks in:
-//   - src/app/components/common/Sidebar.jsx            (the poller)
-//   - src/app/dashboard/emergency-sos/page.js          (table auto-reload)
+//   - src/pages/components/common/Sidebar.jsx            (the poller)
+//   - src/pages/dashboard/emergency-sos/page.jsx       (table auto-reload)
 export const SOS_POLL_INTERVAL_MS = 2000; // 2s
 
 const LAST_SEEN_KEY = "sos_last_seen_at";
@@ -132,9 +132,9 @@ export default useSosStore;
  *
  * To restore the OLD FLOW: swap the store above for the one below, and
  * re-enable the matching "OLD FLOW" blocks in:
- *   - src/app/components/common/Sidebar.jsx           (total badge)
- *   - src/app/components/common/EmergencySosAlert.jsx (total popup)
- *   - src/app/dashboard/emergency-sos/page.js         (remove chips + markAllSeen)
+ *   - src/pages/components/common/Sidebar.jsx           (total badge)
+ *   - src/pages/components/common/EmergencySosAlert.jsx (total popup)
+ *   - src/pages/dashboard/emergency-sos/page.jsx      (remove chips + markAllSeen)
  *
  * export const SOS_ALERT_THRESHOLD = 1;
  *
