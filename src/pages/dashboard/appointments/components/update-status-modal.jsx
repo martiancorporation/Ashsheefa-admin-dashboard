@@ -39,8 +39,13 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
     const [amount, setAmount] = useState("")
     const [paymentMode, setPaymentMode] = useState("")
     const [paid, setPaid] = useState(false)
+    const [transactionId, setTransactionId] = useState("")
     const [confirmedAmount, setConfirmedAmount] = useState("")
     const [confirmedMode, setConfirmedMode] = useState("")
+    const [confirmedTxnId, setConfirmedTxnId] = useState("")
+
+    // Cash has no reference number; UPI/card do.
+    const needsTransactionId = paymentMode === "upi" || paymentMode === "card"
 
     // Reset state whenever modal opens fresh
     useEffect(() => {
@@ -49,13 +54,16 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                 // Already paid — jump straight to locked view
                 setConfirmedAmount(appointment.amount ?? "")
                 setConfirmedMode(appointment.paymentMode ?? "")
+                setConfirmedTxnId(appointment.transaction_id ?? "")
                 setPaid(true)
             } else {
                 setAmount(appointment.amount ?? appointment.doctorId?.fees ?? "")
                 setPaymentMode("")
+                setTransactionId("")
                 setPaid(false)
                 setConfirmedAmount("")
                 setConfirmedMode("")
+                setConfirmedTxnId("")
             }
         }
     }, [open, appointment])
@@ -79,6 +87,8 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                 paymentStatus: "paid",
                 amount: Number(amount),
                 paymentMode,
+                // Cash carries no reference, so send an empty value for it.
+                transaction_id: needsTransactionId ? transactionId.trim() : "",
             })
 
             if (res?.success || res?.data) {
@@ -86,6 +96,7 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                 // Lock the modal into confirmation view
                 setConfirmedAmount(amount)
                 setConfirmedMode(paymentMode)
+                setConfirmedTxnId(needsTransactionId ? transactionId.trim() : "")
                 setPaid(true)
                 onSave?.()
             } else {
@@ -163,7 +174,7 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-500">Transaction Id</span>
                                         <span className="text-sm font-semibold text-gray-800">
-                                            {appointment?.orderId || "—"}
+                                            {confirmedTxnId || appointment?.transaction_id || appointment?.orderId || "—"}
                                         </span>
                                     </div>
                                     <div className="flex justify-between items-center">
@@ -221,14 +232,14 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                     <Label className="text-[#4A4A4B] text-sm">
                                         Amount (₹) <span className="text-red-500">*</span>
                                     </Label>
-                                    <div className="relative">
+                                    <div className="relative cursor-not-allowed">
                                         <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                                         <Input
                                             type="number"
-                                            min={0}
                                             value={amount}
-                                            onChange={(e) => setAmount(e.target.value)}
-                                            className="pl-8 bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
+                                            disabled
+                                            readOnly
+                                            className="pl-8 bg-slate-100 border-[#DDDDDD] shadow-none text-slate-700 cursor-not-allowed"
                                             placeholder="0"
                                         />
                                     </div>
@@ -239,7 +250,13 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                     <Label className="text-[#4A4A4B] text-sm">
                                         Payment Mode <span className="text-red-500">*</span>
                                     </Label>
-                                    <Select value={paymentMode} onValueChange={setPaymentMode}>
+                                    <Select
+                                        value={paymentMode}
+                                        onValueChange={(v) => {
+                                            setPaymentMode(v)
+                                            if (v === "cash") setTransactionId("")
+                                        }}
+                                    >
                                         <SelectTrigger className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none">
                                             <SelectValue placeholder="Select mode" />
                                         </SelectTrigger>
@@ -253,6 +270,27 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                     </Select>
                                 </div>
                             </div>
+
+                            {/* Transaction reference — only for UPI / card (cash has none) */}
+                            {needsTransactionId && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[#4A4A4B] text-sm">
+                                        {MODE_LABEL[paymentMode]} Transaction ID{" "}
+                                        <span className="text-gray-400 font-normal">(optional)</span>
+                                    </Label>
+                                    <Input
+                                        type="text"
+                                        value={transactionId}
+                                        onChange={(e) => setTransactionId(e.target.value)}
+                                        className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
+                                        placeholder={
+                                            paymentMode === "upi"
+                                                ? "Enter UPI reference / UTR number"
+                                                : "Enter card transaction / approval code"
+                                        }
+                                    />
+                                </div>
+                            )}
 
                             <DialogFooter>
                                 <Button
