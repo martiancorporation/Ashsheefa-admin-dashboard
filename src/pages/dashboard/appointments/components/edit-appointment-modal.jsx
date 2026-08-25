@@ -362,7 +362,8 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
       medical_issue_details: form.medical_issue_details || undefined,
       speciality: form.speciality || undefined,
       refer_doctor: form.refer_doctor || undefined,
-      amount: Number(form.amount) || undefined,
+      // Always the doctor's standard fee — the field is read-only.
+      amount: Number(doctorData?.fees) || 0,
       status: form.status || undefined,
     };
 
@@ -638,16 +639,28 @@ export function EditAppointmentModal({ open, onOpenChange, appointment, onSave }
               </div>
             )}
 
-            {/* Consultation fee */}
-            <div>
-              <Label className="text-sm font-medium">Consultation Fee (₹)</Label>
-              <Input
-                className="mt-1 w-40"
-                type="number"
-                min={0}
-                value={form.amount}
-                onChange={(e) => setField("amount", e.target.value)}
-              />
+            {/* Consultation fee — read-only, taken from the doctor's profile */}
+            <div className="rounded-md border border-slate-200 p-3">
+              <div className="flex justify-between items-center gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Consultation Fee</Label>
+                  <p className="text-xs text-slate-500">
+                    Set from the doctor&apos;s profile — cannot be edited
+                  </p>
+                </div>
+                {/* cursor-not-allowed lives on the wrapper: the disabled Input
+                    has pointer-events-none, so it can't show a cursor. */}
+                <div className="flex items-center gap-1 cursor-not-allowed">
+                  <span className="text-sm text-gray-900">₹</span>
+                  <Input
+                    className="w-32 text-right bg-slate-100 text-slate-700 cursor-not-allowed"
+                    type="number"
+                    value={Number(doctorData?.fees) || 0}
+                    disabled
+                    readOnly
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Medical issue */}

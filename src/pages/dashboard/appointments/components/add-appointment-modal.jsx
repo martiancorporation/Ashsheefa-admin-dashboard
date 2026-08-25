@@ -394,7 +394,8 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
             slot_start_time: selectedSlot,
             slot_end_time: slotEnd,
             medical_issue_details: formData.medical_issue_details,
-            amount: Number(formData.amount) || 0,
+            // Always the doctor's standard fee — the field is read-only.
+            amount: Number(doctorData?.fees) || 0,
             speciality: doctorData?.specialization || doctorData?.speciality || "",
         };
 
@@ -810,29 +811,26 @@ export function AddAppointmentModal({ open, onOpenChange, onSave }) {
 
                     {/* Doctor Fee */}
                     {doctorData && (
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <p className="text-sm font-semibold">Consultation Fee</p>
-                                <p className="text-xs text-slate-500">
-                                    (Auto-filled from doctor profile)
-                                </p>
-                            </div>
-                            <div className="flex items-center">
-                                <span className="inline-flex items-center px-3 text-sm text-gray-900">
-                                    ₹
-                                </span>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={formData.amount ?? 0}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            amount: e.target.value,
-                                        }))
-                                    }
-                                    className="w-full rounded-md text-right"
-                                />
+                        <div className="rounded-md border border-slate-200 p-3">
+                            <div className="flex justify-between items-center gap-4">
+                                <div>
+                                    <p className="text-sm font-semibold">Consultation Fee</p>
+                                    <p className="text-xs text-slate-500">
+                                        Set from the doctor&apos;s profile — cannot be edited
+                                    </p>
+                                </div>
+                                {/* cursor-not-allowed lives on the wrapper: the disabled
+                                    Input has pointer-events-none, so it can't show a cursor. */}
+                                <div className="flex items-center gap-1 cursor-not-allowed">
+                                    <span className="text-sm text-gray-900">₹</span>
+                                    <Input
+                                        type="number"
+                                        value={Number(doctorData?.fees) || 0}
+                                        disabled
+                                        readOnly
+                                        className="w-32 rounded-md text-right bg-slate-100 text-slate-700 cursor-not-allowed"
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
