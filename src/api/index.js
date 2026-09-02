@@ -7,6 +7,7 @@ import patientsEnquiry from "./patients-enquiry";
 import department from "./department";
 import patient from "./patient";
 import appointments from "./appointments";
+import healthCheckupBookings from "./health-checkup-bookings";
 import emergencySos from "./emergency-sos";
 
 const API = {
@@ -19,6 +20,7 @@ const API = {
   department,
   patient,
   appointments,
+  healthCheckupBookings,
   emergencySos,
 };
 

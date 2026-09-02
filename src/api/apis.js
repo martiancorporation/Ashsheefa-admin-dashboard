@@ -133,6 +133,16 @@ export const APPOINTMENTS_API = {
   AVAILABLE_SLOTS_API: BASE_URL + "/v1/public/appointments/available-slots",
 };
 
+// Dashboard Health Checkup Booking APIs (Always Authenticated)
+// Package bookings are a separate resource from doctor appointments.
+export const HEALTH_CHECKUP_BOOKINGS_API = {
+  GET_ALL: BASE_URL + "/v1/dashboard/health-checkup-bookings",
+  GET_BY_ID: BASE_URL + "/v1/dashboard/health-checkup-bookings",
+  UPDATE: BASE_URL + "/v1/dashboard/health-checkup-bookings",
+  RESCHEDULE: BASE_URL + "/v1/dashboard/health-checkup-bookings",
+  DELETE: BASE_URL + "/v1/dashboard/health-checkup-bookings",
+};
+
 // Dashboard Patients APIs (Always Authenticated)
 export const PATIENTS_API = {
   GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients",
