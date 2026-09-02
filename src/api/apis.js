@@ -143,6 +143,14 @@ export const HEALTH_CHECKUP_BOOKINGS_API = {
   DELETE: BASE_URL + "/v1/dashboard/health-checkup-bookings",
 };
 
+export const TEST_BOOKINGS_API = {
+  GET_ALL: BASE_URL + "/v1/dashboard/test-bookings",
+  GET_BY_ID: BASE_URL + "/v1/dashboard/test-bookings",
+  UPDATE: BASE_URL + "/v1/dashboard/test-bookings",
+  RESCHEDULE: BASE_URL + "/v1/dashboard/test-bookings",
+  DELETE: BASE_URL + "/v1/dashboard/test-bookings",
+};
+
 // Dashboard Patients APIs (Always Authenticated)
 export const PATIENTS_API = {
   GET_ALL_PATIENTS: BASE_URL + "/v1/dashboard/get_all_patients",

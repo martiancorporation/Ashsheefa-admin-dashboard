@@ -13,6 +13,7 @@ import DoctorsPage from "@/pages/dashboard/doctors/page";
 import DoctorDetailsPage from "@/pages/dashboard/doctors/[id]/page";
 import HealthCheckupPage from "@/pages/dashboard/health-checkup/page";
 import CheckupBookingsPage from "@/pages/dashboard/checkup-bookings/page";
+import TestsBookingsPage from "@/pages/dashboard/tests-bookings/page";
 import HealthCheckupDetailsPage from "@/pages/dashboard/health-checkup/[id]/page";
 import DepartmentsPage from "@/pages/dashboard/departments/page";
 import DepartmentDetailsPage from "@/pages/dashboard/departments/[id]/page";
@@ -51,6 +52,7 @@ export default function AppRouter() {
         <Route path="doctors/:id" element={<DoctorDetailsPage />} />
 
         <Route path="checkup-bookings" element={<CheckupBookingsPage />} />
+        <Route path="tests-bookings" element={<TestsBookingsPage />} />
         <Route path="health-checkup" element={<HealthCheckupPage />} />
         <Route path="health-checkup/:id" element={<HealthCheckupDetailsPage />} />
 
