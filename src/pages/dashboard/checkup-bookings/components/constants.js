@@ -21,30 +21,6 @@ export const PAYMENT_STATUSES = [
   { value: "failed", label: "Failed" },
 ];
 
-// Collection slots the patient-facing site offers: every 30 minutes from 7:00,
-// last one at 10:00, which closes the 7:00 AM - 10:30 AM window it advertises.
-// The admin picker is limited to these so a booking can never be moved to a
-// time patients can't book themselves.
-export const COLLECTION_SLOTS = [
-  "07:00",
-  "07:30",
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-];
-
-// The site shows today plus the next six days, with today itself not bookable.
-export const COLLECTION_DAYS = 7;
-
-export const isOfferedSlot = (time) => COLLECTION_SLOTS.includes(time);
-
-export const COLLECTION_TYPES = [
-  { value: "hospital", label: "Hospital visit", disabled: false },
-  { value: "home", label: "Home collection", disabled: true },
-];
-
 export const modeHasReference = (mode) =>
   ["upi", "card", "icici"].includes(String(mode || "").toLowerCase());
 

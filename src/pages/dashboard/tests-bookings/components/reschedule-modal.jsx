@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { CalendarClock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -15,6 +14,10 @@ import {
 import { toast } from "sonner";
 import API from "@/api";
 import { formatDate, formatTime, toLocalDateStr } from "./constants";
+import {
+  CollectionPicker,
+  isOfferedSlot,
+} from "../../components/collection-picker";
 
 export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
   const [loading, setLoading] = useState(false);
@@ -24,8 +27,8 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
 
   useEffect(() => {
     if (open && booking) {
-      setDate("");
-      setStartTime(booking.slot_start_time || "");
+      setDate(booking.collection_date ? toLocalDateStr(booking.collection_date) : "");
+      setStartTime(isOfferedSlot(booking.slot_start_time) ? booking.slot_start_time : "");
       setReason("");
     }
   }, [open, booking]);
@@ -54,6 +57,13 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
     today.setHours(0, 0, 0, 0);
     if (picked < today) {
       toast.error("The new date cannot be in the past");
+      return;
+    }
+    const currentDate = booking?.collection_date
+      ? toLocalDateStr(booking.collection_date)
+      : "";
+    if (date === currentDate && startTime === (booking?.slot_start_time || "")) {
+      toast.error("Pick a different date or time to reschedule");
       return;
     }
 
@@ -86,7 +96,7 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !loading && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base text-[#4B4B4B]">
             <CalendarClock className="w-4 h-4 text-purple-600" />
@@ -121,29 +131,17 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
             )}
           </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1 space-y-1.5">
-              <Label className="text-[#4A4A4B] text-sm">
-                New Date <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="date"
-                value={date}
-                min={toLocalDateStr(new Date())}
-                onChange={(e) => setDate(e.target.value)}
-                className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
-              />
-            </div>
-            <div className="flex-1 space-y-1.5">
-              <Label className="text-[#4A4A4B] text-sm">New Time</Label>
-              <Input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none"
-              />
-            </div>
-          </div>
+          <CollectionPicker
+            date={date}
+            time={startTime}
+            onDateChange={setDate}
+            onTimeChange={setStartTime}
+            currentDate={booking?.collection_date}
+            currentTime={booking?.slot_start_time}
+            dateLabel="New Date"
+            timeLabel="New Time"
+            dateRequired
+          />
 
           <div className="space-y-1.5">
             <Label className="text-[#4A4A4B] text-sm">

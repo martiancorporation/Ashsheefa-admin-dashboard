@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarClock,
-  CreditCard,
+  CheckCircle,
   Ellipsis,
   Eye,
   FlaskConical,
   Loader2,
   Pencil,
+  Receipt,
   Trash2,
 } from "lucide-react";
 import {
@@ -41,6 +42,7 @@ import { RescheduleModal } from "./reschedule-modal";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
 import {
   INLINE_STATUSES,
+  PAYMENT_STATUSES,
   formatDate,
   formatTime,
   getPaymentBadgeColor,
@@ -91,8 +93,6 @@ export default function AllTestsBookings({
 
       const res = await API.testBookings.getAllBookings(params);
 
-      // handleResponse returns false on transport errors, and the backend
-      // reports its own errors as { error } — neither carries a booking list.
       if (!res || res.error) {
         setError(res?.error || "Failed to load test bookings.");
         setBookings([]);
@@ -126,8 +126,6 @@ export default function AllTestsBookings({
     fetchBookings();
   }, [fetchBookings]);
 
-  // Any filter change starts the list over at page 1. Guarded so it doesn't
-  // fire a second identical fetch when we're already on page 1.
   useEffect(() => {
     setPage((p) => (p === 1 ? p : 1));
   }, [searchQuery, selectedStatus, selectedPaymentStatus, dateRange]);
@@ -158,6 +156,28 @@ export default function AllTestsBookings({
     setActiveBooking(booking);
     setOpenDropdownId(null);
     setter(true);
+  };
+
+  const handlePaymentStatusChange = async (booking, value) => {
+    if (value === "paid") {
+      openWith(booking, setPaidOpen);
+      return;
+    }
+
+    try {
+      const res = await API.testBookings.updateBooking(booking._id, {
+        paymentStatus: value,
+      });
+      if (res?.success || res?.data) {
+        toast.success("Payment status updated");
+        refresh();
+      } else {
+        toast.error(res?.error || res?.message || "Failed to update payment status");
+      }
+    } catch (err) {
+      console.error("Error updating payment status:", err);
+      toast.error("An error occurred while updating payment status");
+    }
   };
 
   if (loading) {
@@ -304,7 +324,7 @@ export default function AllTestsBookings({
                     <SelectTrigger
                       className={`text-xs !px-2 !py-1 !h-auto rounded-full border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&_svg]:hidden ${getStatusBadgeColor(
                         booking.test_status
-                      )} cursor-pointer font-medium justify-center hover:brightness-95 transition-all`}
+                      )} mx-auto cursor-pointer font-medium justify-center hover:brightness-95 transition-all`}
                     >
                       <SelectValue />
                     </SelectTrigger>
@@ -324,13 +344,25 @@ export default function AllTestsBookings({
                   </Select>
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 text-center">
-                  <span
-                    className={`inline-block text-xs px-2.5 py-1 rounded-full font-medium capitalize ${getPaymentBadgeColor(
-                      booking.paymentStatus
-                    )}`}
+                  <Select
+                    value={booking.paymentStatus || "pending"}
+                    onValueChange={(val) => handlePaymentStatusChange(booking, val)}
                   >
-                    {booking.paymentStatus || "pending"}
-                  </span>
+                    <SelectTrigger
+                      className={`text-xs !px-2 !py-1 !h-auto rounded-full border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&_svg]:hidden ${getPaymentBadgeColor(
+                        booking.paymentStatus
+                      )} mx-auto cursor-pointer font-medium capitalize justify-center hover:brightness-95 transition-all`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_STATUSES.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="py-3">
                   <div className="flex justify-center gap-2">
@@ -372,13 +404,23 @@ export default function AllTestsBookings({
                           <CalendarClock className="h-4 w-4 mr-2 text-purple-600" />
                           Reschedule
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                          onClick={() => openWith(booking, setPaidOpen)}
-                        >
-                          <CreditCard className="h-4 w-4 mr-2 text-green-600" />
-                          {isPaid ? "Payment Details" : "Mark as Paid"}
-                        </DropdownMenuItem>
+                        {isPaid ? (
+                          <DropdownMenuItem
+                            className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
+                            onClick={() => openWith(booking, setPaidOpen)}
+                          >
+                            <Receipt className="h-4 w-4 mr-2 text-green-600" />
+                            Payment Details
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            className="flex items-center px-2 py-2 text-sm text-green-600 hover:bg-green-50 cursor-pointer transition-colors"
+                            onClick={() => openWith(booking, setPaidOpen)}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                            Mark as Paid
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           className="flex items-center px-2 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
                           onClick={() => openWith(booking, setDeleteOpen)}

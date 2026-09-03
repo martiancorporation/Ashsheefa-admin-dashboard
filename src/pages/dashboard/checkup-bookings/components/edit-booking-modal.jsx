@@ -23,13 +23,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 import API from "@/api";
 import healthCheckup from "@/api/healthCheckup";
+import { INLINE_STATUSES, toLocalDateStr } from "./constants";
 import {
   COLLECTION_TYPES,
-  INLINE_STATUSES,
+  CollectionPicker,
   isOfferedSlot,
-  toLocalDateStr,
-} from "./constants";
-import { CollectionPicker } from "./collection-picker";
+} from "../../components/collection-picker";
 
 // Same shape as the appointment edit modal's validation.
 const patientSchema = z.object({

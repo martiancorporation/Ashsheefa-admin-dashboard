@@ -1,12 +1,45 @@
 import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
-import {
-  COLLECTION_DAYS,
-  COLLECTION_SLOTS,
-  formatTime,
-  isOfferedSlot,
-  toLocalDateStr,
-} from "./constants";
+
+export const COLLECTION_SLOTS = [
+  "07:00",
+  "07:30",
+  "08:00",
+  "08:30",
+  "09:00",
+  "09:30",
+  "10:00",
+];
+
+// The site shows today plus the next six days, with today itself not bookable.
+export const COLLECTION_DAYS = 7;
+
+export const isOfferedSlot = (time) => COLLECTION_SLOTS.includes(time);
+
+// Home collection isn't offered yet — kept in the model so bookings that
+// already carry it still read correctly, but not selectable.
+export const COLLECTION_TYPES = [
+  { value: "hospital", label: "Hospital visit", disabled: false },
+  { value: "home", label: "Home collection", disabled: true },
+];
+
+// Local YYYY-MM-DD — toISOString() would shift the date backwards in IST.
+const toLocalDateStr = (date) => {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")}`;
+};
+
+// Slots are stored 24h ("08:30") — show them the way reception reads them.
+const formatSlot = (time) => {
+  if (!time) return "";
+  const [h, m] = String(time).split(":").map(Number);
+  if (isNaN(h)) return time;
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hr = h % 12 || 12;
+  return `${hr}:${String(m || 0).padStart(2, "0")} ${suffix}`;
+};
 
 export function CollectionPicker({
   date,
@@ -36,16 +69,17 @@ export function CollectionPicker({
       if (current < today) days.unshift(current);
     }
 
-    const currentStr = current && !isNaN(current.getTime()) ? toLocalDateStr(current) : "";
+    const currentStr =
+      current && !isNaN(current.getTime()) ? toLocalDateStr(current) : "";
 
     return days.map((d) => {
       const value = toLocalDateStr(d);
       return {
         value,
-        // The site labels the first cell "Today" and greys it out — same-day
-        // collection isn't bookable. A booking already on today stays
-        // selectable so editing it can't move the patient off their own slot.
-        label: value === todayStr ? "Today" : d.toLocaleString("default", { weekday: "short" }),
+        label:
+          value === todayStr
+            ? "Today"
+            : d.toLocaleString("default", { weekday: "short" }),
         day: d.getDate(),
         month: d.toLocaleString("default", { month: "short" }),
         isPast: d < today,
@@ -54,8 +88,6 @@ export function CollectionPicker({
     });
   }, [currentDate]);
 
-  // A time outside the offered window was never bookable, so it isn't offered
-  // back — the admin has to move the booking onto a real slot.
   const staleTime = currentTime && !isOfferedSlot(currentTime) ? currentTime : "";
 
   return (
@@ -93,7 +125,7 @@ export function CollectionPicker({
         <Label className="text-sm font-medium">{timeLabel}</Label>
         {staleTime && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-2">
-            This booking is stored at {formatTime(staleTime)}, outside the
+            This booking is stored at {formatSlot(staleTime)}, outside the
             collection window — pick a slot below to correct it.
           </p>
         )}
@@ -110,7 +142,7 @@ export function CollectionPicker({
                     : "bg-white border-slate-200 hover:border-blue-400"
                 }`}
             >
-              {formatTime(slot)}
+              {formatSlot(slot)}
             </button>
           ))}
         </div>

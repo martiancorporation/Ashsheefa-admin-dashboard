@@ -13,8 +13,11 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import API from "@/api";
-import { formatDate, formatTime, isOfferedSlot, toLocalDateStr } from "./constants";
-import { CollectionPicker } from "./collection-picker";
+import { formatDate, formatTime, toLocalDateStr } from "./constants";
+import {
+  CollectionPicker,
+  isOfferedSlot,
+} from "../../components/collection-picker";
 
 export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
   const [loading, setLoading] = useState(false);
