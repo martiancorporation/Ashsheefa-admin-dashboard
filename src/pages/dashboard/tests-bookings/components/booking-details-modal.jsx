@@ -89,8 +89,17 @@ export function BookingDetailsModal({ open, onOpenChange, booking }) {
                 {booking.test_status || "Not set"}
               </Badge>
             </div>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            {/* Three columns here, unlike the sections below: the five patient
+                fields split as identity (name, DOB, gender) then contact
+                (number, address), with no dead space after the name. */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
               <InfoRow label="Full Name" value={patient?.patient_full_name} />
+              <InfoRow
+                label="Date of Birth"
+                value={
+                  patient?.date_of_birth ? longDate(patient.date_of_birth) : undefined
+                }
+              />
               <InfoRow label="Gender" value={patient?.gender} />
               <InfoRow
                 label="Contact Number"

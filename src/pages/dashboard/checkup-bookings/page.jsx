@@ -3,6 +3,10 @@ import { useState } from "react";
 import {
   ArrowLeft,
   Calendar as CalendarIcon,
+  FileSpreadsheet,
+  Loader2,
+  MoreVertical,
+  Plus,
   RefreshCw,
   Search,
   X,
@@ -22,8 +26,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import AllCheckupBookings from "./components/all-checkup-bookings";
+import { AddBookingModal } from "./components/add-booking-modal";
+import { exportCheckupBookingsToExcel } from "./components/export-checkup-bookings";
 import { CHECKUP_STATUSES } from "./components/constants";
 
 export default function CheckupBookingsPage() {
@@ -34,7 +47,35 @@ export default function CheckupBookingsPage() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const [addModalOpen, setAddModalOpen] = useState(false);
+
+  // Rows currently visible in the table (filters applied) — published by the
+  // table so the export matches exactly what is on screen.
+  const [visibleBookings, setVisibleBookings] = useState([]);
+  const [exporting, setExporting] = useState(false);
+
   const handleRefresh = () => setRefreshKey((k) => k + 1);
+
+  const handleExportToExcel = async () => {
+    if (!visibleBookings.length) {
+      toast.error("No bookings to export");
+      return;
+    }
+    try {
+      setExporting(true);
+      await exportCheckupBookingsToExcel(visibleBookings);
+      toast.success(
+        `Exported ${visibleBookings.length} checkup booking${
+          visibleBookings.length === 1 ? "" : "s"
+        } to Excel`
+      );
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("Failed to export bookings");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const getDateRangeLabel = () => {
     if (!dateRange?.from) return "Select Date";
@@ -159,6 +200,45 @@ export default function CheckupBookingsPage() {
             <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
+
+          <Button
+            onClick={() => setAddModalOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 whitespace-nowrap"
+          >
+            <Plus className="h-4 w-4" />
+            Add Checkup Booking
+          </Button>
+
+          {/* Overflow actions — keeps the header from getting any wider */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 cursor-pointer"
+                aria-label="More actions"
+              >
+                <MoreVertical className="h-4 w-4 text-gray-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 bg-white border border-gray-200 rounded-lg shadow-lg"
+            >
+              <DropdownMenuItem
+                onClick={handleExportToExcel}
+                disabled={exporting || visibleBookings.length === 0}
+                className="flex items-center px-2 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                {exporting ? (
+                  <Loader2 className="h-4 w-4 mr-2 text-gray-500 animate-spin" />
+                ) : (
+                  <FileSpreadsheet className="h-4 w-4 mr-2 text-green-600" />
+                )}
+                {exporting ? "Exporting..." : "Export to Excel"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -169,8 +249,15 @@ export default function CheckupBookingsPage() {
           selectedStatus={selectedStatus}
           selectedPaymentStatus={selectedPaymentStatus}
           dateRange={dateRange}
+          onVisibleBookingsChange={setVisibleBookings}
         />
       </div>
+
+      <AddBookingModal
+        open={addModalOpen}
+        onOpenChange={setAddModalOpen}
+        onSave={handleRefresh}
+      />
     </>
   );
 }

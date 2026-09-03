@@ -68,6 +68,9 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
     try {
       const res = await API.testBookings.updateBooking(booking._id, {
         paymentStatus: "paid",
+        // Sent together, the way appointments do it: either half of this pair
+        // makes the backend clear is_new_patient on the linked patient.
+        test_status: "Confirmed",
         paymentMode,
         amount: Number(amount),
         transaction_id: needsTransactionId ? transactionId.trim() : "",

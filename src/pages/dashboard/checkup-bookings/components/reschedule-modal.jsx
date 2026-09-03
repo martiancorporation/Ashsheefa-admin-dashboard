@@ -52,6 +52,10 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
       toast.error("Please pick the new collection date");
       return;
     }
+    if (!startTime) {
+      toast.error("Please pick the new collection time");
+      return;
+    }
     const picked = new Date(date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -142,6 +146,7 @@ export function RescheduleModal({ open, onOpenChange, booking, onSave }) {
             dateLabel="New Date"
             timeLabel="New Time"
             dateRequired
+            timeRequired
           />
 
           <div className="space-y-1.5">

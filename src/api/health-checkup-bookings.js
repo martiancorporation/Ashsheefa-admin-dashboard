@@ -16,6 +16,17 @@ const getAllBookings = async (params) => {
   return handleResponse(response);
 };
 
+// Counter booking — no payment gateway; it lands unpaid for Mark as Paid.
+const addBookingByAdmin = async (data) => {
+  let response = null;
+  try {
+    response = await apiConnector("POST", GET_ALL, data);
+  } catch (error) {
+    response = error;
+  }
+  return handleResponse(response);
+};
+
 const getBookingById = async (id) => {
   let response = null;
   try {
@@ -61,6 +72,7 @@ const deleteBooking = async (id) => {
 
 export default {
   getAllBookings,
+  addBookingByAdmin,
   getBookingById,
   updateBooking,
   rescheduleBooking,

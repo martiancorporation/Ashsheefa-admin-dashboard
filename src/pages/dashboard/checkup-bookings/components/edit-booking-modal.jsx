@@ -200,6 +200,16 @@ export function EditBookingModal({ open, onOpenChange, booking, onSave }) {
     }
     setErrors({});
 
+    // A booking with no collection slot leaves the lab nothing to work to.
+    if (!form.collection_date) {
+      toast.error("Please pick the collection date");
+      return;
+    }
+    if (!form.slot_start_time) {
+      toast.error("Please pick the collection time");
+      return;
+    }
+
     const payload = {
       // Patient
       patient_full_name: parsed.data.patient_full_name,
@@ -417,6 +427,8 @@ export function EditBookingModal({ open, onOpenChange, booking, onSave }) {
               onTimeChange={(v) => setField("slot_start_time", v)}
               currentDate={booking?.collection_date}
               currentTime={booking?.slot_start_time}
+              dateRequired
+              timeRequired
             />
 
             <div className="grid grid-cols-2 gap-4">

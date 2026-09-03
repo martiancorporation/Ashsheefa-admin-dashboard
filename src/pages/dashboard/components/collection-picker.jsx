@@ -51,6 +51,7 @@ export function CollectionPicker({
   dateLabel = "Collection Date",
   timeLabel = "Collection Time",
   dateRequired = false,
+  timeRequired = false,
 }) {
   const dateStrip = useMemo(() => {
     const today = new Date();
@@ -122,7 +123,10 @@ export function CollectionPicker({
       </div>
 
       <div>
-        <Label className="text-sm font-medium">{timeLabel}</Label>
+        <Label className="text-sm font-medium">
+          {timeLabel}
+          {timeRequired && <span className="text-red-500"> *</span>}
+        </Label>
         {staleTime && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-2">
             This booking is stored at {formatSlot(staleTime)}, outside the

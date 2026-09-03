@@ -15,6 +15,29 @@ const getAllBookings = async (params) => {
   return handleResponse(response);
 };
 
+// Counter booking — no payment gateway; it lands unpaid for Mark as Paid.
+const addBookingByAdmin = async (data) => {
+  let response = null;
+  try {
+    response = await apiConnector("POST", GET_ALL, data);
+  } catch (error) {
+    response = error;
+  }
+  return handleResponse(response);
+};
+
+// Bookable tests and their prices. The server prices bookings from this same
+// list and refuses a name that isn't in it, so the picker has to come from here.
+const getTestRates = async () => {
+  let response = null;
+  try {
+    response = await apiConnector("GET", `${GET_ALL}/test-rates`);
+  } catch (error) {
+    response = error;
+  }
+  return handleResponse(response);
+};
+
 const getBookingById = async (id) => {
   let response = null;
   try {
@@ -60,6 +83,8 @@ const deleteBooking = async (id) => {
 
 export default {
   getAllBookings,
+  addBookingByAdmin,
+  getTestRates,
   getBookingById,
   updateBooking,
   rescheduleBooking,

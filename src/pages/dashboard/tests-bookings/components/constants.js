@@ -1,5 +1,6 @@
 export const TEST_STATUSES = [
   "Booked",
+  "Confirmed",
   "Sample Collected",
   "Report Ready",
   "Postponed",
@@ -38,6 +39,8 @@ export const getStatusBadgeColor = (status) => {
     case "Report Ready":
       return "bg-green-100 text-green-700 border-green-200";
     case "Sample Collected":
+      return "bg-indigo-100 text-indigo-700 border-indigo-200";
+    case "Confirmed":
       return "bg-blue-100 text-blue-700 border-blue-200";
     case "Booked":
       return "bg-amber-100 text-amber-700 border-amber-200";
