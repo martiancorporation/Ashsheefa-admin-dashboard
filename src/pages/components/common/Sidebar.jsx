@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck, Siren } from 'lucide-react'
+import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck, Siren, FlaskConical, TestTubeDiagonal } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -34,6 +34,18 @@ const menuItems = [
     label: 'Appointments',
     href: '/dashboard/appointments',
     matchPaths: ['/dashboard/appointments']
+  },
+  {
+    icon: FlaskConical,
+    label: 'Checkup Bookings',
+    href: '/dashboard/checkup-bookings',
+    matchPaths: ['/dashboard/checkup-bookings']
+  },
+  {
+    icon: TestTubeDiagonal,
+    label: 'Tests Bookings',
+    href: '/dashboard/tests-bookings',
+    matchPaths: ['/dashboard/tests-bookings']
   },
   {
     icon: Siren,
