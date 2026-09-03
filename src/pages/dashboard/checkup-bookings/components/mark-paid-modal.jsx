@@ -20,13 +20,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import API from "@/api";
-import { MODE_LABEL, PAYMENT_MODES } from "./constants";
+import { MODE_LABEL, PAYMENT_MODES, modeHasReference } from "./constants";
 
-/**
- * Counter payment for a package booking. Mirrors the appointment flow: amount
- * is fixed, mode is required, and UPI/card carry a reference while cash doesn't.
- * Once paid the modal locks into a receipt view.
- */
 export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
   const [loading, setLoading] = useState(false);
   const [amount, setAmount] = useState("");
@@ -36,6 +31,9 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
   const [confirmed, setConfirmed] = useState({ amount: "", mode: "", txnId: "" });
 
   const needsTransactionId = paymentMode === "upi" || paymentMode === "card";
+
+  const receiptMode = confirmed.mode || booking?.paymentMode;
+  const receiptNeedsTxnId = modeHasReference(receiptMode);
 
   useEffect(() => {
     if (!open || !booking) return;
@@ -77,13 +75,8 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
 
       if (res?.success || res?.data) {
         toast.success("Booking marked as paid");
-        setConfirmed({
-          amount,
-          mode: paymentMode,
-          txnId: needsTransactionId ? transactionId.trim() : "",
-        });
-        setPaid(true);
         onSave?.();
+        onOpenChange(false);
       } else {
         toast.error(res?.error || res?.message || "Failed to update payment status");
       }
@@ -159,12 +152,14 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
                     ₹{Number(confirmed.amount).toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">Transaction Id</span>
-                  <span className="text-sm font-semibold text-gray-800">
-                    {confirmed.txnId || booking?.transaction_id || booking?.orderId || "—"}
-                  </span>
-                </div>
+                {receiptNeedsTxnId && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Transaction Id</span>
+                    <span className="text-sm font-semibold text-gray-800">
+                      {confirmed.txnId || booking?.transaction_id || booking?.orderId || "—"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">Payment Mode</span>
                   <span className="text-sm font-semibold text-gray-800">
