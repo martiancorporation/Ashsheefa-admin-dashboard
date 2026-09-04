@@ -5,14 +5,6 @@ import {
 } from "@/lib/exportToExcel";
 import { MODE_LABEL, formatTime } from "./constants";
 
-// Every field the admin can see for a test booking — the union of the table
-// columns and the "View Details" modal. Where both show the same thing it
-// appears once.
-//
-// Table only : No.
-// Modal only : Date of Birth, Address, Payment Mode, Reference, Notes,
-//              Reschedule count, Created At, Last Updated
-// Both       : the rest
 const DATE_FMT = "dd-mmm-yyyy";
 const DATETIME_FMT = "dd-mmm-yyyy hh:mm AM/PM";
 
@@ -112,11 +104,6 @@ const TEST_BOOKING_COLUMNS = [
     header: "Payment Mode",
     width: 16,
     value: (b) => MODE_LABEL[b.paymentMode] || b.paymentMode || "",
-  },
-  {
-    header: "Reference",
-    width: 24,
-    value: (b) => b.transaction_id || b.orderId || "",
   },
 
   // ── Additional ──
