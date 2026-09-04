@@ -47,6 +47,13 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
     // Cash has no reference number; UPI/card do.
     const needsTransactionId = paymentMode === "upi" || paymentMode === "card"
 
+    // An online-paid booking keeps its old order id after it is re-marked as
+    // cash, so the receipt goes by the mode, not by the id being there.
+    const receiptMode = confirmedMode || appointment?.paymentMode
+    const receiptNeedsTxnId = ["upi", "card", "icici"].includes(
+        String(receiptMode || "").toLowerCase()
+    )
+
     // Reset state whenever modal opens fresh
     useEffect(() => {
         if (open && appointment) {
@@ -171,12 +178,14 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                             ₹{Number(confirmedAmount).toLocaleString("en-IN")}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm text-gray-500">Transaction Id</span>
-                                        <span className="text-sm font-semibold text-gray-800">
-                                            {confirmedTxnId || appointment?.transaction_id || appointment?.orderId || "—"}
-                                        </span>
-                                    </div>
+                                    {receiptNeedsTxnId && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-500">Transaction Id</span>
+                                            <span className="text-sm font-semibold text-gray-800">
+                                                {confirmedTxnId || appointment?.transaction_id || appointment?.orderId || "—"}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm text-gray-500">Payment Mode</span>
                                         <span className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
