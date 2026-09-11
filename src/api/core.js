@@ -71,11 +71,12 @@ export const handleResponse = (response) => {
         description: response.data?.error || "Request accepted but processing",
       });
     } else if (response?.status === 401) {
-      toast.error("Session expired", {
-        description: "Redirecting to login...",
+      toast.error("Signed out", {
+        description:
+          response?.data?.error || "Session expired. Redirecting to login...",
       });
       localStorage.removeItem("authentications");
-      setTimeout(() => { window.location.href = "/"; }, 1500);
+      setTimeout(() => { window.location.href = "/"; }, 2000);
     } else if (response?.status === 500) {
       toast.error("Server error", {
         description: response?.data?.message || "Internal server error",
@@ -101,14 +102,24 @@ export const handleResponse = (response) => {
     const data = response.response.data;
 
     if (status === 401) {
-      toast.error("Session expired", {
-        description: "Redirecting to login...",
+      // The backend says why the session ended — e.g. a superadmin changed this
+      // admin's email/password, or deactivated the account.
+      toast.error("Signed out", {
+        description: data?.error || "Session expired. Redirecting to login...",
       });
       localStorage.removeItem("authentications");
-      setTimeout(() => { window.location.href = "/"; }, 1500);
+      setTimeout(() => { window.location.href = "/"; }, 2000);
     } else if (status === 400) {
       toast.error("Bad request", {
         description: data?.message || "Invalid request data",
+      });
+    } else if (status === 403) {
+      // RBAC: this drawer/action is not granted to this admin. The sidebar and
+      // route guard normally prevent reaching here, so this mostly fires when
+      // access was revoked mid-session.
+      toast.error("Access denied", {
+        description:
+          data?.error || "You do not have permission to perform this action",
       });
     } else if (status === 404) {
       toast.error("Not found", {

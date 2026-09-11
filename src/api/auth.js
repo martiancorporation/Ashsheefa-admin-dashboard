@@ -13,12 +13,28 @@ const {
   UPDATE_ADMIN_DETAILS_API,
   CHANGE_EMAIL_INITIATE,
   VERIFY_EMAIL,
+  ME_API,
 } = authEndpoints;
 const auth = {
   Login: async (data) => {
     let response = null;
     try {
       response = await apiConnector("POST", LOGIN_API, data);
+    } catch (error) {
+      response = error;
+    }
+    return handleResponse(response);
+  },
+
+  /**
+   * Fetch the logged-in admin plus their freshly resolved RBAC access
+   * (roles / permissions / is_superadmin). Used by the route guard to pick up
+   * a grant or revoke without forcing a re-login.
+   */
+  Me: async () => {
+    let response = null;
+    try {
+      response = await apiConnector("GET", ME_API);
     } catch (error) {
       response = error;
     }

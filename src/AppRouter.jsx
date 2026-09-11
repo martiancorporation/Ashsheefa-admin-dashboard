@@ -28,6 +28,10 @@ import AllNews from "@/pages/dashboard/news/all-news/page";
 import CreateNews from "@/pages/dashboard/news/create-news/page";
 import EditNews from "@/pages/dashboard/news/edit/[id]/page";
 import SettingsPage from "@/pages/dashboard/settings/page";
+import RoleManagementPage from "@/pages/dashboard/role-management/page";
+import UserManagementPage from "@/pages/dashboard/user-management/page";
+import PermissionRequestsPage from "@/pages/dashboard/permission-requests/page";
+import RequestAccessPage from "@/pages/dashboard/request-access/page";
 
 export default function AppRouter() {
   return (
@@ -74,6 +78,15 @@ export default function AppRouter() {
         </Route>
 
         <Route path="settings" element={<SettingsPage />} />
+
+        <Route path="role-management" element={<RoleManagementPage />} />
+        <Route path="user-management" element={<UserManagementPage />} />
+
+        <Route
+          path="permission-requests"
+          element={<PermissionRequestsPage />}
+        />
+        <Route path="request-access" element={<RequestAccessPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

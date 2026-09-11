@@ -10,6 +10,9 @@ import appointments from "./appointments";
 import healthCheckupBookings from "./health-checkup-bookings";
 import testBookings from "./test-bookings";
 import emergencySos from "./emergency-sos";
+import roles from "./roles";
+import permissions from "./permissions";
+import adminUsers from "./admin-users";
 
 const API = {
   auth,
@@ -24,6 +27,9 @@ const API = {
   healthCheckupBookings,
   testBookings,
   emergencySos,
+  roles,
+  permissions,
+  adminUsers,
 };
 
 export default API;
