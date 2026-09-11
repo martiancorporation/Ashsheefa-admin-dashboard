@@ -11,6 +11,34 @@ export const authEndpoints = {
   UPDATE_ADMIN_DETAILS_API: BASE_URL + "/v1/auth/update-admin-details",
   CHANGE_EMAIL_INITIATE: BASE_URL + "/v1/auth/change-email-initiate",
   VERIFY_EMAIL: BASE_URL + "/v1/auth/verify-email",
+  ME_API: BASE_URL + "/v1/auth/me",
+};
+
+//**************** * RBAC ENDPOINTS ***************
+
+// Role management (superadmin only)
+export const rolesEndpoints = {
+  ROLES_API: BASE_URL + "/v1/roles",
+  ROLE_HISTORY_API: BASE_URL + "/v1/roles/history",
+};
+
+// Admin user management (superadmin only)
+export const adminUsersEndpoints = {
+  USERS_API: BASE_URL + "/v1/admin/users",
+  USER_HISTORY_API: BASE_URL + "/v1/admin/users/history",
+  DELETED_USERS_API: BASE_URL + "/v1/admin/users/deleted",
+};
+
+// Drawer permissions: self-service requests + superadmin grant/revoke
+export const permissionsEndpoints = {
+  CATALOG_API: BASE_URL + "/v1/permissions/catalog",
+  REQUESTS_API: BASE_URL + "/v1/permissions/requests",
+  MY_REQUESTS_API: BASE_URL + "/v1/permissions/requests/me",
+  MY_HISTORY_API: BASE_URL + "/v1/permissions/history/me",
+  ADMIN_REQUESTS_API: BASE_URL + "/v1/permissions/admin/requests",
+  ADMIN_USERS_API: BASE_URL + "/v1/permissions/admin/users",
+  GRANT_ACCESS_API: BASE_URL + "/v1/permissions/admin/grant",
+  REVOKE_ACCESS_API: BASE_URL + "/v1/permissions/admin/revoke",
 };
 
 //**************** * ENQUIRY ENDPOINTS ***************

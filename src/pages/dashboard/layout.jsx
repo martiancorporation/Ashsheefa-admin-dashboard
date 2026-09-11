@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "../components/common/Sidebar";
 import EmergencySosAlert from "../components/common/EmergencySosAlert";
+import RouteGuard from "../components/common/RouteGuard";
 
 export default function DashboardLayout() {
   return (
@@ -11,7 +12,9 @@ export default function DashboardLayout() {
       <Sidebar />
       <main className="flex-1 min-w-0 h-screen flex flex-col bg-[#F7F7F7] py-3 pr-3">
         <div className="w-full h-full flex bg-[#FFFFFF] border border-[#DCDCDC] rounded-[10px] flex-col gap-y-3 py-4 px-4 sm:px-5 min-w-0">
-          <Outlet />
+          <RouteGuard>
+            <Outlet />
+          </RouteGuard>
         </div>
       </main>
     </div>

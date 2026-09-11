@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, User, FileText, LogOut, Settings, House, Plane, BriefcaseMedical, Stethoscope, Syringe, UserSearch, Mic, ClipboardCheck, Siren, FlaskConical, TestTubeDiagonal } from 'lucide-react'
+import { LogOut, House, UserSearch, ClipboardCheck, FlaskConical, TestTubeDiagonal, Siren, Plane, User, Stethoscope, Syringe, BriefcaseMedical, FileText, Mic, Settings, KeyRound, ShieldCheck, UserCog, Users } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -13,96 +13,154 @@ import useAuthDataStore from '@/store/authStore'
 import useSosStore, { SOS_POLL_INTERVAL_MS } from '@/store/sosStore'
 import { initEmergencyAudioUnlock } from '@/lib/emergencyAlertSound'
 import API from '@/api'
+import { canSeeMenuItem, hasDrawerAccess } from '@/lib/rbac'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 
-const menuItems = [
+/**
+ * Feature flag: show/hide the superadmin "Permissions" drawer.
+ * `true` shows the Permissions (permission-requests) drawer, `false` hides it.
+ * The same flag hides "Request Access" for other roles — there is no point
+ * requesting access if the superadmin has no drawer to approve it in.
+ */
+export const SHOW_PERMISSIONS_DRAWER = false
+
+export const menuItems = [
   {
     icon: House,
     label: 'Dashboard',
     href: '/dashboard',
-    matchPaths: ['/dashboard']
+    matchPaths: ['/dashboard'],
+    requiredPermission: null
   },
   {
     icon: UserSearch,
     label: 'Patients Enquiry',
     href: '/dashboard/patients-enquiries',
-    matchPaths: ['/dashboard/patients-enquiries']
+    matchPaths: ['/dashboard/patients-enquiries'],
+    requiredPermission: 'patients-enquiry'
   },
   {
     icon: ClipboardCheck,
     label: 'Appointments',
     href: '/dashboard/appointments',
-    matchPaths: ['/dashboard/appointments']
+    matchPaths: ['/dashboard/appointments'],
+    requiredPermission: 'appointments'
   },
   {
     icon: FlaskConical,
     label: 'Checkup Bookings',
     href: '/dashboard/checkup-bookings',
-    matchPaths: ['/dashboard/checkup-bookings']
+    matchPaths: ['/dashboard/checkup-bookings'],
+    requiredPermission: 'checkup-bookings'
   },
   {
     icon: TestTubeDiagonal,
     label: 'Tests Bookings',
     href: '/dashboard/tests-bookings',
-    matchPaths: ['/dashboard/tests-bookings']
+    matchPaths: ['/dashboard/tests-bookings'],
+    requiredPermission: 'tests-bookings'
   },
   {
     icon: Siren,
     label: 'Emergency SOS',
     href: '/dashboard/emergency-sos',
-    matchPaths: ['/dashboard/emergency-sos', '/dashboard/emergency-sos/[id]']
+    matchPaths: ['/dashboard/emergency-sos', '/dashboard/emergency-sos/[id]'],
+    requiredPermission: 'emergency-sos'
   },
-
   {
     icon: Plane,
     label: 'International Patient',
     href: '/dashboard/international-patients',
-    matchPaths: ['/dashboard/international-patients', '/dashboard/international-patients/[id]']
+    matchPaths: ['/dashboard/international-patients', '/dashboard/international-patients/[id]'],
+    requiredPermission: 'international-patients'
   },
   {
     icon: User,
     label: 'Patients',
     href: '/dashboard/patient',
-    matchPaths: ['/dashboard/patient', '/dashboard/patient/[id]']
+    matchPaths: ['/dashboard/patient', '/dashboard/patient/[id]'],
+    requiredPermission: 'patients'
   },
   {
     icon: Stethoscope,
     label: 'Doctors',
     href: '/dashboard/doctors',
-    matchPaths: ['/dashboard/doctors', '/dashboard/doctors/[id]']
+    matchPaths: ['/dashboard/doctors', '/dashboard/doctors/[id]'],
+    requiredPermission: 'doctors'
   },
   {
     icon: Syringe,
     label: 'Health checkup',
     href: '/dashboard/health-checkup',
-    matchPaths: ['/dashboard/health-checkup', '/dashboard/health-checkup/[id]']
+    matchPaths: ['/dashboard/health-checkup', '/dashboard/health-checkup/[id]'],
+    requiredPermission: 'health-checkup'
   },
   {
     icon: BriefcaseMedical,
     label: 'Departments',
     href: '/dashboard/departments',
-    matchPaths: ['/dashboard/departments', '/dashboard/departments/[id]']
+    matchPaths: ['/dashboard/departments', '/dashboard/departments/[id]'],
+    requiredPermission: 'departments'
   },
   {
     icon: FileText,
     label: 'Blog',
     href: '/dashboard/blogs',
-    matchPaths: ['/dashboard/blogs', '/dashboard/blogs/all-blogs', '/dashboard/blogs/create-blog', '/dashboard/blogs/edit']
+    matchPaths: ['/dashboard/blogs', '/dashboard/blogs/all-blogs', '/dashboard/blogs/create-blog', '/dashboard/blogs/edit'],
+    requiredPermission: 'blogs'
   },
   {
     icon: Mic,
     label: 'News',
     href: '/dashboard/news',
-    matchPaths: ['/dashboard/news', '/dashboard/news/all-news', '/dashboard/news/create-news', '/dashboard/news/edit']
+    matchPaths: ['/dashboard/news', '/dashboard/news/all-news', '/dashboard/news/create-news', '/dashboard/news/edit'],
+    requiredPermission: 'news'
   },
   {
     icon: Settings,
     label: 'Settings',
     href: '/dashboard/settings',
-    matchPaths: ['/dashboard/settings']
+    matchPaths: ['/dashboard/settings'],
+    // Always visible — Settings is each admin's own profile/account page.
+    requiredPermission: null
   },
+  {
+    icon: KeyRound,
+    label: 'Request Access',
+    href: '/dashboard/request-access',
+    matchPaths: ['/dashboard/request-access'],
+    requiredPermission: null,
+    hideForSuperadmin: true,
+    hidden: !SHOW_PERMISSIONS_DRAWER
+  },
+  {
+    icon: ShieldCheck,
+    label: 'Permissions',
+    href: '/dashboard/permission-requests',
+    matchPaths: ['/dashboard/permission-requests'],
+    requiredPermission: null,
+    superadminOnly: true,
+    hidden: !SHOW_PERMISSIONS_DRAWER
+  },
+  {
+    icon: UserCog,
+    label: 'Roles',
+    href: '/dashboard/role-management',
+    matchPaths: ['/dashboard/role-management'],
+    requiredPermission: null,
+    superadminOnly: true
+  },
+  {
+    icon: Users,
+    label: 'Users',
+    href: '/dashboard/user-management',
+    matchPaths: ['/dashboard/user-management'],
+    requiredPermission: null,
+    superadminOnly: true
+  }
 ]
+
 
 export function Sidebar() {
   const { pathname } = useLocation()
@@ -110,6 +168,11 @@ export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
   const clearAuthData = useAuthDataStore((state) => state.clearAuthData)
+  const authData = useAuthDataStore((state) => state.authData)
+
+  const visibleMenuItems = menuItems.filter((item) => canSeeMenuItem(authData, item))
+
+  const canSeeSos = hasDrawerAccess(authData, 'emergency-sos')
 
   // NEW SOS FLOW (unread) — ACTIVE.
   // ── OLD FLOW (pending `total` badge) — COMMENTED OUT ──
@@ -119,12 +182,13 @@ export function Sidebar() {
   const resetSosAlert = useSosStore((state) => state.resetAlert)
 
   useEffect(() => {
+    if (!canSeeSos) return
     initEmergencyAudioUnlock()
     // Fresh dashboard session (this runs on each login, since logout unmounts
     // the dashboard): clear any stale `dismissed` flag so the popup shows again.
     resetSosAlert()
     fetchSosCount()
-  }, [fetchSosCount, resetSosAlert])
+  }, [canSeeSos, fetchSosCount, resetSosAlert])
 
   // ── SOS POLLING (auto-refresh) ─────────────────────────────────────────────
   // The sidebar is mounted on every dashboard page, so one poller here keeps the
@@ -135,6 +199,8 @@ export function Sidebar() {
   // ⚠️ Remove this whole block (and SOS_POLL_INTERVAL_MS in the store) if upper
   // management / the client don't want background polling.
   useEffect(() => {
+    if (!canSeeSos) return
+
     const id = setInterval(() => {
       // Skip while the tab is hidden — no point polling (or alarming) in the
       // background; the visibility listener below catches up on return.
@@ -152,7 +218,7 @@ export function Sidebar() {
       clearInterval(id)
       document.removeEventListener("visibilitychange", onVisible)
     }
-  }, [fetchSosCount])
+  }, [canSeeSos, fetchSosCount])
 
   const handleLogout = () => {
     API.auth.Logout(navigate, clearAuthData);
@@ -201,7 +267,7 @@ export function Sidebar() {
       " h-screen flex flex-col transition-all duration-500 relative shrink-0",
       isCollapsed ? "w-20" : "w-64"
     )}>
-      <div className={isCollapsed ? ' flex  flex-col  justify-center items-center' : "flex  flex-col gap-y-0 justify-center items-center "}>
+      <div className={isCollapsed ? 'shrink-0 flex  flex-col  justify-center items-center' : "shrink-0 flex  flex-col gap-y-0 justify-center items-center "}>
         <div className={isCollapsed ? ` h-[45px] flex flex-col items-center justify-center ` : ` h-[45px] flex flex-col items-center justify-center`} >
           {isCollapsed ?
             <img src="/assets/images/logo.png" alt="Logo" className='w-[35px] ' /> :
@@ -235,13 +301,13 @@ export function Sidebar() {
           </div>
         </div> */}
       </div>
-      <nav className={isCollapsed ? "w-full  px-4 py-3" : "w-full  px-4 py-3"}>
+      <nav className="w-full px-4 py-2 flex-1 min-h-0 overflow-y-auto eme-scroll">
         <ul>
-          {menuItems.map((item) => (
+          {visibleMenuItems.map((item) => (
             <li key={item.href}>
               <Link to={item.href}>
                 <span className={cn(
-                  " relative flex items-center gap-x-2 text-sm py-1.5 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
+                  " relative flex items-center gap-x-2 text-sm py-1 px-2 my-0 text-[#7F7F7F] rounded-[12px] hover:bg-[#FFFFFF] hover:text-[#323232] cursor-pointer transition-all border border-transparent hover:border hover:border-[#E5E5E5]",
                   isActiveRoute(item) ? "bg-[#FFFFFF] text-[#323232] border border-[#E5E5E5]" : "",
                   isCollapsed ? "justify-center" : ""
                 )}>
@@ -281,17 +347,17 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
-      <div className='h-[1px] bg-[#D0D5DD] mx-auto' style={{ width: isCollapsed ? '70%' : '80%' }}>
+      <div className='h-[1px] shrink-0 bg-[#D0D5DD] mx-auto' style={{ width: isCollapsed ? '70%' : '80%' }}>
 
       </div>
-      <div className={isCollapsed ? 'px-4 pt-2' : "px-6 pt-2"}>
+      <div className='shrink-0 px-4 pt-2'>
 
         <AlertDialog className='w-full '>
           <AlertDialogTrigger className='w-full'>
             <Button
               className={cn(
-                "w-full flex items-center justify-start bg-transparent border-none shadow-none text-[#7F7F7F] hover:bg-gray-100 cursor-pointer",
-                isCollapsed ? "p-2" : ""
+                "w-full flex items-center justify-start gap-x-2 bg-transparent border border-transparent shadow-none rounded-[12px] text-[#7F7F7F] hover:bg-gray-100 cursor-pointer",
+                isCollapsed ? "justify-center p-2" : "px-2"
               )}
             >
               <LogOut className={cn("shrink-0 text-[#7F7F7F]", isCollapsed ? "mr-0 " : "mr-0")} />
@@ -323,7 +389,7 @@ export function Sidebar() {
       </div>
 
       {
-        <div className='w-full flex flex-col items-center absolute bottom-2  left-1/2 transform -translate-x-1/2'>
+        <div className='w-full shrink-0 flex flex-col items-center pt-5 pb-2'>
           {isCollapsed ? <p className='text-blue-700 font-semibold'>M</p> :
             <div>
               <div className='text-[#656565] text-sm flex items-center gap-x-1 leading-3'>
