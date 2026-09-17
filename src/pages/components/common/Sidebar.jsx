@@ -23,7 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
  * The same flag hides "Request Access" for other roles — there is no point
  * requesting access if the superadmin has no drawer to approve it in.
  */
-export const SHOW_PERMISSIONS_DRAWER = false
+export const SHOW_PERMISSIONS_DRAWER = true
 
 export const menuItems = [
   {
