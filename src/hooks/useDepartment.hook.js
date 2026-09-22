@@ -20,6 +20,16 @@ const FALLBACK_DEPARTMENTS = [
   "Cardiac Science",
 ];
 
+/**
+ * Department names, for filter dropdowns.
+ *
+ * This is reference data, not the Departments drawer: an admin who can see
+ * Appointments but not Departments still needs the speciality filter to work.
+ * The read is gated on the departments drawer server-side, so a 403 here is a
+ * normal outcome rather than a fault — it is asked for quietly and falls back
+ * to the static list, instead of throwing an "Access denied" toast at someone
+ * who did nothing wrong.
+ */
 export const useDepartments = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,7 +40,9 @@ export const useDepartments = () => {
       setLoading(true);
       setError(null);
 
-      const response = await API.department.getAllDepartments(1, 100);
+      const response = await API.department.getAllDepartments(1, 100, {
+        silentStatuses: [403],
+      });
 
       let departmentNames = [];
 
