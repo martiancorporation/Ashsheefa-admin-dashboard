@@ -1,8 +1,9 @@
-import { X, Phone, Calendar, Globe, Clock, Mail, User, Award, MapPin, Hash } from "lucide-react"
+import { X, Phone, Calendar, Globe, Clock, Mail, Award, MapPin, Hash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { dedupeDoctorTitle } from "@/lib/formatText"
+import DoctorAvatar from "@/pages/components/common/DoctorAvatar"
 
 export function DoctorDetailsModal({ open, onOpenChange, doctor }) {
     return (
@@ -30,15 +31,12 @@ export function DoctorDetailsModal({ open, onOpenChange, doctor }) {
                     <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                         <div className="relative">
                             <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-gray-200">
-                                {doctor.profilePic ? (
-                                    <img
-                                        src={doctor.profilePic || "/placeholder.svg"}
-                                        alt={doctor.fullName}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <User className="h-8 w-8 text-gray-400" />
-                                )}
+                                <DoctorAvatar
+                                    src={doctor.profilePic}
+                                    alt={doctor.fullName}
+                                    className="w-full h-full object-cover"
+                                    fallbackClassName="h-8 w-8"
+                                />
                             </div>
                             <Badge
                                 variant={doctor.isActive ? "default" : "secondary"}

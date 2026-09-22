@@ -29,6 +29,13 @@ export const adminUsersEndpoints = {
   DELETED_USERS_API: BASE_URL + "/v1/admin/users/deleted",
 };
 
+// Activity trail — read-only; gated on the "activity-logs" drawer
+export const activityLogsEndpoints = {
+  ACTIVITY_LOGS_API: BASE_URL + "/v1/dashboard/activity-logs",
+  ACTIVITY_LOG_FILTERS_API: BASE_URL + "/v1/dashboard/activity-logs/filters",
+  ACTIVITY_LOG_EXPORT_API: BASE_URL + "/v1/dashboard/activity-logs/export",
+};
+
 // Drawer permissions: self-service requests + superadmin grant/revoke
 export const permissionsEndpoints = {
   CATALOG_API: BASE_URL + "/v1/permissions/catalog",

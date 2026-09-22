@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { LogOut, House, UserSearch, ClipboardCheck, FlaskConical, TestTubeDiagonal, Siren, Plane, User, Stethoscope, Syringe, BriefcaseMedical, FileText, Mic, Settings, KeyRound, ShieldCheck, UserCog, Users } from 'lucide-react'
+import { LogOut, House, UserSearch, ClipboardCheck, FlaskConical, TestTubeDiagonal, Siren, Plane, User, Stethoscope, Syringe, BriefcaseMedical, FileText, Mic, Settings, KeyRound, ShieldCheck, UserCog, Users, ScrollText } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -116,6 +116,13 @@ export const menuItems = [
     href: '/dashboard/news',
     matchPaths: ['/dashboard/news', '/dashboard/news/all-news', '/dashboard/news/create-news', '/dashboard/news/edit'],
     requiredPermission: 'news'
+  },
+  {
+    icon: ScrollText,
+    label: 'Activity Logs',
+    href: '/dashboard/activity-logs',
+    matchPaths: ['/dashboard/activity-logs'],
+    requiredPermission: 'activity-logs'
   },
   {
     icon: Settings,

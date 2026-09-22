@@ -40,6 +40,7 @@ import API from "@/api";
 import { toast } from "sonner";
 import useAuthDataStore from "@/store/authStore";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import DoctorAvatar from "@/pages/components/common/DoctorAvatar";
 
 export default function DoctorsPage() {
   const navigate = useNavigate();
@@ -757,19 +758,12 @@ export default function DoctorsPage() {
 
                       <div className="flex flex-col items-start space-y-2">
                         <div className="size-12 md:size-14 rounded-full bg-[#C3DDFF] flex items-center justify-center text-blue-600 overflow-hidden shrink-0">
-                          {doctor.profilePic ? (
-                            <img
-                              className="w-full h-full object-top object-cover"
-                              src={doctor.profilePic || "/placeholder.svg"}
-                              alt={doctor.fullName}
-                            />
-                          ) : (
-                            <img
-                              className="size-8 md:size-9 "
-                              src="/assets/images/doctor/avatar.svg"
-                              alt="avatar"
-                            />
-                          )}
+                          <DoctorAvatar
+                            src={doctor.profilePic}
+                            alt={doctor.fullName}
+                            className="w-full h-full object-top object-cover"
+                            fallbackClassName="size-8 md:size-9 "
+                          />
                         </div>
                         <div className="flex justify-between items-end w-full gap-3">
                         <div className="min-w-0 flex-1">

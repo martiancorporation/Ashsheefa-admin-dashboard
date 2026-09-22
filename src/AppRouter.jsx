@@ -32,6 +32,7 @@ import RoleManagementPage from "@/pages/dashboard/role-management/page";
 import UserManagementPage from "@/pages/dashboard/user-management/page";
 import PermissionRequestsPage from "@/pages/dashboard/permission-requests/page";
 import RequestAccessPage from "@/pages/dashboard/request-access/page";
+import ActivityLogsPage from "@/pages/dashboard/activity-logs/page";
 
 export default function AppRouter() {
   return (
@@ -87,6 +88,8 @@ export default function AppRouter() {
           element={<PermissionRequestsPage />}
         />
         <Route path="request-access" element={<RequestAccessPage />} />
+
+        <Route path="activity-logs" element={<ActivityLogsPage />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />
