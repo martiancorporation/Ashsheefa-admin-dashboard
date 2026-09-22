@@ -13,6 +13,7 @@ import emergencySos from "./emergency-sos";
 import roles from "./roles";
 import permissions from "./permissions";
 import adminUsers from "./admin-users";
+import activityLogs from "./activity-logs";
 
 const API = {
   auth,
@@ -30,6 +31,7 @@ const API = {
   roles,
   permissions,
   adminUsers,
+  activityLogs,
 };
 
 export default API;

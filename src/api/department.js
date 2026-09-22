@@ -11,16 +11,22 @@ const {
 
 const department = {
   // Get all departments with pagination
-  getAllDepartments: async (page = 1, limit = 10) => {
+  /**
+   * @param {number} page
+   * @param {number} limit
+   * @param {object} [options] - forwarded to handleResponse, e.g.
+   *   `{ silentStatuses: [403] }` when the caller only wants the names as
+   *   reference data and can cope without them.
+   */
+  getAllDepartments: async (page = 1, limit = 10, options = {}) => {
     let response = null;
     try {
       const url = `${GET_ALL_DEPARTMENTS_API}?page=${page}&limit=${limit}`;
       response = await apiConnector("GET", url);
     } catch (error) {
-      console.error("API call error:", error);
       response = error;
     }
-    return handleResponse(response);
+    return handleResponse(response, options);
   },
 
   // Add new department

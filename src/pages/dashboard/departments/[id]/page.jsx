@@ -27,6 +27,7 @@ import {
 import { toast } from "sonner";
 import API from "@/api";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import DoctorAvatar from "@/pages/components/common/DoctorAvatar";
 
 export default function DepartmentDetailsPage() {
   const { id } = useParams();
@@ -333,14 +334,11 @@ export default function DepartmentDetailsPage() {
                   <div className="flex items-center gap-4 ">
                     <div className="relative">
                       <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                        <img
-                          src={
-                            doctor.profilePic ||
-                            doctor.photo ||
-                            "/placeholder.svg"
-                          }
+                        <DoctorAvatar
+                          src={doctor.profilePic || doctor.photo}
                           alt={doctor.fullName || doctor.name}
                           className="w-full h-full object-cover object-top"
+                          fallbackClassName="size-9"
                         />
                       </div>
                       {doctor.available && (

@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import API from "@/api";
 import { withYears, withRupee, dedupeDoctorTitle } from "@/lib/formatText";
+import DoctorAvatar from "@/pages/components/common/DoctorAvatar";
 
 export default function DoctorDetailsPage() {
   const { id } = useParams();
@@ -182,9 +183,11 @@ export default function DoctorDetailsPage() {
     if (!file) return;
 
     // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("Invalid file type. Only JPEG, PNG, and JPG are allowed.");
+      toast.error(
+        "Invalid file type. Only JPEG, JPG, PNG, and WebP are allowed.",
+      );
       return;
     }
 
@@ -524,7 +527,7 @@ export default function DoctorDetailsPage() {
                   type="file"
                   ref={fileInputRef}
                   onChange={handleFileChange}
-                  accept="image/jpeg, image/png, image/jpg"
+                  accept="image/jpeg, image/png, image/jpg, image/webp"
                   className="hidden"
                 />
 
@@ -535,21 +538,14 @@ export default function DoctorDetailsPage() {
                     photoFile ? "border-blue-400" : "border-none"
                   } ${isEditMode ? "cursor-pointer group" : ""}`}
                 >
-                  {photoUrl ? (
-                    <img
+                  <div className="w-full h-full bg-[#C3DDFF] flex items-center justify-center">
+                    <DoctorAvatar
                       src={photoUrl}
                       alt={formData.fullName}
                       className="object-cover w-full h-full"
+                      fallbackClassName="w-15 h-15"
                     />
-                  ) : (
-                    <div className="w-full h-full bg-[#C3DDFF] flex items-center justify-center">
-                      <img
-                        src="/assets/images/doctor/avatar.svg"
-                        alt={formData.fullName}
-                        className="w-15 h-15"
-                      />
-                    </div>
-                  )}
+                  </div>
 
                   {/* Hover overlay */}
                   {isEditMode && (

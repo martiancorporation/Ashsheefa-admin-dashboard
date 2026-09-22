@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import DoctorAvatar from "@/pages/components/common/DoctorAvatar";
 
 export function AddDoctorModal({
   open,
@@ -148,8 +149,9 @@ export function AddDoctorModal({
       }
 
       // Validate file type
-      if (!file.type.match(/image\/(jpeg|jpg|png)/)) {
-        toast.error("Please select a JPEG or PNG image");
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error("Please select a JPEG, PNG or WebP image");
         return;
       }
 
@@ -350,10 +352,11 @@ export function AddDoctorModal({
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden border-2 border-dashed border-blue-300 hover:border-blue-500 transition-colors">
                 {photoUrl ? (
-                  <img
-                    src={photoUrl || "/placeholder.svg"}
+                  <DoctorAvatar
+                    src={photoUrl}
                     alt="Doctor photo"
                     className="w-full h-full object-cover"
+                    fallbackClassName="size-12"
                   />
                 ) : (
                   <svg
@@ -385,7 +388,7 @@ export function AddDoctorModal({
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept="image/jpeg, image/png, image/jpg"
+                accept="image/jpeg, image/png, image/jpg, image/webp"
                 className="hidden"
               />
             </div>

@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import TablePagination from "@/pages/components/common/Pagination";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import API from "@/api";
@@ -394,22 +399,47 @@ export default function PermissionRequestsPage() {
                           </span>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            {u.permissions.map((key) => (
-                              <span
-                                key={key}
-                                className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-50 px-2.5 py-0.5 text-xs text-[#4B4B4B]"
-                              >
-                                {keyToLabel[key] || key}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRevoke(u.id, key)}
-                                  className="text-gray-400 hover:text-red-500 cursor-pointer"
-                                  title="Revoke access"
-                                >
-                                  <X className="w-3 h-3" />
-                                </button>
-                              </span>
-                            ))}
+                            {u.permissions.map((key) => {
+                              const fromRole = (
+                                u.role_permissions || []
+                              ).includes(key);
+                              const role =
+                                u.primary_role?.toLowerCase() || "the role";
+
+                              return (
+                                <Tooltip key={key}>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                                        fromRole
+                                          ? "border-dashed border-gray-300 bg-white text-[#7F7F7F] hover:border-gray-400 hover:text-[#4B4B4B]"
+                                          : "border-gray-300 bg-gray-50 text-[#4B4B4B] hover:border-gray-400"
+                                      }`}
+                                    >
+                                      {keyToLabel[key] || key}
+                                      {fromRole ? (
+                                        <span className="text-[10px] uppercase tracking-wide text-gray-400">
+                                          role
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRevoke(u.id, key)}
+                                          className="text-gray-400 hover:text-red-500 cursor-pointer"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      )}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">
+                                    {fromRole
+                                      ? `Comes from the ${role} role — change it under Roles → Access`
+                                      : "Granted directly — click ✕ to revoke"}
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            })}
                           </div>
                         )}
                       </TableCell>

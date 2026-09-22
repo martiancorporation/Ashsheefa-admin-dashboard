@@ -60,7 +60,21 @@ export const apiConnector = (method, url, bodyData, headers, params) => {
   return axiosInstance(config);
 };
 
-export const handleResponse = (response) => {
+/**
+ * Turn an axios/fetch result into data, toasting anything that went wrong.
+ *
+ * @param {object} response
+ * @param {object} [options]
+ * @param {number[]} [options.silentStatuses] - statuses the caller expects and
+ *   handles itself, so they must not raise a toast. A 401 still signs the user
+ *   out whatever is listed here — that is a session-wide safety behaviour, not
+ *   a per-call concern.
+ */
+export const handleResponse = (response, options = {}) => {
+  const silent = (status) =>
+    Array.isArray(options.silentStatuses) &&
+    options.silentStatuses.includes(status);
+
 
   // Handle fetch responses (for news add)
   if (response?.ok !== undefined) {
@@ -117,10 +131,12 @@ export const handleResponse = (response) => {
       // RBAC: this drawer/action is not granted to this admin. The sidebar and
       // route guard normally prevent reaching here, so this mostly fires when
       // access was revoked mid-session.
-      toast.error("Access denied", {
-        description:
-          data?.error || "You do not have permission to perform this action",
-      });
+      if (!silent(403)) {
+        toast.error("Access denied", {
+          description:
+            data?.error || "You do not have permission to perform this action",
+        });
+      }
     } else if (status === 404) {
       toast.error("Not found", {
         description: data?.message || "Resource not found",
