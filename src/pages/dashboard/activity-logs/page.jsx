@@ -90,6 +90,10 @@ export default function ActivityLogsPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  // "nothing came back" and "nothing has happened yet" look identical in an
+  // empty table but mean opposite things — one is a fault to chase, the other
+  // is fine. Tracked so the empty state can say which.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
@@ -147,9 +151,17 @@ export default function ActivityLogsPage() {
         });
         if (id !== requestId.current) return;
         if (res) {
+          setLoadFailed(false);
           setLogs(res.logs || []);
           setTotal(res.pagination?.total || 0);
           setTotalPages(res.pagination?.total_pages || 1);
+        } else {
+          // `handleResponse` already toasted the reason; the table must not go
+          // on claiming there is simply no activity.
+          setLoadFailed(true);
+          setLogs([]);
+          setTotal(0);
+          setTotalPages(1);
         }
       } finally {
         if (id === requestId.current) setLoading(false);
@@ -401,9 +413,17 @@ export default function ActivityLogsPage() {
                       colSpan={COLUMNS.length}
                       className="text-center py-10 text-gray-500 text-sm"
                     >
-                      {filtersActive
-                        ? "No activity matches these filters."
-                        : "No activity recorded yet."}
+                      {loadFailed ? (
+                        <span className="text-red-600">
+                          Couldn't load activity — the server didn't answer.
+                          Check that the backend is deployed and reachable, then
+                          press Refresh.
+                        </span>
+                      ) : filtersActive ? (
+                        "No activity matches these filters."
+                      ) : (
+                        "No activity recorded yet."
+                      )}
                     </TableCell>
                   </TableRow>
                 ) : (
