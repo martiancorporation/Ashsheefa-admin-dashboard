@@ -38,6 +38,7 @@ import {
   formatLogTime,
   humanise,
   toApiDate,
+  toDisplayLog,
 } from "./helpers";
 import { LogDetails } from "./components/log-details";
 import { exportActivityLogsToExcel } from "./components/export-activity-logs";
@@ -152,7 +153,7 @@ export default function ActivityLogsPage() {
         if (id !== requestId.current) return;
         if (res) {
           setLoadFailed(false);
-          setLogs(res.logs || []);
+          setLogs((res.logs || []).map(toDisplayLog));
           setTotal(res.pagination?.total || 0);
           setTotalPages(res.pagination?.total_pages || 1);
         } else {
@@ -440,23 +441,23 @@ export default function ActivityLogsPage() {
                       <TableCell
                         className={`${TD_CLS} align-top font-medium text-[#323232] whitespace-nowrap`}
                       >
-                        {log.module}
+                        {log.display_module}
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top whitespace-nowrap`}>
-                        {log.sub_module || "—"}
+                        {log.display_sub_module || "—"}
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top`}>
-                        <ActionBadge action={log.action} />
+                        <ActionBadge action={log.display_action} />
                       </TableCell>
                       <TableCell
                         className={`${TD_CLS} align-top whitespace-normal min-w-[150px] max-w-[210px]`}
                       >
-                        {log.title || "—"}
+                        {log.display_title || "—"}
                       </TableCell>
                       <TableCell
                         className={`${TD_CLS} align-top whitespace-normal min-w-[260px] max-w-[380px]`}
                       >
-                        <span className="line-clamp-2">{log.description}</span>
+                        <span className="line-clamp-2">{log.display_description}</span>
                       </TableCell>
                       <TableCell
                         className={`${TD_CLS} align-top whitespace-normal max-w-[180px]`}
@@ -466,7 +467,7 @@ export default function ActivityLogsPage() {
                         )}
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top`}>
-                        <div className="text-[#323232]">{log.actor_name}</div>
+                        <div className="text-[#323232]">{log.display_actor_name}</div>
                         <ActorTypeBadge actorType={log.actor_type} actorRole={log.actor_role} />
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top`}>
