@@ -40,6 +40,32 @@ export const humanise = (value) =>
     .replace(/[_-]+/g, " ")
     .replace(/^\w/, (c) => c.toUpperCase());
 
+/** A stored field name as people read it: "paymentStatus" → "Payment status". */
+const FIELD_LABELS = {
+  paymentStatus: "Payment status",
+  paymentMode: "Payment mode",
+  transaction_id: "Transaction ID",
+  checkup_status: "Checkup status",
+  test_status: "Test status",
+  doctorId: "Doctor",
+  patientId: "Patient",
+};
+
+export const fieldLabel = (field) =>
+  FIELD_LABELS[field] ||
+  humanise(String(field || "").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase());
+
+/** Status "pending" → "Pending", mode "upi" → "UPI"; free text as typed. */
+export const formatChangeValue = (field, value) => {
+  if (value === null || value === undefined || value === "") return "—";
+  const text = String(value);
+  if (field === "paymentMode") {
+    return { upi: "UPI", icici: "ICICI (online)", cash: "Cash", card: "Card" }[text] || text;
+  }
+  const isStatus = ["paymentStatus", "status", "checkup_status", "test_status"].includes(field);
+  return isStatus && /^[a-z]+$/.test(text) ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+};
+
 export function ActionBadge({ action }) {
   const style = ACTION_STYLES[action] || ACTION_STYLES.other;
   return <span className={`${BADGE_BASE} ${style}`}>{humanise(action)}</span>;
@@ -67,12 +93,32 @@ const ACTOR_TYPE_LABELS = {
   system: "System",
 };
 
-export function ActorTypeBadge({ actorType }) {
-  return (
-    <span className="text-[11px] text-gray-400">
-      {ACTOR_TYPE_LABELS[actorType] || actorType}
-    </span>
-  );
+/**
+ * A role key as people read it: "SUPERADMIN" → "Super Admin", "hr" → "Hr",
+ * "front_desk" → "Front Desk".
+ */
+export function formatRoleKey(roleKey) {
+  if (!roleKey) return "";
+  if (roleKey === "SUPERADMIN") return "Super Admin";
+  return String(roleKey)
+    .toLowerCase()
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
+ * The line under the actor's name: their role for a dashboard admin (every
+ * dashboard login is actor_type "admin", superadmin included, so the type alone
+ * says nothing), otherwise what kind of actor it was.
+ */
+export function ActorTypeBadge({ actorType, actorRole }) {
+  const label =
+    actorType === "admin" && actorRole
+      ? formatRoleKey(actorRole)
+      : ACTOR_TYPE_LABELS[actorType] || actorType;
+  return <span className="text-[11px] text-gray-400">{label}</span>;
 }
 
 /** "21 Sep 2026" and "03:24:18 pm" as separate lines — the table shows both. */

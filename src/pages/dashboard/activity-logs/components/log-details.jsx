@@ -9,6 +9,9 @@ import {
   LogStatusBadge,
   formatLogDate,
   formatLogTime,
+  formatRoleKey,
+  fieldLabel,
+  formatChangeValue,
   humanise,
 } from "../helpers";
 
@@ -57,15 +60,27 @@ export const LogDetails = ({ open, setOpen, log }) => {
           {log.changes?.length > 0 && (
             <Row label="Changed">
               <div className="space-y-1">
-                {log.changes.map((change, index) => (
-                  <div key={`${change.field}-${index}`}>
-                    <span className="font-medium">{humanise(change.field)}</span>
-                    {": "}
-                    <span className="text-red-700">{change.from || "—"}</span>
-                    {" → "}
-                    <span className="text-green-700">{change.to || "—"}</span>
-                  </div>
-                ))}
+                {log.changes.map((change, index) => {
+                  const marksPaid = log.changes.some(
+                    (c) => c.field === "paymentStatus" && String(c.to).toLowerCase() === "paid"
+                  );
+                  const newOnly =
+                    change.from === change.to ||
+                    (marksPaid && ["paymentMode", "transaction_id"].includes(change.field));
+                  return (
+                    <div key={`${change.field}-${index}`}>
+                      <span className="font-medium">{fieldLabel(change.field)}</span>
+                      {": "}
+                      {!newOnly && (
+                        <>
+                          <span className="text-red-700">{formatChangeValue(change.field, change.from)}</span>
+                          {" → "}
+                        </>
+                      )}
+                      <span className="text-green-700">{formatChangeValue(change.field, change.to)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </Row>
           )}
@@ -80,7 +95,7 @@ export const LogDetails = ({ open, setOpen, log }) => {
           <Row label="Performed by">
             {log.actor_name}
             {log.actor_email ? ` · ${log.actor_email}` : ""}
-            {log.actor_role ? ` · ${log.actor_role}` : ""}
+            {log.actor_role ? ` · ${formatRoleKey(log.actor_role)}` : ""}
           </Row>
           <Row label="Actor type">{humanise(log.actor_type)}</Row>
 

@@ -1,7 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { LogOut, House, UserSearch, ClipboardCheck, FlaskConical, TestTubeDiagonal, Siren, Plane, User, Stethoscope, Syringe, BriefcaseMedical, FileText, Mic, Settings, KeyRound, ShieldCheck, UserCog, Users, ScrollText } from 'lucide-react'
+import { LogOut, House, UserSearch, ClipboardCheck, FlaskConical, TestTubeDiagonal, Siren, Plane, User, Stethoscope, Syringe, BriefcaseMedical, FileText, Mic, Settings, KeyRound, ShieldCheck, UserCog, Users, ScrollText, BadgeCheck } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import {
   Tooltip,
@@ -13,7 +13,10 @@ import useAuthDataStore from '@/store/authStore'
 import useSosStore, { SOS_POLL_INTERVAL_MS } from '@/store/sosStore'
 import { initEmergencyAudioUnlock } from '@/lib/emergencyAlertSound'
 import API from '@/api'
-import { canSeeMenuItem, hasDrawerAccess } from '@/lib/rbac'
+import { canSeeMenuItem, hasDrawerAccess, isSuperadmin } from '@/lib/rbac'
+import { APPROVALS_CHANGED_EVENT } from '@/pages/dashboard/approval-requests/components/approval-helpers'
+
+const APPROVALS_POLL_INTERVAL_MS = 30000
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 
 
@@ -151,6 +154,14 @@ export const menuItems = [
     hidden: !SHOW_PERMISSIONS_DRAWER
   },
   {
+    icon: BadgeCheck,
+    label: 'Approval Requests',
+    href: '/dashboard/approval-requests',
+    matchPaths: ['/dashboard/approval-requests'],
+    requiredPermission: null,
+    superadminOnly: true
+  },
+  {
     icon: UserCog,
     label: 'Roles',
     href: '/dashboard/role-management',
@@ -226,6 +237,31 @@ export function Sidebar() {
       document.removeEventListener("visibilitychange", onVisible)
     }
   }, [canSeeSos, fetchSosCount])
+
+  // ── Approval Requests badge (superadmin) 
+  const superadmin = isSuperadmin(authData)
+  const [approvalsPending, setApprovalsPending] = useState(0)
+
+  useEffect(() => {
+    if (!superadmin) return
+
+    const load = async () => {
+      if (typeof document !== "undefined" && document.hidden) return
+      const res = await API.approvalRequests.GetCounts()
+      if (res?.counts) setApprovalsPending(res.counts.pending || 0)
+    }
+
+    load()
+    const id = setInterval(load, APPROVALS_POLL_INTERVAL_MS)
+    window.addEventListener(APPROVALS_CHANGED_EVENT, load)
+    document.addEventListener("visibilitychange", load)
+
+    return () => {
+      clearInterval(id)
+      window.removeEventListener(APPROVALS_CHANGED_EVENT, load)
+      document.removeEventListener("visibilitychange", load)
+    }
+  }, [superadmin])
 
   const handleLogout = () => {
     API.auth.Logout(navigate, clearAuthData);
@@ -335,6 +371,18 @@ export function Sidebar() {
                   </TooltipProvider>
 
                   {!isCollapsed && <span>{item.label}</span>}
+
+                  {item.label === 'Approval Requests' && approvalsPending > 0 && (
+                    isCollapsed ? (
+                      <span className="absolute top-0.5 right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-blue-600 text-white text-[9px] font-semibold">
+                        {approvalsPending > 99 ? '99+' : approvalsPending}
+                      </span>
+                    ) : (
+                      <span className="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-blue-600 text-white text-[11px] font-semibold">
+                        {approvalsPending > 99 ? '99+' : approvalsPending}
+                      </span>
+                    )
+                  )}
 
                   {/* Emergency SOS count badge (static — only the icon animates) */}
                   {item.label === 'Emergency SOS' && sosUnread > 0 && (

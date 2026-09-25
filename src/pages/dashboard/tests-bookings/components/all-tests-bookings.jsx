@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   CalendarClock,
   CheckCircle,
+  ClipboardList,
   Ellipsis,
   Eye,
   FlaskConical,
@@ -40,6 +41,13 @@ import { EditBookingModal } from "./edit-booking-modal";
 import { MarkPaidModal } from "./mark-paid-modal";
 import { RescheduleModal } from "./reschedule-modal";
 import { DeleteConfirmationModal } from "./delete-confirmation-modal";
+import { RequestChangeModal } from "@/pages/dashboard/approval-requests/components/request-change-modal";
+import { RequestStatusModal } from "@/pages/dashboard/approval-requests/components/request-status-modal";
+import {
+  PendingApprovalPill,
+  useNeedsApproval,
+  usePendingApprovals,
+} from "@/pages/dashboard/approval-requests/components/approval-helpers";
 import {
   INLINE_STATUSES,
   PAYMENT_STATUSES,
@@ -74,6 +82,18 @@ export default function AllTestsBookings({
   const [paidOpen, setPaidOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [requestStatusOpen, setRequestStatusOpen] = useState(false);
+  const [requestChangeOpen, setRequestChangeOpen] = useState(false);
+  const [proposedChange, setProposedChange] = useState(null);
+
+  // Payment status is superadmin-only; others raise an approval request.
+  const needsApproval = useNeedsApproval();
+  const { pending: pendingApprovals, refresh: refreshApprovals } = usePendingApprovals(
+    "test_booking",
+    // Only requesters see pending markers; the superadmin's table stays as it
+    // was and requests are reviewed in the Approval Requests drawer.
+    needsApproval ? bookings.map((b) => b._id) : []
+  );
 
   // Filtering happens server-side so paging stays correct across the whole set.
   const fetchBookings = useCallback(async () => {
@@ -132,6 +152,7 @@ export default function AllTestsBookings({
 
   const refresh = () => {
     fetchBookings();
+    refreshApprovals();
     onBookingUpdate?.();
   };
 
@@ -159,8 +180,14 @@ export default function AllTestsBookings({
   };
 
   const handlePaymentStatusChange = async (booking, value) => {
+    if (value === (booking.paymentStatus || "pending")) return;
     if (value === "paid") {
       openWith(booking, setPaidOpen);
+      return;
+    }
+    if (needsApproval) {
+      setProposedChange({ paymentStatus: value });
+      openWith(booking, setRequestChangeOpen);
       return;
     }
 
@@ -259,6 +286,7 @@ export default function AllTestsBookings({
         <TableBody>
           {bookings.map((booking, index) => {
             const isPaid = booking.paymentStatus === "paid";
+            const pendingApproval = needsApproval ? pendingApprovals[booking._id] : null;
             const rescheduled = booking.reschedule_history?.length || 0;
             return (
               <TableRow
@@ -344,6 +372,12 @@ export default function AllTestsBookings({
                   </Select>
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 text-center">
+                  {pendingApproval ? (
+                    <PendingApprovalPill
+                      request={pendingApproval}
+                      onClick={() => openWith(booking, setRequestStatusOpen)}
+                    />
+                  ) : (
                   <Select
                     value={booking.paymentStatus || "pending"}
                     onValueChange={(val) => handlePaymentStatusChange(booking, val)}
@@ -363,6 +397,7 @@ export default function AllTestsBookings({
                       ))}
                     </SelectContent>
                   </Select>
+                  )}
                 </TableCell>
                 <TableCell className="py-3">
                   <div className="flex justify-center gap-2">
@@ -404,7 +439,20 @@ export default function AllTestsBookings({
                           <CalendarClock className="h-4 w-4 mr-2 text-purple-600" />
                           Reschedule
                         </DropdownMenuItem>
-                        {isPaid ? (
+                        {needsApproval && (
+                          <DropdownMenuItem
+                            className={`flex items-center px-2 py-2 text-sm cursor-pointer transition-colors ${
+                              pendingApproval
+                                ? "text-yellow-800 hover:bg-yellow-50"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                            onClick={() => openWith(booking, setRequestStatusOpen)}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2 text-yellow-600" />
+                            Check Request Status
+                          </DropdownMenuItem>
+                        )}
+                        {pendingApproval ? null : isPaid ? (
                           <DropdownMenuItem
                             className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
                             onClick={() => openWith(booking, setPaidOpen)}
@@ -418,7 +466,7 @@ export default function AllTestsBookings({
                             onClick={() => openWith(booking, setPaidOpen)}
                           >
                             <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                            Mark as Paid
+                            {needsApproval ? "Request Mark as Paid" : "Mark as Paid"}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -489,6 +537,23 @@ export default function AllTestsBookings({
         onOpenChange={setRescheduleOpen}
         booking={activeBooking}
         onSave={refresh}
+      />
+      <RequestChangeModal
+        open={requestChangeOpen}
+        onOpenChange={setRequestChangeOpen}
+        entityType="test_booking"
+        record={activeBooking}
+        changes={proposedChange}
+        recordLabel={activeBooking?.patientId?.patient_full_name}
+        onSent={refreshApprovals}
+      />
+      <RequestStatusModal
+        open={requestStatusOpen}
+        onOpenChange={setRequestStatusOpen}
+        entityType="test_booking"
+        record={activeBooking}
+        recordLabel={activeBooking?.patientId?.patient_full_name}
+        onChanged={refresh}
       />
       <DeleteConfirmationModal
         open={deleteOpen}

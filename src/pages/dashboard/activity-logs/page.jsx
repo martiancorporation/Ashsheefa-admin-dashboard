@@ -467,7 +467,7 @@ export default function ActivityLogsPage() {
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top`}>
                         <div className="text-[#323232]">{log.actor_name}</div>
-                        <ActorTypeBadge actorType={log.actor_type} />
+                        <ActorTypeBadge actorType={log.actor_type} actorRole={log.actor_role} />
                       </TableCell>
                       <TableCell className={`${TD_CLS} align-top`}>
                         <LogStatusBadge status={log.status} />
