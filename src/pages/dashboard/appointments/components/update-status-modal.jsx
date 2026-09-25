@@ -3,6 +3,7 @@ import { Loader2, IndianRupee, CreditCard, CheckCircle2, Lock } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
     Dialog,
     DialogContent,
@@ -21,6 +22,9 @@ import {
 import { toast } from "sonner"
 import appointments from "@/api/appointments"
 import { dedupeDoctorTitle } from "@/lib/formatText"
+import API from "@/api"
+import { unwrap } from "@/pages/dashboard/rbac/helpers"
+import { useNeedsApproval } from "@/pages/dashboard/approval-requests/components/approval-helpers"
 
 const PAYMENT_MODES = [
     { value: "cash", label: "Cash" },
@@ -43,6 +47,10 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
     const [confirmedAmount, setConfirmedAmount] = useState("")
     const [confirmedMode, setConfirmedMode] = useState("")
     const [confirmedTxnId, setConfirmedTxnId] = useState("")
+    const [reason, setReason] = useState("")
+
+    // Only the superadmin marks paid directly; everyone else sends a request.
+    const needsApproval = useNeedsApproval()
 
     // Cash has no reference number; UPI/card do.
     const needsTransactionId = paymentMode === "upi" || paymentMode === "card"
@@ -67,6 +75,7 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                 setAmount(appointment.amount ?? appointment.doctorId?.fees ?? "")
                 setPaymentMode("")
                 setTransactionId("")
+                setReason("")
                 setPaid(false)
                 setConfirmedAmount("")
                 setConfirmedMode("")
@@ -89,6 +98,30 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
 
         setLoading(true)
         try {
+            if (needsApproval) {
+                const req = unwrap(
+                    await API.approvalRequests.CreateRequest({
+                        entity_type: "appointment",
+                        entity_id: appointment._id,
+                        changes: {
+                            status: "Confirmed",
+                            paymentStatus: "paid",
+                            paymentMode,
+                            transaction_id: needsTransactionId ? transactionId.trim() : "",
+                        },
+                        reason: reason.trim(),
+                    })
+                )
+                if (req?.request) {
+                    toast.success("Request sent", {
+                        description: "It will be marked as paid once the superadmin approves.",
+                    })
+                    onSave?.()
+                    onOpenChange(false)
+                }
+                return
+            }
+
             const res = await appointments.updateAppointment(appointment._id, {
                 status: "Confirmed", 
                 paymentStatus: "paid",
@@ -212,10 +245,12 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                         <DialogHeader>
                             <DialogTitle className="flex items-center gap-2 text-base text-[#4B4B4B]">
                                 <CreditCard className="w-4 h-4 text-green-600" />
-                                Mark as Paid
+                                {needsApproval ? "Request Mark as Paid" : "Mark as Paid"}
                             </DialogTitle>
                             <DialogDescription className="text-xs text-slate-500">
-                                Confirm the payment details below to mark this appointment as paid.
+                                {needsApproval
+                                    ? "Payment status changes need superadmin approval. The appointment is marked paid once your request is approved."
+                                    : "Confirm the payment details below to mark this appointment as paid."}
                             </DialogDescription>
                         </DialogHeader>
 
@@ -301,6 +336,21 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                 </div>
                             )}
 
+                            {needsApproval && (
+                                <div className="space-y-1.5">
+                                    <Label className="text-[#4A4A4B] text-sm">
+                                        Reason <span className="text-gray-400 font-normal">(optional)</span>
+                                    </Label>
+                                    <Textarea
+                                        value={reason}
+                                        onChange={(e) => setReason(e.target.value)}
+                                        className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none text-sm"
+                                        placeholder="e.g. Paid in cash at the counter"
+                                        maxLength={500}
+                                    />
+                                </div>
+                            )}
+
                             <DialogFooter>
                                 <Button
                                     type="button"
@@ -320,6 +370,8 @@ export function UpdateStatusModal({ open, onOpenChange, appointment, onSave }) {
                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                             Processing...
                                         </>
+                                    ) : needsApproval ? (
+                                        "Send Request"
                                     ) : (
                                         "Confirm Payment"
                                     )}

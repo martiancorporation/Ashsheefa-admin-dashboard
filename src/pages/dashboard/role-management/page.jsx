@@ -16,6 +16,7 @@ import {
   unwrap,
   RoleActionBadge,
   formatDateTime,
+  fullName,
   LoadingRowsCell,
   TABLE_CLS,
   THEAD_CLS,
@@ -50,6 +51,8 @@ export default function RoleManagementPage() {
   const [accessOpen, setAccessOpen] = useState(false);
   const [accessRole, setAccessRole] = useState(null);
   const [accessKeys, setAccessKeys] = useState([]);
+  // drawer key → names of this role's users who hold it as a direct grant
+  const [directGrants, setDirectGrants] = useState({});
 
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -126,12 +129,28 @@ export default function RoleManagementPage() {
     // Superadmin implicitly has every drawer — show them all, read-only.
     if (isSuperadminRole(role)) {
       setAccessKeys(assignableCatalog.map((c) => c.permission_key));
+      setDirectGrants({});
       setAccessOpen(true);
       return;
     }
 
-    // Fetch current drawers BEFORE opening so the modal initialises checked.
-    const res = await API.roles.GetRolePermissions(role.id);
+    // Fetch current drawers BEFORE opening so the modal initialises checked,
+    // plus the drawers this role's users were granted directly under
+    // Permissions — those show as checked-but-locked, since the role can't
+    // take them away.
+    const [res, usersRes] = await Promise.all([
+      API.roles.GetRolePermissions(role.id),
+      API.permissions.GetUsersWithPermissions(1, 100),
+    ]);
+    const grants = {};
+    (usersRes?.users || [])
+      .filter((u) => (u.roles || []).includes(role.role_key))
+      .forEach((u) => {
+        (u.direct_permissions || []).forEach((key) => {
+          grants[key] = [...(grants[key] || []), fullName(u) || u.email];
+        });
+      });
+    setDirectGrants(grants);
     setAccessKeys(
       (res?.permission_keys || []).filter((k) => k !== "settings")
     );
@@ -423,6 +442,7 @@ export default function RoleManagementPage() {
         role={accessRole}
         catalog={assignableCatalog}
         initialKeys={accessKeys}
+        directGrants={directGrants}
         onSave={handleSaveAccess}
         loading={saving}
         readOnly={accessRole ? accessRole.role_key === "SUPERADMIN" : false}

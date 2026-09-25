@@ -18,6 +18,7 @@ import {
   ChevronDown,
   X,
   Ban,
+  ClipboardList,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,13 @@ import {
 } from "date-fns";
 import TablePagination from "@/pages/components/common/Pagination";
 import { dedupeDoctorTitle } from "@/lib/formatText";
+import { RequestChangeModal } from "@/pages/dashboard/approval-requests/components/request-change-modal";
+import { RequestStatusModal } from "@/pages/dashboard/approval-requests/components/request-status-modal";
+import {
+  PendingApprovalPill,
+  useNeedsApproval,
+  usePendingApprovals,
+} from "@/pages/dashboard/approval-requests/components/approval-helpers";
 
 export default function AllAppointments({
   searchQuery = "",
@@ -83,6 +91,13 @@ export default function AllAppointments({
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelAppointment, setCancelAppointment] = useState(null);
   const [sortOrder, setSortOrder] = useState(null); // null, 'asc', or 'desc'
+  const [approvalAppointment, setApprovalAppointment] = useState(null);
+  const [requestStatusOpen, setRequestStatusOpen] = useState(false);
+  const [requestChangeOpen, setRequestChangeOpen] = useState(false);
+  const [proposedChange, setProposedChange] = useState(null);
+
+  // Payment status is superadmin-only; others raise an approval request.
+  const needsApproval = useNeedsApproval();
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -132,12 +147,35 @@ export default function AllAppointments({
 
   // Handle appointment refresh after add/edit/delete
   const handleAppointmentUpdate = () => {
+    refreshApprovals();
     if (onAppointmentUpdate) {
       onAppointmentUpdate();
     } else {
       setCurrentPage(1);
       fetchAppointments();
     }
+  };
+
+  const openRequestStatus = (appointment) => {
+    setApprovalAppointment(appointment);
+    setOpenDropdownId(null);
+    setRequestStatusOpen(true);
+  };
+
+  const handlePaymentStatusChange = (appointment, value) => {
+    if (value === (appointment.paymentStatus || "pending")) return;
+    // Marking paid collects the mode/reference first, request or not.
+    if (value === "paid") {
+      handleUpdateStatus(appointment);
+      return;
+    }
+    if (needsApproval) {
+      setApprovalAppointment(appointment);
+      setProposedChange({ paymentStatus: value });
+      setRequestChangeOpen(true);
+      return;
+    }
+    handleStatusChange(appointment._id, "paymentStatus", value);
   };
 
   const handleStatusChange = async (appointmentId, field, value) => {
@@ -369,6 +407,11 @@ export default function AllAppointments({
     currentPage * itemsPerPage,
   );
 
+  const { pending: pendingApprovals, refresh: refreshApprovals } = usePendingApprovals(
+    "appointment",
+    needsApproval ? paginatedAppointments.map((a) => a._id) : []
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -448,6 +491,7 @@ export default function AllAppointments({
             const isCancelled =
               appointment.status?.toLowerCase() === "cancelled";
             const isPaid = appointment.paymentStatus === "paid";
+            const pendingApproval = needsApproval ? pendingApprovals[appointment._id] : null;
             return (
               <TableRow
                 key={appointment._id}
@@ -509,9 +553,15 @@ export default function AllAppointments({
                 </TableCell>
                 <TableCell className="border-r border-gray-200 py-3 group-hover:border-blue-300 transition-colors duration-200 text-center">
                   <div className="flex items-center justify-center gap-2">
+                    {pendingApproval ? (
+                      <PendingApprovalPill
+                        request={pendingApproval}
+                        onClick={() => openRequestStatus(appointment)}
+                      />
+                    ) : (
                     <Select
                       value={appointment.paymentStatus || "pending"}
-                      onValueChange={(val) => handleStatusChange(appointment._id, "paymentStatus", val)}
+                      onValueChange={(val) => handlePaymentStatusChange(appointment, val)}
                     >
                       <SelectTrigger
                         className={`text-xs !px-2 !py-1 !h-auto rounded-full border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 [&_svg]:hidden ${getStatusBadgeColor(appointment.paymentStatus)} cursor-pointer font-medium justify-center hover:brightness-95 transition-all`}
@@ -524,6 +574,7 @@ export default function AllAppointments({
                         <SelectItem value="failed">Failed</SelectItem>
                       </SelectContent>
                     </Select>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="py-3">
@@ -563,8 +614,22 @@ export default function AllAppointments({
                           Edit Appointment
                         </DropdownMenuItem>
 
+                        {needsApproval && (
+                          <DropdownMenuItem
+                            className={`flex items-center px-2 py-2 text-sm cursor-pointer transition-colors ${
+                              pendingApproval
+                                ? "text-yellow-800 hover:bg-yellow-50"
+                                : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                            onClick={() => openRequestStatus(appointment)}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2 text-yellow-600" />
+                            Check Request Status
+                          </DropdownMenuItem>
+                        )}
+
                         {/* PAYMENT ACTION */}
-                        {!isCancelled &&
+                        {!isCancelled && !pendingApproval &&
                           (isPaid ? (
                             <DropdownMenuItem
                               className="flex items-center px-2 py-2 text-sm text-green-700 hover:bg-green-50 cursor-pointer transition-colors"
@@ -579,7 +644,7 @@ export default function AllAppointments({
                               onClick={() => handleUpdateStatus(appointment)}
                             >
                               <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                              Mark as Paid
+                              {needsApproval ? "Request Mark as Paid" : "Mark as Paid"}
                             </DropdownMenuItem>
                           ))}
 
@@ -655,6 +720,24 @@ export default function AllAppointments({
         onOpenChange={setStatusUpdateModalOpen}
         appointment={statusUpdateAppointment}
         onSave={handleAppointmentUpdate}
+      />
+
+      <RequestChangeModal
+        open={requestChangeOpen}
+        onOpenChange={setRequestChangeOpen}
+        entityType="appointment"
+        record={approvalAppointment}
+        changes={proposedChange}
+        recordLabel={approvalAppointment?.patientId?.patient_full_name}
+        onSent={refreshApprovals}
+      />
+      <RequestStatusModal
+        open={requestStatusOpen}
+        onOpenChange={setRequestStatusOpen}
+        entityType="appointment"
+        record={approvalAppointment}
+        recordLabel={approvalAppointment?.patientId?.patient_full_name}
+        onChanged={handleAppointmentUpdate}
       />
 
       {/* Cancel Appointment Modal */}

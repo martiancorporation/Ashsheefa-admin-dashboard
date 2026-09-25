@@ -3,6 +3,7 @@ import { CheckCircle2, CreditCard, IndianRupee, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,8 @@ import {
 import { toast } from "sonner";
 import API from "@/api";
 import { MODE_LABEL, PAYMENT_MODES, modeHasReference } from "./constants";
+import { unwrap } from "@/pages/dashboard/rbac/helpers";
+import { useNeedsApproval } from "@/pages/dashboard/approval-requests/components/approval-helpers";
 
 export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
   const [loading, setLoading] = useState(false);
@@ -29,6 +32,10 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
   const [transactionId, setTransactionId] = useState("");
   const [paid, setPaid] = useState(false);
   const [confirmed, setConfirmed] = useState({ amount: "", mode: "", txnId: "" });
+  const [reason, setReason] = useState("");
+
+  // Only the superadmin marks paid directly; everyone else sends a request.
+  const needsApproval = useNeedsApproval();
 
   const needsTransactionId = paymentMode === "upi" || paymentMode === "card";
 
@@ -48,6 +55,7 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
       setAmount(booking.amount ?? "");
       setPaymentMode("");
       setTransactionId("");
+      setReason("");
       setPaid(false);
       setConfirmed({ amount: "", mode: "", txnId: "" });
     }
@@ -66,6 +74,30 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
 
     setLoading(true);
     try {
+      if (needsApproval) {
+        const req = unwrap(
+          await API.approvalRequests.CreateRequest({
+            entity_type: "checkup_booking",
+            entity_id: booking._id,
+            changes: {
+              paymentStatus: "paid",
+              checkup_status: "Confirmed",
+              paymentMode,
+              transaction_id: needsTransactionId ? transactionId.trim() : "",
+            },
+            reason: reason.trim(),
+          })
+        );
+        if (req?.request) {
+          toast.success("Request sent", {
+            description: "It will be marked as paid once the superadmin approves.",
+          });
+          onSave?.();
+          onOpenChange(false);
+        }
+        return;
+      }
+
       const res = await API.healthCheckupBookings.updateBooking(booking._id, {
         paymentStatus: "paid",
         // Sent together, the way appointments do it: either half of this pair
@@ -177,10 +209,12 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-base text-[#4B4B4B]">
                 <CreditCard className="w-4 h-4 text-green-600" />
-                Mark as Paid
+                {needsApproval ? "Request Mark as Paid" : "Mark as Paid"}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500">
-                Confirm the payment details below to mark this checkup as paid.
+                {needsApproval
+                  ? "Payment status changes need superadmin approval. The booking is marked paid once your request is approved."
+                  : "Confirm the payment details below to mark this checkup as paid."}
               </DialogDescription>
             </DialogHeader>
 
@@ -263,6 +297,21 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
                 </div>
               )}
 
+              {needsApproval && (
+                <div className="space-y-1.5">
+                  <Label className="text-[#4A4A4B] text-sm">
+                    Reason <span className="text-gray-400 font-normal">(optional)</span>
+                  </Label>
+                  <Textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    className="bg-[#FBFBFB] border-[#DDDDDD] shadow-none text-sm"
+                    placeholder="e.g. Paid in cash at the counter"
+                    maxLength={500}
+                  />
+                </div>
+              )}
+
               <DialogFooter>
                 <Button
                   type="button"
@@ -282,6 +331,8 @@ export function MarkPaidModal({ open, onOpenChange, booking, onSave }) {
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Processing...
                     </>
+                  ) : needsApproval ? (
+                    "Send Request"
                   ) : (
                     "Confirm Payment"
                   )}

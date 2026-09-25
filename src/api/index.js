@@ -14,6 +14,7 @@ import roles from "./roles";
 import permissions from "./permissions";
 import adminUsers from "./admin-users";
 import activityLogs from "./activity-logs";
+import approvalRequests from "./approval-requests";
 
 const API = {
   auth,
@@ -32,6 +33,7 @@ const API = {
   permissions,
   adminUsers,
   activityLogs,
+  approvalRequests,
 };
 
 export default API;

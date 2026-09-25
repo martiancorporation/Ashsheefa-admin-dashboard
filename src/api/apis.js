@@ -36,6 +36,17 @@ export const activityLogsEndpoints = {
   ACTIVITY_LOG_EXPORT_API: BASE_URL + "/v1/dashboard/activity-logs/export",
 };
 
+// Approval requests for guarded fields (payment status): any admin raises one,
+// only the superadmin reviews
+export const approvalRequestsEndpoints = {
+  REQUESTS_API: BASE_URL + "/v1/approval-requests",
+  PENDING_API: BASE_URL + "/v1/approval-requests/pending",
+  RECORD_API: BASE_URL + "/v1/approval-requests/record",
+  ADMIN_API: BASE_URL + "/v1/approval-requests/admin",
+  ADMIN_COUNTS_API: BASE_URL + "/v1/approval-requests/admin/counts",
+  ADMIN_BULK_API: BASE_URL + "/v1/approval-requests/admin/bulk",
+};
+
 // Drawer permissions: self-service requests + superadmin grant/revoke
 export const permissionsEndpoints = {
   CATALOG_API: BASE_URL + "/v1/permissions/catalog",
